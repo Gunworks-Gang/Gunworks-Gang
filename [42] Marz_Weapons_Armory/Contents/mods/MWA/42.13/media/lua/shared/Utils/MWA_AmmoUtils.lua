@@ -83,6 +83,17 @@ function MWA_Utils.AmmoProfileSetter(weapon, bulletType)
         return
     end
 
+    if isClient() then
+        local playerObj = getSpecificPlayer(0)
+        if playerObj then
+            sendClientCommand(playerObj, "MWA", "ammoProfile", {
+                itemId = weapon:getID(),
+                bulletType = bulletType
+            })
+        end
+        return
+    end
+
     print('Ammo Profile Setting!')
     print(weapon:getAmmoType(), "  -->   ", ammoEnum)
 
@@ -94,6 +105,17 @@ function MWA_Utils.MagazineAmmoProfileSetter(magazine, bulletType)
     if not ammoEnum then return end
 
     if magazine:getAmmoType() == ammoEnum then
+        return
+    end
+
+    if isClient() then
+        local playerObj = getSpecificPlayer(0)
+        if playerObj then
+            sendClientCommand(playerObj, "MWA", "magazineAmmoProfile", {
+                itemId = magazine:getID(),
+                bulletType = bulletType
+            })
+        end
         return
     end
 

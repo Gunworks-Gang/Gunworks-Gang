@@ -1,4 +1,5 @@
 require "TimedActions/ISRackFirearm"
+require "MWA_Animations"
 
 local ISRackFirearm_animEvent_old = ISRackFirearm.animEvent
 function ISRackFirearm:animEvent(event, parameter)

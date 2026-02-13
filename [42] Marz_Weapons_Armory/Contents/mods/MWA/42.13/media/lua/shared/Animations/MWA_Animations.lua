@@ -1,3 +1,4 @@
+require "MWA_OpenModels"
 AnimationWeaponAction = {}
 
 function AnimationWeaponAction.scheduleActionClose(seconds, callback, ...)
