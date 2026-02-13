@@ -1,0 +1,144 @@
+module MWA
+{
+    imports
+    {
+        Base
+    }
+    model M92FS
+    {
+        mesh = weapons/firearms/pistols|M92FS,
+        texture = weapons/firearms/pistols/M92FS,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.2304 -0.0271,
+            rotate = -90.0000 0.0000 0.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model M92FS_OPEN
+    {
+        mesh = weapons/firearms/pistols|M92FS_OPEN,
+        texture = weapons/firearms/pistols/M92FS,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.2304 -0.0271,
+            rotate = -90.0000 0.0000 0.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+    }
+    model M1911
+    {
+        mesh = weapons/firearms/pistols|M1911,
+        texture = weapons/firearms/pistols/M1911,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.2304 -0.0271,
+            rotate = -90.0000 0.0000 0.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model M1911_OPEN
+    {
+        mesh = weapons/firearms/pistols|M1911_OPEN,
+        texture = weapons/firearms/pistols/M1911,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.2304 -0.0271,
+            rotate = -90.0000 0.0000 0.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model DEAGLE_1
+    {
+        mesh = weapons/firearms/pistols|DEAGLE,
+        texture = weapons/firearms/pistols/DEAGLE_1,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.2304 -0.0271,
+            rotate = -90.0000 0.0000 0.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model DEAGLE_1_OPEN
+    {
+        mesh = weapons/firearms/pistols|DEAGLE_OPEN,
+        texture = weapons/firearms/pistols/DEAGLE_1,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.2304 -0.0271,
+            rotate = -90.0000 0.0000 0.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model DEAGLE_2
+    {
+        mesh = weapons/firearms/pistols|DEAGLE,
+        texture = weapons/firearms/pistols/DEAGLE_2,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.2304 -0.0271,
+            rotate = -90.0000 0.0000 0.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model DEAGLE_2_OPEN
+    {
+        mesh = weapons/firearms/pistols|DEAGLE_OPEN,
+        texture = weapons/firearms/pistols/DEAGLE_2,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.2304 -0.0271,
+            rotate = -90.0000 0.0000 0.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+}

@@ -1,0 +1,144 @@
+module Base
+{
+    model 9mm_Round_Base
+    {
+        mesh = Worlditems/Ammo/9mm_Round,
+        texture = WorldItems/Ammo/Pistol_Standard_Round_Base,
+        scale = 0.55,
+    }
+    
+    model 45_Round_Base
+    {
+        mesh = Worlditems/Ammo/45_Round,
+        texture = WorldItems/Ammo/Pistol_Medium_Round_Base,
+        scale = 0.55,
+    }
+    
+    model 44_Round_Base
+    {
+        mesh = Worlditems/Ammo/44_Round,
+        texture = WorldItems/Ammo/Pistol_Heavy_Round_Base,
+        scale = 0.55,
+    }
+    
+    model 38_Round_Base
+    {
+        mesh = Worlditems/Ammo/38_Round,
+        texture = WorldItems/Ammo/Pistol_Standard_Round_Base,
+        scale = 0.55,
+    }
+    
+    model 308_Round_Base
+    {
+        mesh = Worlditems/Ammo/308_Round,
+        texture = WorldItems/Ammo/Nato_Round_CIV,
+        scale = 0.55,
+    }
+    model 76251_Round_Base
+    {
+        mesh = Worlditems/Ammo/308_Round,
+        texture = WorldItems/Ammo/Nato_Round_Base,
+        scale = 0.55,
+    }
+    
+    model 223_Round_Base
+    {
+        mesh = Worlditems/Ammo/556_Round,
+        texture = WorldItems/Ammo/Nato_Round_CIV,
+        scale = 0.55,
+    }
+    model 556_Round_Base
+    {
+        mesh = Worlditems/Ammo/556_Round,
+        texture = WorldItems/Ammo/Nato_Round_Base,
+        scale = 0.55,
+    }
+    model 556_Round_AP
+    {
+        mesh = Worlditems/Ammo/556_Round,
+        texture = WorldItems/Ammo/Nato_Round_AP,
+        scale = 0.55,
+    }
+    model 556_Round_SS
+    {
+        mesh = Worlditems/Ammo/556_Round,
+        texture = WorldItems/Ammo/Nato_Round_SS,
+        scale = 0.55,
+    }
+    
+    model 12Gauge_Red_Shell
+    {
+        mesh = Worlditems/Ammo/12_Gauge,
+        texture = WorldItems/Ammo/12Gauge_Red_Shell,
+        scale = 0.55,
+    }
+    model 12Gauge_Green_Shell
+    {
+        mesh = Worlditems/Ammo/12_Gauge,
+        texture = WorldItems/Ammo/12Gauge_Green_Shell,
+        scale = 0.55,
+    }
+    
+    model 22_Round_Base
+    {
+        mesh = Worlditems/Ammo/22_Round,
+        texture = WorldItems/Ammo/Pistol_Light_Round_Base,
+        scale = 0.55,
+    }
+    
+    model 762_Round_Base
+    {
+        mesh = Worlditems/Ammo/762_Round,
+        texture = WorldItems/Ammo/Russian_Steel_Round_Base,
+        scale = 0.55,
+    }
+    
+    model 545_Round_Base
+    {
+        mesh = Worlditems/Ammo/545_Round,
+        texture = WorldItems/Ammo/Russian_Brass_Round_Base,
+        scale = 0.55,
+    }
+    
+    model 76254_Round_Base
+    {
+        mesh = Worlditems/Ammo/76254_Round,
+        texture = WorldItems/Ammo/Russian_Steel_Round_Base,
+        scale = 0.55,
+    }
+    
+    model 939_Round_Base
+    {
+        mesh = Worlditems/Ammo/939_Round,
+        texture = WorldItems/Ammo/Russian_Steel_Round_Base,
+        scale = 0.55,
+    }
+    
+    model 3006_Round_Base
+    {
+        mesh = Worlditems/Ammo/3006_Round,
+        texture = WorldItems/Ammo/Nato_Round_Base,
+        scale = 0.55,
+    }
+    
+    model 57_Round_Base
+    {
+        mesh = Worlditems/Ammo/57_Round,
+        texture = WorldItems/Ammo/Nato_Round_Base,
+        scale = 0.55,
+    }
+    
+    model 46_Round_Base
+    {
+        mesh = Worlditems/Ammo/46_Round,
+        texture = WorldItems/Ammo/H&K_Round_Base,
+        scale = 0.55,
+    }
+    
+    model 792_Round_Base
+    {
+        mesh = Worlditems/Ammo/792_Round,
+        texture = WorldItems/Ammo/German_Round_Base,
+        scale = 0.55,
+    }
+}

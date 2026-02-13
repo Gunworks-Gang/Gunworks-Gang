@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<animNode x_extends="LoadFAL_HB.xml">
+	<m_Name>RackFAL</m_Name>
+	<m_AnimName>Bob_Reload_FAL_Rack</m_AnimName>
+	<m_BlendTime>0.10</m_BlendTime>
+	<m_ConditionPriority>10</m_ConditionPriority>
+	<m_Conditions />
+	<m_Conditions />
+	<m_Conditions>
+		<m_Name>isRacking</m_Name>
+	</m_Conditions>
+	<m_Events>
+		<m_EventName>rackingFinished</m_EventName>
+	</m_Events>
+	<m_Events>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>rack</m_ParameterValue>
+	</m_Events>
+	<m_Events>
+		<m_EventName>rackBullet</m_EventName>
+		<m_TimePc>0.6</m_TimePc>
+		<m_ParameterValue></m_ParameterValue>
+	</m_Events>
+	<m_Events>
+		<m_EventName>ejectCasing</m_EventName>
+		<m_TimePc>0.69</m_TimePc>
+	</m_Events>
+	<m_Events>
+		<m_EventName>rackStart</m_EventName>
+		<m_TimePc>0.67</m_TimePc>
+	</m_Events>
+	<m_Events>
+		<m_EventName>rackEnd</m_EventName>
+		<m_TimePc>0.73</m_TimePc>
+	</m_Events>
+</animNode>

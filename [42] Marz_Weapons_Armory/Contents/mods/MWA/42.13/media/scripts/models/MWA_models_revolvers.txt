@@ -1,0 +1,75 @@
+module MWA
+{
+	imports
+    {
+        Base
+    }
+	model TAURUS_1
+    {
+        mesh = weapons/firearms/revolvers|TAURUS,
+        texture = weapons/firearms/revolvers/TAURUS_1,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.2304 -0.0271,
+            rotate = -90.0000 0.0000 0.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+	model TAURUS_2
+    {
+        mesh = weapons/firearms/revolvers|TAURUS,
+        texture = weapons/firearms/revolvers/TAURUS_2,
+
+        attachment muzzle
+        {
+            offset = 0.0000 0.2007 -0.0407,
+            rotate = -90.0000 0.0000 0.0000,
+        }
+
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+	model COLT_1917
+    {
+        mesh = weapons/firearms/revolvers|COLT_1917,
+        texture = weapons/firearms/revolvers/COLT_1917,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.2304 -0.0271,
+            rotate = -90.0000 0.0000 0.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+	model MP412
+    {
+        mesh = weapons/firearms/revolvers|MP412,
+        texture = weapons/firearms/revolvers/MP412,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.2304 -0.0271,
+            rotate = -90.0000 0.0000 0.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+}

@@ -1,0 +1,41 @@
+module MWA
+{
+    imports
+    {
+        base
+    }
+    
+    item FakeItem
+    {
+        DisplayCategory = Junk,
+        Icon            = IntentionallyInvalid,
+        ItemType        = base:normal,
+        Weight          = 20,
+    }
+    
+    item FakeItemRifles
+    {
+        DisplayCategory = Junk,
+        Icon            = IntentionallyInvalid,
+        ItemType        = base:normal,
+        Weight          = 20,
+    }
+    
+    item FakeAmmoHolder1
+    {
+        DisplayCategory = Junk,
+        Icon            = IntentionallyInvalid,
+        ItemType        = base:normal,
+        Weight          = 20,
+        AmmoType        = mwa:slug_shells,
+    }
+    
+    item FakeAmmoHolder2
+    {
+        DisplayCategory = Junk,
+        Icon            = IntentionallyInvalid,
+        ItemType        = base:normal,
+        Weight          = 20,
+        AmmoType        = mwa:bullets_556_SS,
+    }
+}

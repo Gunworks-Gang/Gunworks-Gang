@@ -1,0 +1,665 @@
+module MWA
+{
+    imports
+    {
+        Base
+    }
+    model M1_GARAND
+    {
+        mesh = weapons/firearms/battle_rifles|M1_GARAND,
+        texture = weapons/firearms/battle_rifles/M1_GARAND,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.6085 0.0291,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model M1_GARAND_OPEN
+    {
+        mesh = weapons/firearms/battle_rifles|M1_GARAND_OPEN,
+        texture = weapons/firearms/battle_rifles/M1_GARAND,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model G3
+    {
+        mesh = weapons/firearms/battle_rifles|G3,
+        texture = weapons/firearms/battle_rifles/G3,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model G3A3
+    {
+        mesh = weapons/firearms/battle_rifles|G3A3,
+        texture = weapons/firearms/battle_rifles/G3A3,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model M14
+    {
+        mesh = weapons/firearms/battle_rifles|M14,
+        texture = weapons/firearms/battle_rifles/M14,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model M14_OPEN
+    {
+        mesh = weapons/firearms/battle_rifles|M14_OPEN,
+        texture = weapons/firearms/battle_rifles/M14,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model FAL_1
+    {
+        mesh = weapons/firearms/battle_rifles|FAL,
+        texture = weapons/firearms/battle_rifles/FAL_1,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.5836 0.0327,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model FAL_1_OPEN
+    {
+        mesh = weapons/firearms/battle_rifles|FAL_OPEN,
+        texture = weapons/firearms/battle_rifles/FAL_1,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model FAL_2
+    {
+        mesh = weapons/firearms/battle_rifles|FAL,
+        texture = weapons/firearms/battle_rifles/FAL_2,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.5836 0.0327,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model FAL_2_OPEN
+    {
+        mesh = weapons/firearms/battle_rifles|FAL_OPEN,
+        texture = weapons/firearms/battle_rifles/FAL_2,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model FAL_3
+    {
+        mesh = weapons/firearms/battle_rifles|FAL,
+        texture = weapons/firearms/battle_rifles/FAL_3,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.5836 0.0327,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model FAL_3_OPEN
+    {
+        mesh = weapons/firearms/battle_rifles|FAL_OPEN,
+        texture = weapons/firearms/battle_rifles/FAL_3,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model BAR
+    {
+        mesh = weapons/firearms/battle_rifles|BAR,
+        texture = weapons/firearms/battle_rifles/BAR,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.6575 0.0380,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+    model BAR_DEPLOYED
+    {
+        mesh = weapons/firearms/battle_rifles|BAR_DEPLOYED,
+        texture = weapons/firearms/battle_rifles/BAR,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.6575 0.0380,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+}

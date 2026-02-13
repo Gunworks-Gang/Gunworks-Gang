@@ -1,0 +1,13 @@
+module MWA
+{
+    imports
+    {
+        Base
+    }
+    
+    model M9_BAYONET_ATTACHMENT
+    {
+        mesh = weapons/attachments|M9_BAYONET,
+        texture = weapons/melee/M9_BAYONET,
+    }
+}

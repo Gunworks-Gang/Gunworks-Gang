@@ -1,0 +1,537 @@
+module MWA
+{
+	imports
+    {
+        Base
+    }
+	model M16A1
+    {
+        mesh = weapons/firearms/assault_rifles|M16A1,
+        texture = weapons/firearms/assault_rifles/M16A1,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment bayonet
+        {
+            offset = 0.0000 0.4353 0.0102,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+	model M16A2
+    {
+        mesh = weapons/firearms/assault_rifles|M16A2,
+        texture = weapons/firearms/assault_rifles/M16A2,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment bayonet
+        {
+            offset = 0.0000 0.4353 0.0102,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+	model M16A3_1
+    {
+        mesh = weapons/firearms/assault_rifles|M16A3,
+        texture = weapons/firearms/assault_rifles/M16A3_1,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment bayonet
+        {
+            offset = 0.0000 0.4353 0.0102,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+	model M16A3_2
+    {
+        mesh = weapons/firearms/assault_rifles|M16A3,
+        texture = weapons/firearms/assault_rifles/M16A3_2,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment bayonet
+        {
+            offset = 0.0000 0.4353 0.0102,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+	model M16A3_3
+    {
+        mesh = weapons/firearms/assault_rifles|M16A3,
+        texture = weapons/firearms/assault_rifles/M16A3_3,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment bayonet
+        {
+            offset = 0.0000 0.4353 0.0102,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+	model M16A3_4
+    {
+        mesh = weapons/firearms/assault_rifles|M16A3,
+        texture = weapons/firearms/assault_rifles/M16A3_4,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment bayonet
+        {
+            offset = 0.0000 0.4353 0.0102,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+	model M16A4
+    {
+        mesh = weapons/firearms/assault_rifles|M16A4,
+        texture = weapons/firearms/assault_rifles/M16A4,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+        
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+        
+        attachment bayonet
+        {
+            offset = 0.0000 0.4353 0.0102,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+	model M4
+    {
+        mesh = weapons/firearms/assault_rifles|M4,
+        texture = weapons/firearms/assault_rifles/M4,
+
+        attachment muzzle
+        {
+            offset = 0.0000 0.3888 0.0227,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment bayonet
+        {
+            offset = 0.0000 0.3481 0.0036,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+	model COLT_653
+    {
+        mesh = weapons/firearms/assault_rifles|COLT_653,
+        texture = weapons/firearms/assault_rifles/COLT_653,
+
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment bayonet
+        {
+            offset = 0.0000 0.3941 0.0038,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+	model CAR15
+    {
+        mesh = weapons/firearms/assault_rifles|CAR15,
+        texture = weapons/firearms/assault_rifles/CAR15,
+
+        attachment muzzle
+        {
+            offset = 0.0000 0.3299 0.0231,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+
+        attachment scope
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment scope_long
+        {
+            offset = 0.0000 0.1467 0.0757,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment foregrip
+        {
+            offset = 0.0000 0.2264 -0.0338,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment reddot
+        {
+            offset = 0.0000 0.0936 0.0864,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment laser
+        {
+            offset = 0.0257 0.3271 0.0277,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+
+        attachment bayonet
+        {
+            offset = 0.0000 0.3095 0.0044,
+            rotate = 0.0000 0.0000 0.0000,
+        }
+    }
+}

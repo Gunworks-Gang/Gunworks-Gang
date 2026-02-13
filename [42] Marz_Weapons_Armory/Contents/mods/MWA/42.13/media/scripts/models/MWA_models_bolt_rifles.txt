@@ -1,0 +1,177 @@
+module MWA
+{
+	imports
+    {
+        Base
+    }
+	model KAR98K
+    {
+        mesh = weapons/firearms/bolt_rifles|KAR98K,
+        texture = weapons/firearms/bolt_rifles/KAR98K,
+
+        attachment muzzle
+        {
+            offset = 0.0000 0.5914 0.0214,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+    }
+	model KAR98K_OPEN
+    {
+        mesh = weapons/firearms/bolt_rifles|KAR98K_OPEN,
+        texture = weapons/firearms/bolt_rifles/KAR98K,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+    }
+	model MOSIN
+    {
+        mesh = weapons/firearms/bolt_rifles|MOSIN,
+        texture = weapons/firearms/bolt_rifles/MOSIN,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+    }
+	model MOSIN_OPEN
+    {
+        mesh = weapons/firearms/bolt_rifles|MOSIN_OPEN,
+        texture = weapons/firearms/bolt_rifles/MOSIN,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+    }
+	model M24_1
+    {
+        mesh = weapons/firearms/bolt_rifles|M24,
+        texture = weapons/firearms/bolt_rifles/M24_1,
+
+        attachment muzzle
+        {
+            offset = 0.0000 0.6223 0.0159,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+    }
+	model M24_1_OPEN
+    {
+        mesh = weapons/firearms/bolt_rifles|M24_OPEN,
+        texture = weapons/firearms/bolt_rifles/M24_1,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+    }
+	model M24_2
+    {
+        mesh = weapons/firearms/bolt_rifles|M24,
+        texture = weapons/firearms/bolt_rifles/M24_2,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+    }
+	model M24_2_OPEN
+    {
+        mesh = weapons/firearms/bolt_rifles|M24_OPEN,
+        texture = weapons/firearms/bolt_rifles/M24_2,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+    }
+	model M40
+    {
+        mesh = weapons/firearms/bolt_rifles|M40,
+        texture = weapons/firearms/bolt_rifles/M40,
+
+        attachment muzzle
+        {
+            offset = 0.0000 0.5678 0.0198,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+    }
+	model M40_OPEN
+    {
+        mesh = weapons/firearms/bolt_rifles|M40_OPEN,
+        texture = weapons/firearms/bolt_rifles/M40,
+        
+        attachment muzzle
+        {
+            offset = 0.0000 0.4769 0.0297,
+            rotate = -90.0000 0.0000 -180.0000,
+        }
+        
+        attachment world
+        {
+            offset = -0.0250 -0.0000 -0.0000,
+            rotate = -180.0000 0.0000 0.0000,
+        }
+    }
+}

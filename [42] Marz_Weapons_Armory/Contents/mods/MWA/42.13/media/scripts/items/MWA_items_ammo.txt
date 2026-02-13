@@ -1,0 +1,834 @@
+module Base
+{
+    item 762Bullets
+    {
+        AlwaysWelcomeGift   = true,
+        Count               = 5,
+        DisplayCategory     = Ammo,
+        Icon                = 762_Round_Base,
+        ItemType            = base:normal,
+        MetalValue          = 1.0,
+        Tags                = base:ammo;mwa:ammo50,
+        Weight              = 0.025,
+        WorldStaticModel    = 762_Round_Base,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item 762Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf50Bullets,
+        Icon               = 762AmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 40,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        StaticModel        = RifleAmmoBox,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammobox50;mwa:ammobox,
+        Weight             = 0.5,
+        WorldStaticModel   = 762Box,
+    }
+    
+    item 762Carton
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+        Icon               = Parcel_Medium_Military,
+        ItemType           = base:normal,
+        MetalValue         = 400.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammocarton,
+        Weight             = 4.5,
+        WorldStaticModel   = Parcel_Military_Medium,
+    }
+    
+    item 22Bullets
+    {
+        AlwaysWelcomeGift   = true,
+        Count               = 10,
+        DisplayCategory     = Ammo,
+        Icon                = 22_Round_Base,
+        ItemType            = base:normal,
+        MetalValue          = 1,
+        Tags                = base:ammo;mwa:ammo50,
+        Weight              = 0.005,
+        WorldStaticModel    = 22_Round_Base,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item 22Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf50Bullets,
+        Icon               = 22AmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 40,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        StaticModel        = BoxOfRounds22LR,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammobox50;mwa:ammobox,
+        Weight             = 0.1,
+        WorldStaticModel   = BoxOfRounds22LR,
+    }
+    
+    item 22Carton
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+        Icon               = Parcel_Medium_Ammo,
+        ItemType           = base:normal,
+        MetalValue         = 400.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammocarton,
+        Weight             = 0.9,
+        WorldStaticModel   = Parcel_Ammo_Medium,
+    }
+    
+    item 308Bullets
+    {
+        AlwaysWelcomeGift   = true,
+        count               = 5,
+        DisplayCategory     = Ammo,
+        Icon                = 308_Round_Base,
+        ItemType            = base:normal,
+        MetalValue          = 1.0,
+        Tags                = base:ammo;mwa:ammo20,
+        Weight              = 0.04,
+        WorldStaticModel    = 308_Round_Base,
+        AmmoCharacteristics = CivilianAmmo,
+    }
+    
+    item 308Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf20Bullets,
+        Icon               = RifleAmmo308,
+        ItemType           = base:normal,
+        MetalValue         = 40.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        StaticModel        = RifleAmmoBox,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammobox20;mwa:ammobox,
+        Weight             = 0.8,
+        WorldStaticModel   = RifleAmmoBox,
+    }
+    
+    item 308Carton
+    {
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammocarton,
+        Weight             = 7.2,
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Icon               = Parcel_Medium_Ammo,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 400.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Ammo_Medium,
+    }
+    
+    item 556Bullets
+    {
+        AlwaysWelcomeGift   = true,
+        count               = 5,
+        DisplayCategory     = Ammo,
+        Icon                = 556_Round_Base,
+        ItemType            = base:normal,
+        MetalValue          = 1.0,
+        Tags                = base:ammo;mwa:ammo50,
+        Weight              = 0.023,
+        WorldStaticModel    = 556_Round_Base,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item 556Bullets_Subsonics
+    {
+        AlwaysWelcomeGift   = true,
+        count               = 5,
+        DisplayCategory     = Ammo,
+        Icon                = 556_Round_SS,
+        ItemType            = base:normal,
+        MetalValue          = 1.0,
+        Tags                = base:ammo;mwa:ammo50,
+        Weight              = 0.023,
+        WorldStaticModel    = 556_Round_SS,
+        AmmoCharacteristics = SubsonicAmmo,
+    }
+    
+    item 556Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf50Bullets,
+        Icon               = RifleAmmo308,
+        ItemType           = base:normal,
+        MetalValue         = 40.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        StaticModel        = 556_Base_Box,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammobox50;mwa:ammobox,
+        Weight             = 0.46,
+        WorldStaticModel   = 556_Base_Box,
+    }
+    
+    item 556Carton
+    {
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammocarton,
+        Weight             = 4.14,
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Icon               = Parcel_Medium_Military,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 400.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Military_Medium,
+    }
+    
+    item 223Bullets
+    {
+        AlwaysWelcomeGift   = true,
+        count               = 5,
+        DisplayCategory     = Ammo,
+        Icon                = 223_Round_Base,
+        ItemType            = base:normal,
+        MetalValue          = 1.0,
+        Tags                = base:ammo;mwa:ammo50,
+        Weight              = 0.023,
+        WorldStaticModel    = 223_Round_Base,
+        AmmoCharacteristics = CivilianAmmo,
+    }
+    
+    item 223Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf50Bullets,
+        Icon               = RifleAmmo223,
+        ItemType           = base:normal,
+        MetalValue         = 40.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        StaticModel        = RifleAmmoBox,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammobox50;mwa:ammobox,
+        Weight             = 0.46,
+        WorldStaticModel   = RifleAmmoBox,
+    }
+    
+    item 223Carton
+    {
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammocarton,
+        Weight             = 4.14,
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Icon               = Parcel_Medium_Ammo,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 400.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        StaticModel        = Parcel_Ammo_Medium,
+        WorldStaticModel   = Parcel_Ammo_Medium,
+    }
+    
+    item ShotgunShells
+    {
+        AlwaysWelcomeGift   = true,
+        count               = 6,
+        DisplayCategory     = Ammo,
+        Icon                = 12Gauge_Red_Shell,
+        ItemType            = base:normal,
+        MetalValue          = 1.0,
+        Tags                = base:ammo;mwa:ammo25,
+        Weight              = 0.06,
+        WorldStaticModel    = 12Gauge_Red_Shell,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item ShotgunShells_Slugs
+    {
+        AlwaysWelcomeGift   = true,
+        count               = 6,
+        DisplayCategory     = Ammo,
+        Icon                = 12Gauge_Green_Shell,
+        ItemType            = base:normal,
+        MetalValue          = 1.0,
+        Tags                = base:ammo;mwa:ammo25,
+        Weight              = 0.06,
+        WorldStaticModel    = 12Gauge_Green_Shell,
+        AmmoCharacteristics = SlugAmmo,
+    }
+    
+    item ShotgunShellsBox
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf25Bullets,
+        Icon               = ShotgunAmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 24.0,
+        PlaceMultipleSound = BoxOfShellsPlaceAll,
+        PlaceOneSound      = BoxOfShellsPlaceOne,
+        StaticModel        = BoxOfShotGunShells,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammobox25;mwa:ammobox,
+        Weight             = 1.20,
+        WorldStaticModel   = BoxOfShotGunShells,
+    }
+    
+    item ShotgunShellsCarton
+    {
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammocarton,
+        Weight             = 10.8,
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Icon               = Parcel_Medium_Ammo,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 240.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Ammo_Medium,
+    }
+    
+    item Bullets9mm
+    {
+        AlwaysWelcomeGift   = true,
+        count               = 5,
+        DisplayCategory     = Ammo,
+        Icon                = 9mm_Round_Base,
+        ItemType            = base:normal,
+        MetalValue          = 1.0,
+        Tags                = base:ammo;mwa:ammo50,
+        Weight              = 0.02,
+        WorldStaticModel    = 9mm_Round_Base,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item Bullets9mmBox
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf50Bullets,
+        Icon               = HandgunAmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 30.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        StaticModel        = HandGunAmmoBox,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammobox50;mwa:ammobox,
+        Weight             = 0.4,
+        WorldStaticModel   = HandGunAmmoBox,
+    }
+    
+    item Bullets9mmCarton
+    {
+        DoubleClickRecipe = OpenCartonOfBoxesOfAmmo,
+        Tags              = base:hasmetal;base:ignorezombiedensity;mwa:ammocarton,
+        Weight            = 3.6,
+        
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Icon               = Parcel_Medium_Ammo,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 300.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Ammo_Medium,
+    }
+    
+    item Bullets38
+    {
+        AlwaysWelcomeGift   = true,
+        count               = 5,
+        DisplayCategory     = Ammo,
+        Icon                = 38_Round_Base,
+        ItemType            = base:normal,
+        MetalValue          = 1.0,
+        Tags                = base:ammo;mwa:ammo50,
+        Weight              = 0.015,
+        WorldStaticModel    = 38_Round_Base,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item Bullets38Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf50Bullets,
+        Icon               = HandgunAmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 30.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        StaticModel        = BoxOf38Special,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammobox50;mwa:ammobox,
+        Weight             = 0.3,
+        WorldStaticModel   = BoxOf38Special,
+    }
+    
+    item Bullets38Carton
+    {
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammocarton,
+        Weight             = 2.7,
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Icon               = Parcel_Medium_Ammo,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 300.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Ammo_Medium,
+    }
+    
+    item Bullets44
+    {
+        AlwaysWelcomeGift   = true,
+        count               = 3,
+        DisplayCategory     = Ammo,
+        Icon                = 44_Round_Base,
+        ItemType            = base:normal,
+        MetalValue          = 1.0,
+        Tags                = base:ammo;mwa:ammo20,
+        Weight              = 0.03,
+        WorldStaticModel    = 44_Round_Base,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item Bullets44Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf20Bullets,
+        Icon               = HandgunAmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 30.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        StaticModel        = BoxOf44Magnum,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammobox20;mwa:ammobox,
+        Weight             = 0.6,
+        WorldStaticModel   = BoxOf44Magnum,
+    }
+    
+    item Bullets44Carton
+    {
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammocarton,
+        Weight             = 5.4,
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Icon               = Parcel_Medium_Ammo,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 300.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Ammo_Medium,
+    }
+    
+    item Bullets45
+    {
+        AlwaysWelcomeGift   = true,
+        Weight              = 0.025,
+        Tags                = base:ammo;mwa:ammo50,
+        Icon                = 45_Round_Base,
+        DisplayCategory     = Ammo,
+        ItemType            = base:normal,
+        count               = 5,
+        MetalValue          = 1.0,
+        WorldStaticModel    = 45_Round_Base,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item Bullets45Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf50Bullets,
+        Icon               = HandgunAmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 30.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        StaticModel        = BoxOf45Auto,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammobox50;mwa:ammobox,
+        Weight             = 0.5,
+        WorldStaticModel   = BoxOf45Auto,
+    }
+    
+    item Bullets45Carton
+    {
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammocarton,
+        Weight             = 4.5,
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Icon               = Parcel_Medium_Ammo,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 300.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Ammo_Medium,
+    }
+    
+    item 46Bullets
+    {
+        AlwaysWelcomeGift   = true,
+        Count               = 5,
+        DisplayCategory     = Ammo,
+        Icon                = 46_Round_Base,
+        ItemType            = base:normal,
+        MetalValue          = 1,
+        Tags                = base:ammo;mwa:ammo50,
+        Weight              = 0.02,
+        WorldStaticModel    = 46_Round_Base,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item 46Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf50Bullets,
+        Icon               = 46AmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 40,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammobox50;mwa:ammobox,
+        Weight             = 0.4,
+        WorldStaticModel   = 46Box,
+    }
+    
+    item 46Carton
+    {
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Weight             = 3.6,
+        Icon               = Parcel_Medium_Ammo,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 400.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Ammo_Medium,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammocarton,
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+    }
+    
+    item 57Bullets
+    {
+        Count               = 5,
+        Weight              = 0.022,
+        AlwaysWelcomeGift   = true,
+        ItemType            = base:normal,
+        DisplayCategory     = Ammo,
+        Icon                = 57_Round_Base,
+        MetalValue          = 1,
+        WorldStaticModel    = 57_Round_Base,
+        Tags                = base:ammo;mwa:ammo50,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item 57Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf50Bullets,
+        Icon               = 57AmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 40,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammobox50;mwa:ammobox,
+        Weight             = 0.44,
+        WorldStaticModel   = 57Box,
+    }
+    
+    item 57Carton
+    {
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Weight             = 3.96,
+        Icon               = Parcel_Medium_Ammo,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 400.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Ammo_Medium,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammocarton,
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+    }
+    
+    item 545Bullets
+    {
+        AlwaysWelcomeGift   = true,
+        Count               = 5,
+        DisplayCategory     = Ammo,
+        Icon                = 545_Round_Base,
+        ItemType            = base:normal,
+        MetalValue          = 1,
+        Tags                = base:ammo;mwa:ammo50,
+        Weight              = 0.02,
+        WorldStaticModel    = 545_Round_Base,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item 545Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf50Bullets,
+        Icon               = 545AmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 40,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammobox50;mwa:ammobox,
+        Weight             = 0.4,
+        WorldStaticModel   = 545Box,
+    }
+    
+    item 545Carton
+    {
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Weight             = 3.6,
+        Icon               = Parcel_Medium_Military,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 400.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Military_Medium,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammocarton,
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+    }
+    
+    item 939Bullets
+    {
+        Count               = 5,
+        Weight              = 0.025,
+        AlwaysWelcomeGift   = true,
+        ItemType            = base:normal,
+        DisplayCategory     = Ammo,
+        Icon                = 939_Round_Base,
+        MetalValue          = 1,
+        WorldStaticModel    = 939_Round_Base,
+        Tags                = base:ammo;mwa:ammo50,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item 939Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf50Bullets,
+        Icon               = 939AmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 40,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        Tags               = base:hasmetal;base:ignorezombiedensity;mwa:ammobox50;mwa:ammobox,
+        Weight             = 0.5,
+        WorldStaticModel   = 939Box,
+    }
+    
+    item 939Carton
+    {
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Weight             = 4.5,
+        Icon               = Parcel_Medium_Military,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 400.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Military_Medium,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammocarton,
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+    }
+    
+    item 76254Bullets
+    {
+        Count               = 5,
+        Weight              = 0.04,
+        AlwaysWelcomeGift   = true,
+        ItemType            = base:normal,
+        DisplayCategory     = Ammo,
+        Icon                = 76254_Round_Base,
+        MetalValue          = 1,
+        WorldStaticModel    = 76254_Round_Base,
+        Tags                = base:ammo;mwa:ammo20,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item 76254Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf20Bullets,
+        Icon               = 76254AmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 40,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammobox20;mwa:ammobox,
+        Weight             = 0.8,
+        WorldStaticModel   = 76254Box,
+    }
+    
+    item 76254Carton
+    {
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Weight             = 7.2,
+        Icon               = Parcel_Medium_Military,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 400.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Military_Medium,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammocarton,
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+    }
+    
+    item 3006Bullets
+    {
+        Count               = 5,
+        Weight              = 0.04,
+        AlwaysWelcomeGift   = true,
+        ItemType            = base:normal,
+        DisplayCategory     = Ammo,
+        Icon                = 3006_Round_Base,
+        MetalValue          = 1,
+        WorldStaticModel    = 3006_Round_Base,
+        Tags                = base:ammo;mwa:ammo20,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item 3006Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf20Bullets,
+        Icon               = 3006AmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 40,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammobox20;mwa:ammobox,
+        Weight             = 0.8,
+        WorldStaticModel   = 3006Box,
+    }
+    
+    item 3006Carton
+    {
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Weight             = 7.2,
+        Icon               = Parcel_Medium_Military,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 400.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Military_Medium,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammocarton,
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+    }
+    
+    item 76251Bullets
+    {
+        Count               = 5,
+        Weight              = 0.04,
+        AlwaysWelcomeGift   = true,
+        ItemType            = base:normal,
+        DisplayCategory     = Ammo,
+        Icon                = 76251_Round_Base,
+        MetalValue          = 1,
+        WorldStaticModel    = 76251_Round_Base,
+        Tags                = base:ammo;mwa:ammo20,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item 76251Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf20Bullets,
+        Icon               = 3006AmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 40,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammobox20;mwa:ammobox,
+        Weight             = 0.8,
+        WorldStaticModel   = 3006Box,
+    }
+    
+    item 76251Carton
+    {
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Weight             = 7.2,
+        Icon               = Parcel_Medium_Military,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 400.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Military_Medium,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammocarton,
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+    }
+    
+    item 792Bullets
+    {
+        Count               = 5,
+        Weight              = 0.04,
+        AlwaysWelcomeGift   = true,
+        ItemType            = base:normal,
+        DisplayCategory     = Ammo,
+        Icon                = 792_Round_Base,
+        MetalValue          = 1,
+        WorldStaticModel    = 792_Round_Base,
+        Tags                = base:ammo;mwa:ammo20,
+        AmmoCharacteristics = BaseAmmo,
+    }
+    
+    item 792Box
+    {
+        AlwaysWelcomeGift  = true,
+        DisplayCategory    = Ammo,
+        DoubleClickRecipe  = OpenBoxOf20Bullets,
+        Icon               = 792AmmoBox,
+        ItemType           = base:normal,
+        MetalValue         = 40,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammobox20;mwa:ammobox,
+        Weight             = 0.8,
+        WorldStaticModel   = 792Box,
+    }
+    
+    item 792Carton
+    {
+        DisplayCategory    = Ammo,
+        ItemType           = base:normal,
+        Weight             = 7.2,
+        Icon               = Parcel_Medium_Military,
+        AlwaysWelcomeGift  = true,
+        MetalValue         = 400.0,
+        PlaceMultipleSound = BoxOfRoundsPlaceAll,
+        PlaceOneSound      = BoxOfRoundsPlaceOne,
+        WorldStaticModel   = Parcel_Military_Medium,
+        Tags               = base:hasmetal;base:ignorezombiedensity;base:ammo;mwa:ammocarton,
+        DoubleClickRecipe  = OpenCartonOfBoxesOfAmmo,
+    }
+}

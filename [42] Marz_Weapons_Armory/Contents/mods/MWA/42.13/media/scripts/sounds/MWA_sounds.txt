@@ -1,0 +1,24 @@
+module Base
+{
+    sound M1Ping
+    {
+        category = Item,
+        clip
+        {
+            file = media/sound/M1Ping.ogg,
+            distanceMax = 10,
+            volume = 0.3,
+        }
+    }
+    
+    sound M1PingDrop
+    {
+        category = Item,
+        clip
+        {
+            file = media/sound/M1PingDrop.ogg,
+            distanceMax = 10,
+            volume = 0.3,
+        }
+    }
+}
