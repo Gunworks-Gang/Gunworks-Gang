@@ -1,10 +1,13 @@
-require "MWA_Core"
+local SWMG_Bayonet = {}
 
+SWMG_Bayonet.MountableWeapons = {}
+SWMG_Bayonet.PendingWeaponRestorations = {}
+SWMG_Bayonet.PendingHotbarRestorations = {}
 -------------------------------------------------
 -- Bayonet Attachment/Removal Utilities
 -------------------------------------------------
 
-function MWA_Utils.CanAttachBayonet(weapon, bayonetKnife)
+function SWMG_Bayonet.CanAttachBayonet(weapon, bayonetKnife)
     if not weapon or not bayonetKnife then return false end
     if not instanceof(weapon, "HandWeapon") then return false end
     if not weapon:isRanged() then return false end
@@ -22,7 +25,7 @@ function MWA_Utils.CanAttachBayonet(weapon, bayonetKnife)
     return true
 end
 
-function MWA_Utils.CanRemoveBayonet(weapon)
+function SWMG_Bayonet.CanRemoveBayonet(weapon)
     if not weapon then return false end
     if not instanceof(weapon, "HandWeapon") then return false end
     if not weapon:isRanged() then return false end
@@ -30,8 +33,8 @@ function MWA_Utils.CanRemoveBayonet(weapon)
     return weapon:getWeaponPart("Bayonet") ~= nil
 end
 
-function MWA_Utils.AttachBayonet(weapon, bayonetKnife, player)
-    if not MWA_Utils.CanAttachBayonet(weapon, bayonetKnife) then return false end
+function SWMG_Bayonet.AttachBayonet(weapon, bayonetKnife, player)
+    if not SWMG_Bayonet.CanAttachBayonet(weapon, bayonetKnife) then return false end
 
     local bayonetAttachmentType = bayonetKnife:getModData().BayonetAttachment
     local bayonetAttachment = instanceItem(bayonetAttachmentType)
@@ -45,8 +48,8 @@ function MWA_Utils.AttachBayonet(weapon, bayonetKnife, player)
     return false
 end
 
-function MWA_Utils.RemoveBayonet(weapon, player)
-    if not MWA_Utils.CanRemoveBayonet(weapon) then return false end
+function SWMG_Bayonet.RemoveBayonet(weapon, player)
+    if not SWMG_Bayonet.CanRemoveBayonet(weapon) then return false end
 
     local bayonetPart = weapon:getWeaponPart("Bayonet")
     if not bayonetPart then return false end
@@ -67,7 +70,7 @@ end
 -- Bayonet Attack (Melee with spear substitute)
 -------------------------------------------------
 
-function MWA_Utils.RestoreWeaponAfterBayonet(character, weapon)
+function SWMG_Bayonet.RestoreWeaponAfterBayonet(character, weapon)
     if not character or not weapon then return end
 
     character:setPrimaryHandItem(weapon)
@@ -76,7 +79,7 @@ function MWA_Utils.RestoreWeaponAfterBayonet(character, weapon)
     end
     character:resetEquippedHandsModels()
 
-    local hotbarInfo = MWA_Utils.PendingHotbarRestorations[character]
+    local hotbarInfo = SWMG_Bayonet.PendingHotbarRestorations[character]
     if hotbarInfo then
         local hotBar = getPlayerHotbar(character:getPlayerNum())
         if hotBar then
@@ -84,13 +87,13 @@ function MWA_Utils.RestoreWeaponAfterBayonet(character, weapon)
             hotBar.needsRefresh = true
             hotBar:update()
         end
-        MWA_Utils.PendingHotbarRestorations[character] = nil
+        SWMG_Bayonet.PendingHotbarRestorations[character] = nil
     end
 
-    MWA_Utils.PendingWeaponRestorations[character] = nil
+    SWMG_Bayonet.PendingWeaponRestorations[character] = nil
 end
 
-function MWA_Utils.BayonetAttack(character, chargeDelta, weapon, callback)
+function SWMG_Bayonet.BayonetAttack(character, chargeDelta, weapon, callback)
     local bayonet = weapon:getWeaponPart("Bayonet"):getFullType()
     local bayonetTempWeapon = instanceItem(bayonet .. "_SPEAR")
     if not bayonetTempWeapon then return end
@@ -122,7 +125,7 @@ function MWA_Utils.BayonetAttack(character, chargeDelta, weapon, callback)
         hotBar.needsRefresh = true
         hotBar:update()
 
-        MWA_Utils.PendingHotbarRestorations[character] = {
+        SWMG_Bayonet.PendingHotbarRestorations[character] = {
             slotIndex = itemSlot,
             slotDef = slotDef,
             attachment = attachment
@@ -139,7 +142,7 @@ function MWA_Utils.BayonetAttack(character, chargeDelta, weapon, callback)
         character:setDoShove(false)
     end
 
-    MWA_Utils.PendingWeaponRestorations[character] = weapon
+    SWMG_Bayonet.PendingWeaponRestorations[character] = weapon
     callback(character, chargeDelta, bayonetTempWeapon)
 end
 
@@ -152,16 +155,18 @@ Events.OnPlayerUpdate.Add(function(playerObj)
         local originalWeapon = primaryHand:getModData().MWA_BayonetOriginalWeapon
         if originalWeapon then
             if not playerObj:isAttacking() and not playerObj:isAttackStarted() then
-                MWA_Utils.RestoreWeaponAfterBayonet(playerObj, originalWeapon)
-                MWA_Utils.PendingWeaponRestorations[playerObj] = nil
+                SWMG_Bayonet.RestoreWeaponAfterBayonet(playerObj, originalWeapon)
+                SWMG_Bayonet.PendingWeaponRestorations[playerObj] = nil
             end
         end
     end
 
-    local weaponToRestore = MWA_Utils.PendingWeaponRestorations[playerObj]
+    local weaponToRestore = SWMG_Bayonet.PendingWeaponRestorations[playerObj]
     if weaponToRestore then
         if not playerObj:isAttacking() and not playerObj:isAttackStarted() then
-            MWA_Utils.RestoreWeaponAfterBayonet(playerObj, weaponToRestore)
+            SWMG_Bayonet.RestoreWeaponAfterBayonet(playerObj, weaponToRestore)
         end
     end
 end)
+
+return SWMG_Bayonet

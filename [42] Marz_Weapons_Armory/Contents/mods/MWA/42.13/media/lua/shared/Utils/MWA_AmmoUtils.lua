@@ -1,6 +1,41 @@
-require "MWA_Core"
+local SWMG_Ammo = {}
 
-function MWA_Utils.isAmmoInProfile(ammoType, profileList)
+SWMG_Ammo.AmmoProfilesList = {
+    -- ["5.56x45mm"] = { "Base.556Bullets", "Base.223Bullets", "Base.556Bullets_Subsonics" },
+    -- ["7.62x51mm"] = { "Base.308Bullets", "Base.76251Bullets" },
+    -- ["12Gauge"] = { "Base.ShotgunShells", "Base.ShotgunShells_Slugs" },
+    -- ["7.62x54mmR"] = { "Base.76254Bullets" }
+}
+
+SWMG_Ammo.ItemFullTypeToAmmoType = {
+    -- ["Base.Bullets38"] = AmmoType.BULLETS_38,
+    -- ["Base.Bullets44"] = AmmoType.BULLETS_44,
+    -- ["Base.Bullets45"] = AmmoType.BULLETS_45,
+    -- ["Base.Bullets9mm"] = AmmoType.BULLETS_9MM,
+    -- ["Base.3006Bullets"] = MWA_AmmoTypes.MWA_bullets_3006,
+    -- ["Base.76254Bullets"] = MWA_AmmoTypes.MWA_bullets_76254,
+
+    -- ["Base.223Bullets"] = AmmoType.BULLETS_223,
+    -- ["Base.556Bullets"] = AmmoType.BULLETS_556,
+    -- ["Base.556Bullets_Subsonics"] = MWA_AmmoTypes.MWA_bullets_556_SS,
+
+    -- ["Base.308Bullets"] = AmmoType.BULLETS_308,
+    -- ["Base.76251Bullets"] = MWA_AmmoTypes.MWA_bullets_76251,
+
+    -- ["Base.ShotgunShells"] = AmmoType.SHOTGUN_SHELLS,
+    -- ["Base.ShotgunShells_Slugs"] = MWA_AmmoTypes.MWA_shotgun_shells_slug,
+}
+
+SWMG_Ammo.AmmoStats = {
+    -- ["BaseAmmo"] = { "We will use base stats when this is selected." },
+    -- ["SubsonicAmmo"] = { MaxDamage = -0.5, MinDamage = -0.5, PiercingBullets = false, MaxHitCount = 1, ProjectileCount = 1, SoundRadius = -50, SoundVolume = -20, RackAfterShot = true },
+    -- ["ArmorPiercingAmmo"] = { MaxDamage = -0.2, MinDamage = -0.2, PiercingBullets = true, MaxHitCount = 3, ProjectileCount = 1 },
+    -- ["HollowPointAmmo"] = { MaxDamage = 1.5, MinDamage = 1.5, PiercingBullets = false, MaxHitCount = 1, ProjectileCount = 1 },
+    -- ["SlugAmmo"] = { MaxDamage = 2.0, MinDamage = 2.0, PiercingBullets = true, MaxHitCount = 2, ProjectileCount = 1 },
+    -- ["CivilianAmmo"] = { MaxDamage = -0.3, MinDamage = -0.3, PiercingBullets = false, MaxHitCount = 1, ProjectileCount = 1 },
+}
+
+function SWMG_Ammo.isAmmoInProfile(ammoType, profileList)
     if not profileList then return false end
     for _, allowedType in ipairs(profileList) do
         if allowedType == ammoType then
@@ -10,7 +45,7 @@ function MWA_Utils.isAmmoInProfile(ammoType, profileList)
     return false
 end
 
-function MWA_Utils.GetAmmoCharacteristics(bulletType)
+function SWMG_Ammo.GetAmmoCharacteristics(bulletType)
     local ammoItem = instanceItem(bulletType)
     if not ammoItem then
         return "BaseAmmo"
@@ -24,10 +59,10 @@ function MWA_Utils.GetAmmoCharacteristics(bulletType)
     return "BaseAmmo"
 end
 
-function MWA_Utils.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
+function SWMG_Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
     local weaponBaseStats     = instanceItem(weapon:getFullType())
-    local ammoCharacteristics = MWA_Utils.GetAmmoCharacteristics(bulletType)
-    local ammoStats           = MWA_Utils.AmmoStats[ammoCharacteristics] or {}
+    local ammoCharacteristics = SWMG_Ammo.GetAmmoCharacteristics(bulletType)
+    local ammoStats           = SWMG_Ammo.AmmoStats[ammoCharacteristics] or {}
 
     local baseMaxDamage       = weaponBaseStats:getMaxDamage()
     local baseMinDamage       = weaponBaseStats:getMinDamage()
@@ -75,8 +110,8 @@ function MWA_Utils.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
     weapon:setAmmoType(ammoEnum)
 end
 
-function MWA_Utils.AmmoProfileSetter(weapon, bulletType)
-    local ammoEnum = MWA_Utils.ItemFullTypeToAmmoType and MWA_Utils.ItemFullTypeToAmmoType[bulletType]
+function SWMG_Ammo.AmmoProfileSetter(weapon, bulletType)
+    local ammoEnum = SWMG_Ammo.ItemFullTypeToAmmoType and SWMG_Ammo.ItemFullTypeToAmmoType[bulletType]
     if not ammoEnum then return end
 
     if weapon:getAmmoType() == ammoEnum then
@@ -97,11 +132,11 @@ function MWA_Utils.AmmoProfileSetter(weapon, bulletType)
     print('Ammo Profile Setting!')
     print(weapon:getAmmoType(), "  -->   ", ammoEnum)
 
-    MWA_Utils.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
+    SWMG_Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
 end
 
-function MWA_Utils.MagazineAmmoProfileSetter(magazine, bulletType)
-    local ammoEnum = MWA_Utils.ItemFullTypeToAmmoType and MWA_Utils.ItemFullTypeToAmmoType[bulletType]
+function SWMG_Ammo.MagazineAmmoProfileSetter(magazine, bulletType)
+    local ammoEnum = SWMG_Ammo.ItemFullTypeToAmmoType and SWMG_Ammo.ItemFullTypeToAmmoType[bulletType]
     if not ammoEnum then return end
 
     if magazine:getAmmoType() == ammoEnum then
@@ -124,3 +159,5 @@ function MWA_Utils.MagazineAmmoProfileSetter(magazine, bulletType)
 
     magazine:setAmmoType(ammoEnum)
 end
+
+return SWMG_Ammo

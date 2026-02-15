@@ -1,6 +1,9 @@
 local SWMG_Magazine = {}
 
-local SWMG_Core = require "MWA_Core.lua"
+SWMG_Magazine.MagazineProfileList = {
+    -- ['Stanag'] = { "MWA.556Magazine20", "MWA.556Magazine25", "MWA.556Magazine30", }
+}
+SWMG_Magazine.MAG_TYPE_KEY = "MWAMagazineType"
 
 function SWMG_Magazine.isMagazineInProfile(magType, profileList)
     if not profileList then return false end
@@ -80,7 +83,7 @@ function SWMG_Magazine.getBestMagazineFromList(playerObj, gun, typeList)
 end
 
 function SWMG_Magazine.getBestMagazineForGun(playerObj, gun)
-    local typeList = SWMG_Core.MagazineProfileList[gun:getModData().MagazineProfile]
+    local typeList = SWMG_Magazine.MagazineProfileList[gun:getModData().MagazineProfile]
     return SWMG_Magazine.getBestMagazineFromList(playerObj, gun, typeList)
 end
 
@@ -96,19 +99,19 @@ end
 function SWMG_Magazine.SaveMagazineType(gun, magType)
     if not gun or not magType then return end
     local modData = gun:getModData()
-    modData[SWMG_Core.MAG_TYPE_KEY] = magType
+    modData[SWMG_Magazine.MAG_TYPE_KEY] = magType
 end
 
 function SWMG_Magazine.GetMagazineType(gun)
     if not gun then return nil end
     local modData = gun:getModData()
-    return modData and modData[SWMG_Core.MAG_TYPE_KEY]
+    return modData and modData[SWMG_Magazine.MAG_TYPE_KEY]
 end
 
 function SWMG_Magazine.ClearMagazineType(gun)
     if not gun then return end
     local modData = gun:getModData()
-    modData[SWMG_Core.MAG_TYPE_KEY] = nil
+    modData[SWMG_Magazine.MAG_TYPE_KEY] = nil
 end
 
 return SWMG_Magazine

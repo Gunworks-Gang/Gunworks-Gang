@@ -1,11 +1,17 @@
-require "MWA_Core"
+local SWMG_FoldingStock = {}
 
-function MWA_Utils.FoldedStockAdjustStats(weapon)
+SWMG_FoldingStock.FoldedStockStats = {
+    -- ["MWA.SPAS_12"] = { AimingPerkCritModifier = -5, AimingPerkHitChanceModifier = -2, AimingTime = -20 },
+    -- ["MWA.MP5"] = { AimingPerkCritModifier = -3, AimingPerkHitChanceModifier = -2, AimingTime = -20 },
+}
+SWMG_FoldingStock.STOCK_FOLDED_KEY = "MWA_StockFolded"
+
+function SWMG_FoldingStock.FoldedStockAdjustStats(weapon)
     if not weapon then return end
 
     local weaponType                      = weapon:getFullType()
-    local stockStats                      = MWA_Utils.FoldedStockStats[weaponType]
-    local isFolded                        = MWA_Utils.IsStockFolded(weapon)
+    local stockStats                      = SWMG_FoldingStock.FoldedStockStats[weaponType]
+    local isFolded                        = SWMG_FoldingStock.IsStockFolded(weapon)
     local foldedMod                       = isFolded and 1 or 0
     local weaponBaseStats                 = instanceItem(weaponType)
 
@@ -18,46 +24,48 @@ function MWA_Utils.FoldedStockAdjustStats(weapon)
     weapon:setAimingTime(baseAimingTime + (stockStats.AimingTime or 0) * foldedMod)
 end
 
-function MWA_Utils.HasFoldableStock(weapon)
+function SWMG_FoldingStock.HasFoldableStock(weapon)
     if not weapon then return false end
     local modData = weapon:getModData()
     return modData and modData.FoldableStock == "true"
 end
 
-function MWA_Utils.IsStockFolded(weapon)
+function SWMG_FoldingStock.IsStockFolded(weapon)
     if not weapon then return false end
     local modData = weapon:getModData()
-    return modData[MWA_Utils.STOCK_FOLDED_KEY] == true
+    return modData[SWMG_FoldingStock.STOCK_FOLDED_KEY] == true
 end
 
-function MWA_Utils.ToggleFoldStock(weapon)
+function SWMG_FoldingStock.ToggleFoldStock(weapon)
     if not weapon then return end
-    if not MWA_Utils.HasFoldableStock(weapon) then return end
+    if not SWMG_FoldingStock.HasFoldableStock(weapon) then return end
 
-    local isFolded = MWA_Utils.IsStockFolded(weapon)
+    local isFolded = SWMG_FoldingStock.IsStockFolded(weapon)
     local newFolded = not isFolded
 
-    weapon:getModData()[MWA_Utils.STOCK_FOLDED_KEY] = newFolded
+    weapon:getModData()[SWMG_FoldingStock.STOCK_FOLDED_KEY] = newFolded
     MWAFoldedModel(weapon, newFolded)
-    MWA_Utils.FoldedStockAdjustStats(weapon)
+    SWMG_FoldingStock.FoldedStockAdjustStats(weapon)
 end
 
-function MWA_Utils.SetStockFolded(weapon, folded)
+function SWMG_FoldingStock.SetStockFolded(weapon, folded)
     if not weapon then return end
-    if not MWA_Utils.HasFoldableStock(weapon) then return end
+    if not SWMG_FoldingStock.HasFoldableStock(weapon) then return end
 
-    weapon:getModData()[MWA_Utils.STOCK_FOLDED_KEY] = folded
+    weapon:getModData()[SWMG_FoldingStock.STOCK_FOLDED_KEY] = folded
     MWAFoldedModel(weapon, folded)
-    MWA_Utils.FoldedStockAdjustStats(weapon)
+    SWMG_FoldingStock.FoldedStockAdjustStats(weapon)
 end
 
-function MWA_Utils.RestoreFoldedStockState(weapon)
+function SWMG_FoldingStock.RestoreFoldedStockState(weapon)
     if not weapon then return end
-    if not MWA_Utils.HasFoldableStock(weapon) then return end
+    if not SWMG_FoldingStock.HasFoldableStock(weapon) then return end
 
-    local isFolded = weapon:getModData()[MWA_Utils.STOCK_FOLDED_KEY]
+    local isFolded = weapon:getModData()[SWMG_FoldingStock.STOCK_FOLDED_KEY]
     if isFolded then
         MWAFoldedModel(weapon, true)
-        MWA_Utils.FoldedStockAdjustStats(weapon)
+        SWMG_FoldingStock.FoldedStockAdjustStats(weapon)
     end
 end
+
+return SWMG_FoldingStock
