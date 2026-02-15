@@ -1,6 +1,8 @@
-require "MWA_Core"
+local SWMG_Magazine = {}
 
-function MWA_Utils.isMagazineInProfile(magType, profileList)
+local SWMG_Core = require "MWA_Core.lua"
+
+function SWMG_Magazine.isMagazineInProfile(magType, profileList)
     if not profileList then return false end
     for _, allowedType in ipairs(profileList) do
         if allowedType == magType then
@@ -10,7 +12,7 @@ function MWA_Utils.isMagazineInProfile(magType, profileList)
     return false
 end
 
-function MWA_Utils.manageMagazineAttachment(weapon, magazine, insert)
+function SWMG_Magazine.manageMagazineAttachment(weapon, magazine, insert)
     if not weapon then return end
 
     if insert then
@@ -22,7 +24,7 @@ function MWA_Utils.manageMagazineAttachment(weapon, magazine, insert)
     end
 end
 
-function MWA_Utils.reloadMagazine(playerObj, magazine)
+function SWMG_Magazine.reloadMagazine(playerObj, magazine)
     if not magazine then
         return 0
     end
@@ -36,7 +38,7 @@ function MWA_Utils.reloadMagazine(playerObj, magazine)
     return ammoCount
 end
 
-function MWA_Utils.getBestMagazineFromList(playerObj, gun, typeList)
+function SWMG_Magazine.getBestMagazineFromList(playerObj, gun, typeList)
     local inv = playerObj:getInventory()
     local modData = gun:getModData()
     local listSize = #typeList
@@ -77,34 +79,36 @@ function MWA_Utils.getBestMagazineFromList(playerObj, gun, typeList)
     end
 end
 
-function MWA_Utils.getBestMagazineForGun(playerObj, gun)
-    local typeList = MWA_Utils.MagazineProfileList[gun:getModData().MagazineProfile]
-    return MWA_Utils.getBestMagazineFromList(playerObj, gun, typeList)
+function SWMG_Magazine.getBestMagazineForGun(playerObj, gun)
+    local typeList = SWMG_Core.MagazineProfileList[gun:getModData().MagazineProfile]
+    return SWMG_Magazine.getBestMagazineFromList(playerObj, gun, typeList)
 end
 
-function MWA_Utils.ReloadBestMagazineFromList(playerObj, gun)
-    local magazine = MWA_Utils.getBestMagazineForGun(playerObj, gun)
-    local ammoCount = MWA_Utils.reloadMagazine(playerObj, magazine)
+function SWMG_Magazine.ReloadBestMagazineFromList(playerObj, gun)
+    local magazine = SWMG_Magazine.getBestMagazineForGun(playerObj, gun)
+    local ammoCount = SWMG_Magazine.reloadMagazine(playerObj, magazine)
     if not magazine or ammoCount == 0 then
         return
     end
     ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
 end
 
-function MWA_Utils.SaveMagazineType(gun, magType)
+function SWMG_Magazine.SaveMagazineType(gun, magType)
     if not gun or not magType then return end
     local modData = gun:getModData()
-    modData[MWA_Utils.MAG_TYPE_KEY] = magType
+    modData[SWMG_Core.MAG_TYPE_KEY] = magType
 end
 
-function MWA_Utils.GetMagazineType(gun)
+function SWMG_Magazine.GetMagazineType(gun)
     if not gun then return nil end
     local modData = gun:getModData()
-    return modData and modData[MWA_Utils.MAG_TYPE_KEY]
+    return modData and modData[SWMG_Core.MAG_TYPE_KEY]
 end
 
-function MWA_Utils.ClearMagazineType(gun)
+function SWMG_Magazine.ClearMagazineType(gun)
     if not gun then return end
     local modData = gun:getModData()
-    modData[MWA_Utils.MAG_TYPE_KEY] = nil
+    modData[SWMG_Core.MAG_TYPE_KEY] = nil
 end
+
+return SWMG_Magazine
