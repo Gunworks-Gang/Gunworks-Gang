@@ -1,7 +1,11 @@
 local SWMG_Bayonet = {}
 
 SWMG_Bayonet.BayonetMauntableWeapons = {
-    ["MWA.M16A1"] = true,
+    ["MWA.M16A1"] = "MWA.M9_BAYONET",
+}
+
+SWMG_Bayonet.BayonetKnives = {
+    ["MWA.M9_BAYONET_KNIFE"] = "MWA.M9_BAYONET",
 }
 
 SWMG_Bayonet.MountableWeapons = {}
@@ -17,14 +21,13 @@ function SWMG_Bayonet.CanAttachBayonet(weapon, bayonetKnife)
     if not weapon:isRanged() then return false end
     if weapon:getWeaponPart("Bayonet") then return false end
 
-    local isAllowed = SWMG_Bayonet.BayonetMauntableWeapons[weapon:getFullType()]
-    if not isAllowed then return false end
+    local weaponBayonetType = SWMG_Bayonet.BayonetMauntableWeapons[weapon:getFullType()]
+    if not weaponBayonetType then return false end
 
-    local bayonetAttachmentType = bayonetKnife:getModData().BayonetAttachment
-    if not bayonetAttachmentType then return false end
+    local knifeBayonetType = SWMG_Bayonet.BayonetKnives[bayonetKnife:getFullType()]
+    if not knifeBayonetType then return false end
 
-    local tempBayonet = instanceItem(bayonetAttachmentType)
-    if not tempBayonet then return false end
+    if weaponBayonetType ~= knifeBayonetType then return false end
 
     return true
 end
@@ -40,7 +43,7 @@ end
 function SWMG_Bayonet.AttachBayonet(weapon, bayonetKnife, player)
     if not SWMG_Bayonet.CanAttachBayonet(weapon, bayonetKnife) then return false end
 
-    local bayonetAttachmentType = bayonetKnife:getModData().BayonetAttachment
+    local bayonetAttachmentType = SWMG_Bayonet.BayonetKnives[bayonetKnife:getFullType()]
     local bayonetAttachment = instanceItem(bayonetAttachmentType)
 
     if bayonetAttachment and instanceof(bayonetAttachment, "WeaponPart") then
@@ -52,19 +55,30 @@ function SWMG_Bayonet.AttachBayonet(weapon, bayonetKnife, player)
     return false
 end
 
+function SWMG_Bayonet.GetKnifeTypeFromAttachment(attachmentType)
+    for knifeType, bayonetType in pairs(SWMG_Bayonet.BayonetKnives) do
+        if bayonetType == attachmentType then
+            return knifeType
+        end
+    end
+    return nil
+end
+
 function SWMG_Bayonet.RemoveBayonet(weapon, player)
     if not SWMG_Bayonet.CanRemoveBayonet(weapon) then return false end
 
     local bayonetPart = weapon:getWeaponPart("Bayonet")
     if not bayonetPart then return false end
 
-    local bayonetKnifeType = bayonetPart:getModData().BayonetItem
+    local bayonetKnifeType = SWMG_Bayonet.GetKnifeTypeFromAttachment(bayonetPart:getFullType())
 
     weapon:detachWeaponPart(bayonetPart)
 
-    local bayonetKnife = instanceItem(bayonetKnifeType)
-    if bayonetKnife then
-        player:getInventory():AddItem(bayonetKnife)
+    if bayonetKnifeType then
+        local bayonetKnife = instanceItem(bayonetKnifeType)
+        if bayonetKnife then
+            player:getInventory():AddItem(bayonetKnife)
+        end
     end
 
     return true

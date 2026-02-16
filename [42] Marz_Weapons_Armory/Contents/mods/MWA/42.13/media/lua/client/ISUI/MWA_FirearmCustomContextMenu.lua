@@ -117,7 +117,7 @@ local function addBayonetAttachmentOption(playerObj, item, context)
         local inventory = playerObj:getInventory():getItems()
         for i = 0, inventory:size() - 1 do
             local invItem = inventory:get(i)
-            if invItem:getModData().BayonetAttachment and SWMG_Bayonet.CanAttachBayonet(item, invItem) then
+            if SWMG_Bayonet.BayonetKnives[invItem:getFullType()] and SWMG_Bayonet.CanAttachBayonet(item, invItem) then
                 local actionString = getText("IGUI_MWA_AttachBayonet")
                 local listEntry = context:addOption(actionString, playerObj, MWA_BayonetAttachmentContext.attachBayonet, item, invItem)
 
