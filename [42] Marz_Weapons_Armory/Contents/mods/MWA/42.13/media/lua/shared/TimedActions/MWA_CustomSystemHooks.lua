@@ -26,13 +26,17 @@ end
 
 MWA_DebugAmmoList = debugAmmoList
 
+local SWMG_Magazine = require "Utils/MWA_MagazineUtils.lua"
+local SWMG_Ammo = require "Utils/MWA_AmmoUtils.lua"
+local SWMG_Bayonet = require "Utils/MWA_BayonetUtils.lua"
+
 -------------------------------------------------
 -- BeginAutomaticReload (MagazineProfile support)
 -------------------------------------------------
 local ISReloadWeaponAction_BeginAutomaticReload_Original = ISReloadWeaponAction.BeginAutomaticReload
 ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
     if gun:getModData().MagazineProfile then
-        local magazine = MWA_Utils.getBestMagazineForGun(playerObj, gun)
+        local magazine = SWMG_Magazine.getBestMagazineForGun(playerObj, gun)
         local hasMagazine = gun:isContainsClip()
         if hasMagazine then
             ISTimedActionQueue.add(ISEjectMagazine:new(playerObj, gun))
@@ -41,7 +45,7 @@ ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
                 ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
                 return
             end
-            ISTimedActionQueue.queueActions(playerObj, MWA_Utils.ReloadBestMagazineFromList, gun)
+            ISTimedActionQueue.queueActions(playerObj, SWMG_Magazine.ReloadBestMagazineFromList, gun)
             return
         end
         if not magazine then return end
@@ -50,28 +54,13 @@ ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
             ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
             return
         end
-        local ammoCount = MWA_Utils.reloadMagazine(playerObj, magazine)
+        local ammoCount = SWMG_Magazine.reloadMagazine(playerObj, magazine)
         if ammoCount > 0 or not hasMagazine then
             ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
         end
     else
         ISReloadWeaponAction_BeginAutomaticReload_Original(playerObj, gun)
     end
-end
-
--------------------------------------------------
--- Magazine Attachment Visual Update
--------------------------------------------------
-local ISInsertMagazine_complete_original = ISInsertMagazine.complete
-function ISInsertMagazine:complete()
-    MWA_Utils.manageMagazineAttachment(self.gun, self.magazine, true)
-    return ISInsertMagazine_complete_original(self)
-end
-
-local ISEjectMagazine_complete_original = ISEjectMagazine.complete
-function ISEjectMagazine:complete()
-    MWA_Utils.manageMagazineAttachment(self.gun, nil, false)
-    return ISEjectMagazine_complete_original(self)
 end
 
 -------------------------------------------------
@@ -84,7 +73,7 @@ function ISRackFirearm:removeBullet()
         local bulletType = ammoList[#ammoList]
         if SpentCasingPhysics and not self.gun:isManuallyRemoveSpentRounds() then
             self.emptyRack = false
-            MWA_Utils.AmmoProfileSetter(self.gun, bulletType)
+            SWMG_Ammo.AmmoProfileSetter(self.gun, bulletType)
         else
             local newBullet = instanceItem(bulletType)
             self.character:getInventory():AddItem(newBullet)
@@ -104,7 +93,7 @@ function ISInsertMagazine:loadAmmo()
         if self.gun.setMagazineType then
             self.gun:setMagazineType(self.magazine:getFullType())
         end
-        MWA_Utils.SaveMagazineType(self.gun, self.magazine:getFullType())
+        SWMG_Magazine.SaveMagazineType(self.gun, self.magazine:getFullType())
 
         local magList = self.magazine:getModData().AmmoList
         if magList and #magList > 0 then
@@ -121,7 +110,7 @@ end
 -------------------------------------------------
 local ISEjectMagazine_unloadAmmo_original = ISEjectMagazine.unloadAmmo
 function ISEjectMagazine:unloadAmmo()
-    local savedMagType = MWA_Utils.GetMagazineType(self.gun)
+    local savedMagType = SWMG_Magazine.GetMagazineType(self.gun)
     local gunModData = self.gun:getModData()
     local gunList = gunModData.AmmoList
 
@@ -160,7 +149,7 @@ function ISEjectMagazine:unloadAmmo()
         end
     end
 
-    MWA_Utils.ClearMagazineType(self.gun)
+    SWMG_Magazine.ClearMagazineType(self.gun)
 end
 
 -------------------------------------------------
@@ -357,7 +346,7 @@ local ISReloadWeaponAction_ejectSpentRounds_Original = ISReloadWeaponAction.ejec
 function ISReloadWeaponAction:ejectSpentRounds()
     if SpentCasingPhysics and self.gun:getModData().SpentAmmoList then
         for _, bulletType in ipairs(self.gun:getModData().SpentAmmoList) do
-            MWA_Utils.AmmoProfileSetter(self.gun, bulletType)
+            SWMG_Ammo.AmmoProfileSetter(self.gun, bulletType)
             SpentCasingPhysics.rackCasing(self.character, self.gun, false)
         end
         self.gun:getModData().SpentAmmoList = nil
@@ -372,7 +361,7 @@ local ISRackFirearm_ejectSpentRounds_Original = ISRackFirearm.ejectSpentRounds
 function ISRackFirearm:ejectSpentRounds()
     if SpentCasingPhysics and self.gun:getModData().SpentAmmoList then
         for _, bulletType in ipairs(self.gun:getModData().SpentAmmoList) do
-            MWA_Utils.AmmoProfileSetter(self.gun, bulletType)
+            SWMG_Ammo.AmmoProfileSetter(self.gun, bulletType)
             SpentCasingPhysics.rackCasing(self.character, self.gun, false)
         end
         self.gun:getModData().SpentAmmoList = nil
@@ -394,7 +383,7 @@ ISReloadWeaponAction.attackHook = function(character, chargeDelta, weapon)
             local ammoList = weapon:getModData().AmmoList
             if ammoList and #ammoList > 0 then
                 local bulletType = ammoList[#ammoList]
-                MWA_Utils.AmmoProfileSetter(weapon, bulletType)
+                SWMG_Ammo.AmmoProfileSetter(weapon, bulletType)
             end
 
             if weapon:isManuallyRemoveSpentRounds() then
@@ -424,7 +413,7 @@ ISReloadWeaponAction.attackHook = function(character, chargeDelta, weapon)
     elseif (not character:getVehicle() or character:isDoShove()) then
         local bayonetInstalled = weapon:getWeaponPart("Bayonet")
         if bayonetInstalled then
-            MWA_Utils.BayonetAttack(character, chargeDelta, weapon, Attack_Hook_Original)
+            SWMG_Bayonet.BayonetAttack(character, chargeDelta, weapon, Attack_Hook_Original)
         else
             Attack_Hook_Original(character, chargeDelta, weapon)
         end

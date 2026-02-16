@@ -1,5 +1,7 @@
 require 'Distribution/MWA_DistributionFunctions'
 
+local MWADistro = require "Distribution/MWA_DistributionFunctions.lua"
+
 local tables = { ProceduralDistributions.list, VehicleDistributions, SuburbsDistributions, BagsAndContainers }
 local zombieTables = { AttachedWeaponDefinitions }
 local vanillaItems = {

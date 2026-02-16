@@ -1,6 +1,8 @@
-require "MWA_Core"
+local MWA_Client = {}
 
-function MWA_Utils.OnServerCommand(module, command, args)
+local SWMG_Ammo = require "Utils/MWA_AmmoUtils.lua"
+
+function MWA_Client.OnServerCommand(module, command, args)
     if module ~= "MWA" or not args then return end
 
     local playerObj = getSpecificPlayer(0)
@@ -10,16 +12,16 @@ function MWA_Utils.OnServerCommand(module, command, args)
         local item = playerObj:getInventory():getItemWithIDRecursiv(args.itemId)
         if item and instanceof(item, "HandWeapon") then
             local bulletType = args.bulletType
-            local ammoEnum = MWA_Utils.ItemFullTypeToAmmoType and MWA_Utils.ItemFullTypeToAmmoType[bulletType]
+            local ammoEnum = SWMG_Ammo.ItemFullTypeToAmmoType and SWMG_Ammo.ItemFullTypeToAmmoType[bulletType]
             if ammoEnum then
-                MWA_Utils.AmmoAdjustWeaponStats(item, bulletType, ammoEnum)
+                SWMG_Ammo.AmmoAdjustWeaponStats(item, bulletType, ammoEnum)
             end
         end
     elseif command == "applyMagazineAmmoProfile" then
         local item = playerObj:getInventory():getItemWithIDRecursiv(args.itemId)
         if item then
             local bulletType = args.bulletType
-            local ammoEnum = MWA_Utils.ItemFullTypeToAmmoType and MWA_Utils.ItemFullTypeToAmmoType[bulletType]
+            local ammoEnum = SWMG_Ammo.ItemFullTypeToAmmoType and SWMG_Ammo.ItemFullTypeToAmmoType[bulletType]
             if ammoEnum then
                 item:setAmmoType(ammoEnum)
             end
@@ -27,4 +29,4 @@ function MWA_Utils.OnServerCommand(module, command, args)
     end
 end
 
-Events.OnServerCommand.Add(MWA_Utils.OnServerCommand)
+Events.OnServerCommand.Add(MWA_Client.OnServerCommand)

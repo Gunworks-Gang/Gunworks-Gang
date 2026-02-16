@@ -1,5 +1,9 @@
 local SWMG_Bayonet = {}
 
+SWMG_Bayonet.BayonetMauntableWeapons = {
+    ["MWA.M16A1"] = true,
+}
+
 SWMG_Bayonet.MountableWeapons = {}
 SWMG_Bayonet.PendingWeaponRestorations = {}
 SWMG_Bayonet.PendingHotbarRestorations = {}
@@ -13,7 +17,7 @@ function SWMG_Bayonet.CanAttachBayonet(weapon, bayonetKnife)
     if not weapon:isRanged() then return false end
     if weapon:getWeaponPart("Bayonet") then return false end
 
-    local isAllowed = weapon:getModData().AllowsBayonetMount
+    local isAllowed = SWMG_Bayonet.BayonetMauntableWeapons[weapon:getFullType()]
     if not isAllowed then return false end
 
     local bayonetAttachmentType = bayonetKnife:getModData().BayonetAttachment

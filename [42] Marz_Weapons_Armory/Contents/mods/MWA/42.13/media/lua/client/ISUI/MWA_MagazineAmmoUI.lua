@@ -4,6 +4,8 @@ require "ISUI/ISLabel"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISItemDropBox"
 
+local SWMG_Ammo = require "Utils/MWA_AmmoUtils.lua"
+
 -----------------------------------------------------------
 -- MWA Magazine Ammo UI
 -- A drag-and-drop interface for loading ammo into magazines
@@ -97,11 +99,7 @@ function MWA_MagazineDropPanel:onItemRemove()
 end
 
 function MWA_MagazineDropPanel:onItemVerify(item)
-    if not item then return false end
-    if not item:isInPlayerInventory() then return false end
-    if item:getCategory() ~= "WeaponPart" then return false end
-    if not item:getMaxAmmo() or item:getMaxAmmo() <= 0 then return false end
-    return true
+    return item:getMaxAmmo() > 0 and not instanceof(item, "HandWeapon")
 end
 
 function MWA_MagazineDropPanel:updateMagazineInfo(magazine)
@@ -362,9 +360,9 @@ function MWA_MagazineAmmoUI:getAvailableAmmoTypes(magazine)
     local result = {}
     local inventory = self.player:getInventory()
 
-    local ammoProfile = magazine:getModData().AmmoProfile
-    if ammoProfile and MWA_Utils and MWA_Utils.AmmoProfilesList and MWA_Utils.AmmoProfilesList[ammoProfile] then
-        for _, ammoTypeKey in ipairs(MWA_Utils.AmmoProfilesList[ammoProfile]) do
+    local ammoProfile = SWMG_Ammo.MagazineAmmoProfile[magazine:getFullType()]
+    if ammoProfile and SWMG_Ammo and SWMG_Ammo.AmmoProfilesList and SWMG_Ammo.AmmoProfilesList[ammoProfile] then
+        for _, ammoTypeKey in ipairs(SWMG_Ammo.AmmoProfilesList[ammoProfile]) do
             local count = inventory:getCountTypeRecurse(ammoTypeKey)
             local script = getScriptManager():FindItem(ammoTypeKey)
             local name = script and script:getDisplayName() or ammoTypeKey
@@ -504,7 +502,7 @@ function MWA_MagazineAmmoUI:performLoad()
     ISInventoryPaneContextMenu.transferBullets(self.player, self.selectedAmmoType, magazine:getCurrentAmmoCount(),
         magazine:getCurrentAmmoCount() + self.transferAmount)
 
-    MWA_Utils.MagazineAmmoProfileSetter(magazine, self.selectedAmmoType)
+    SWMG_Ammo.MagazineAmmoProfileSetter(magazine, self.selectedAmmoType)
 
     ISTimedActionQueue.add(ISLoadBulletsInMagazine:new(self.player, magazine, self.transferAmount, self.transferAmount))
 

@@ -3,9 +3,9 @@ require "Vehicles/VehicleDistributions"
 require "Items/ProceduralDistributions"
 require "Items/Distribution_BagsAndContainers"
 
-MWADistro = {}
+local SWMG_Distro = {}
 
-function MWADistro.Insert(baseItem, chance, tables, newItem)
+function SWMG_Distro.Insert(baseItem, chance, tables, newItem)
     local script = ScriptManager.instance:getItem(baseItem)
     if not script then return end
     for _, lootTable in pairs(tables) do
@@ -29,13 +29,13 @@ function MWADistro.Insert(baseItem, chance, tables, newItem)
     end
 end
 
-function MWADistro.InsertMany(baseItem, chance, tables, ...)
+function SWMG_Distro.InsertMany(baseItem, chance, tables, ...)
     for _, item in ipairs({ ... }) do
-        MWADistro.Insert(baseItem, chance, tables, item)
+        SWMG_Distro.Insert(baseItem, chance, tables, item)
     end
 end
 
-function MWADistro.RemoveEverywhere(tables, item)
+function SWMG_Distro.RemoveEverywhere(tables, item)
     local script = ScriptManager.instance:getItem(item)
     local a, b = item, nil
     if script then a, b = script:getName(), script:getFullName() end
@@ -61,8 +61,10 @@ function MWADistro.RemoveEverywhere(tables, item)
     end
 end
 
-function MWADistro.RemoveMany(tables, ...)
+function SWMG_Distro.RemoveMany(tables, ...)
     for _, item in ipairs({ ... }) do
-        MWADistro.RemoveEverywhere(tables, item)
+        SWMG_Distro.RemoveEverywhere(tables, item)
     end
 end
+
+return SWMG_Distro

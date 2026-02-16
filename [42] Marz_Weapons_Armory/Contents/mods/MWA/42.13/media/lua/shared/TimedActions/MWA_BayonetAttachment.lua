@@ -1,5 +1,6 @@
 require "TimedActions/ISBaseTimedAction"
-require "MWA_BayonetUtils"
+
+local SWMG_Bayonet = require "Utils/MWA_BayonetUtils"
 
 -------------------------------------------------
 -- Attach Bayonet Timed Action
@@ -21,7 +22,7 @@ function MWA_AttachBayonetAction:update()
 end
 
 function MWA_AttachBayonetAction:perform()
-    MWA_Utils.AttachBayonet(self.weapon, self.bayonetKnife, self.character)
+    SWMG_Bayonet.AttachBayonet(self.weapon, self.bayonetKnife, self.character)
     ISBaseTimedAction.perform(self)
 end
 
@@ -47,7 +48,7 @@ MWA_RemoveBayonetAction = ISBaseTimedAction:derive("MWA_RemoveBayonetAction")
 
 function MWA_RemoveBayonetAction:isValid()
     return self.character:getPrimaryHandItem() == self.weapon and
-        MWA_Utils.CanRemoveBayonet(self.weapon)
+        SWMG_Bayonet.CanRemoveBayonet(self.weapon)
 end
 
 function MWA_RemoveBayonetAction:start()
@@ -59,7 +60,7 @@ function MWA_RemoveBayonetAction:update()
 end
 
 function MWA_RemoveBayonetAction:perform()
-    MWA_Utils.RemoveBayonet(self.weapon, self.character)
+    SWMG_Bayonet.RemoveBayonet(self.weapon, self.character)
     ISBaseTimedAction.perform(self)
 end
 

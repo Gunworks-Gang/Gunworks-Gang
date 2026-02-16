@@ -1,7 +1,0 @@
-module MWA
-{
-    imports
-    {
-        Base
-    }
-}

@@ -1,5 +1,7 @@
 require "TimedActions/ISBaseTimedAction"
 
+local SWMG_FoldingBipod = require "Utils/MWA_FoldingBipodUtils.lua"
+
 -------------------------------------------------
 -- Foldable Bipod Timed Action
 -------------------------------------------------
@@ -18,7 +20,7 @@ function MWA_FoldBipodAction:update()
 end
 
 function MWA_FoldBipodAction:perform()
-    MWA_Utils.ToggleDeployBipod(self.weapon)
+    SWMG_FoldingBipod.ToggleDeployBipod(self.weapon)
     ISBaseTimedAction.perform(self)
 end
 

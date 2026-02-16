@@ -1,3 +1,6 @@
+local SWMG_FoldingStock = require "Utils/MWA_FoldingStockUtils.lua"
+local SWMG_FoldingBipod = require "Utils/MWA_FoldingBipodUtils.lua"
+
 local function restoreContainer(container)
     if not container then return end
     local items = container:getItems()
@@ -5,8 +8,8 @@ local function restoreContainer(container)
         local item = items:get(i)
 
         if instanceof(item, "HandWeapon") and item:isRanged() then
-            SWMG_Core.RestoreFoldedStockState(item)
-            SWMG_Core.RestoreDeployedBipodState(item)
+            SWMG_FoldingStock.RestoreFoldedStockState(item)
+            SWMG_FoldingBipod.RestoreDeployedBipodState(item)
         end
 
         if item.getInventory and item:getInventory() then

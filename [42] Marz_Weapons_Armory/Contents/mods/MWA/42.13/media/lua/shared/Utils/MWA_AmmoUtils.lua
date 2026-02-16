@@ -1,62 +1,64 @@
 local SWMG_Ammo = {}
 
+SWMG_Ammo.WeaponAmmoProfile = {}
+
+SWMG_Ammo.MagazineAmmoProfile = {
+    ["MWA.556Magazine20"] = "5.56x45mm",
+    ["MWA.556Magazine25"] = "5.56x45mm",
+    ["MWA.556Magazine30"] = "5.56x45mm",
+
+    ["MWA.308Magazine5_M40"] = "7.62x51mm",
+    ["MWA.308Magazine20_G3"] = "7.62x51mm",
+    ["MWA.308Magazine20_FAL"] = "7.62x51mm",
+    ["MWA.308Magazine20_M14"] = "7.62x51mm",
+}
+
+SWMG_Ammo.AmmunitionTypeProfile = {
+    ["Base.556Bullets"] = "BaseAmmo",
+    ["Base.223Bullets"] = "CivilianAmmo",
+    ["Base.556Bullets_Subsonics"] = "SubsonicAmmo",
+}
+
 SWMG_Ammo.AmmoProfilesList = {
-    -- ["5.56x45mm"] = { "Base.556Bullets", "Base.223Bullets", "Base.556Bullets_Subsonics" },
-    -- ["7.62x51mm"] = { "Base.308Bullets", "Base.76251Bullets" },
-    -- ["12Gauge"] = { "Base.ShotgunShells", "Base.ShotgunShells_Slugs" },
-    -- ["7.62x54mmR"] = { "Base.76254Bullets" }
+    ["5.56x45mm"] = { "Base.556Bullets", "Base.223Bullets", "Base.556Bullets_Subsonics" },
+    ["7.62x51mm"] = { "Base.308Bullets", "Base.76251Bullets" },
+    ["12Gauge"] = { "Base.ShotgunShells", "Base.ShotgunShells_Slugs" },
+    ["7.62x54mmR"] = { "Base.76254Bullets" }
 }
 
 SWMG_Ammo.ItemFullTypeToAmmoType = {
-    -- ["Base.Bullets38"] = AmmoType.BULLETS_38,
-    -- ["Base.Bullets44"] = AmmoType.BULLETS_44,
-    -- ["Base.Bullets45"] = AmmoType.BULLETS_45,
-    -- ["Base.Bullets9mm"] = AmmoType.BULLETS_9MM,
-    -- ["Base.3006Bullets"] = MWA_AmmoTypes.MWA_bullets_3006,
-    -- ["Base.76254Bullets"] = MWA_AmmoTypes.MWA_bullets_76254,
+    ["Base.Bullets38"] = AmmoType.BULLETS_38,
+    ["Base.Bullets44"] = AmmoType.BULLETS_44,
+    ["Base.Bullets45"] = AmmoType.BULLETS_45,
+    ["Base.Bullets9mm"] = AmmoType.BULLETS_9MM,
+    ["Base.ShotgunShells"] = AmmoType.SHOTGUN_SHELLS,
+    ["Base.223Bullets"] = AmmoType.BULLETS_223,
+    ["Base.556Bullets"] = AmmoType.BULLETS_556,
+    ["Base.308Bullets"] = AmmoType.BULLETS_308,
 
-    -- ["Base.223Bullets"] = AmmoType.BULLETS_223,
-    -- ["Base.556Bullets"] = AmmoType.BULLETS_556,
-    -- ["Base.556Bullets_Subsonics"] = MWA_AmmoTypes.MWA_bullets_556_SS,
+    -- custom ones
 
-    -- ["Base.308Bullets"] = AmmoType.BULLETS_308,
-    -- ["Base.76251Bullets"] = MWA_AmmoTypes.MWA_bullets_76251,
-
-    -- ["Base.ShotgunShells"] = AmmoType.SHOTGUN_SHELLS,
-    -- ["Base.ShotgunShells_Slugs"] = MWA_AmmoTypes.MWA_shotgun_shells_slug,
+    ["Base.556Bullets_Subsonics"] = MWA_AmmoTypes.MWA_bullets_556_SS,
+    ["Base.76251Bullets"] = MWA_AmmoTypes.MWA_bullets_76251,
+    ["Base.3006Bullets"] = MWA_AmmoTypes.MWA_bullets_3006,
+    ["Base.76254Bullets"] = MWA_AmmoTypes.MWA_bullets_76254,
+    ["Base.ShotgunShells_Slugs"] = MWA_AmmoTypes.MWA_shotgun_shells_slug,
 }
 
 SWMG_Ammo.AmmoStats = {
-    -- ["BaseAmmo"] = { "We will use base stats when this is selected." },
-    -- ["SubsonicAmmo"] = { MaxDamage = -0.5, MinDamage = -0.5, PiercingBullets = false, MaxHitCount = 1, ProjectileCount = 1, SoundRadius = -50, SoundVolume = -20, RackAfterShot = true },
-    -- ["ArmorPiercingAmmo"] = { MaxDamage = -0.2, MinDamage = -0.2, PiercingBullets = true, MaxHitCount = 3, ProjectileCount = 1 },
-    -- ["HollowPointAmmo"] = { MaxDamage = 1.5, MinDamage = 1.5, PiercingBullets = false, MaxHitCount = 1, ProjectileCount = 1 },
-    -- ["SlugAmmo"] = { MaxDamage = 2.0, MinDamage = 2.0, PiercingBullets = true, MaxHitCount = 2, ProjectileCount = 1 },
-    -- ["CivilianAmmo"] = { MaxDamage = -0.3, MinDamage = -0.3, PiercingBullets = false, MaxHitCount = 1, ProjectileCount = 1 },
+    ["BaseAmmo"] = { "We will use base stats when this is selected." },
+    ["SubsonicAmmo"] = { MaxDamage = -0.5, MinDamage = -0.5, PiercingBullets = false, MaxHitCount = 1, ProjectileCount = 1, SoundRadius = -50, SoundVolume = -20, RackAfterShot = true },
+    ["ArmorPiercingAmmo"] = { MaxDamage = -0.2, MinDamage = -0.2, PiercingBullets = true, MaxHitCount = 3, ProjectileCount = 1 },
+    ["HollowPointAmmo"] = { MaxDamage = 1.5, MinDamage = 1.5, PiercingBullets = false, MaxHitCount = 1, ProjectileCount = 1 },
+    ["SlugAmmo"] = { MaxDamage = 2.0, MinDamage = 2.0, PiercingBullets = true, MaxHitCount = 2, ProjectileCount = 1 },
+    ["CivilianAmmo"] = { MaxDamage = -0.3, MinDamage = -0.3, PiercingBullets = false, MaxHitCount = 1, ProjectileCount = 1 },
 }
 
-function SWMG_Ammo.isAmmoInProfile(ammoType, profileList)
-    if not profileList then return false end
-    for _, allowedType in ipairs(profileList) do
-        if allowedType == ammoType then
-            return true
-        end
-    end
-    return false
-end
-
 function SWMG_Ammo.GetAmmoCharacteristics(bulletType)
-    local ammoItem = instanceItem(bulletType)
-    if not ammoItem then
-        return "BaseAmmo"
+    local AmmoProfile = SWMG_Ammo.AmmunitionTypeProfile[bulletType]
+    if AmmoProfile then
+        return AmmoProfile
     end
-
-    local md = ammoItem:getModData()
-    if md and md.AmmoCharacteristics then
-        return md.AmmoCharacteristics
-    end
-
-    return "BaseAmmo"
 end
 
 function SWMG_Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)

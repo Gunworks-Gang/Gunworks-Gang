@@ -1,5 +1,7 @@
 require "TimedActions/ISBaseTimedAction"
 
+local SWMG_FoldingStock = require "Utils/MWA_FoldingStockUtils.lua"
+
 -------------------------------------------------
 -- Foldable Stock Timed Action
 -------------------------------------------------
@@ -18,7 +20,7 @@ function MWA_FoldStockAction:update()
 end
 
 function MWA_FoldStockAction:perform()
-    MWA_Utils.ToggleFoldStock(self.weapon)
+    SWMG_FoldingStock.ToggleFoldStock(self.weapon)
     ISBaseTimedAction.perform(self)
 end
 

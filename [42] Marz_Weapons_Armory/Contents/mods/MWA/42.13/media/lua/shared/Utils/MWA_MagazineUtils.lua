@@ -1,7 +1,13 @@
 local SWMG_Magazine = {}
 
+SWMG_Magazine.WeaponMagazineProfile = {
+    ['MWA.M16A1'] = 'Stanag',
+    ['MWA.M16A2'] = 'Stanag',
+    ['MWA.M16A3'] = 'Stanag',
+}
+
 SWMG_Magazine.MagazineProfileList = {
-    -- ['Stanag'] = { "MWA.556Magazine20", "MWA.556Magazine25", "MWA.556Magazine30", }
+    ['Stanag'] = { "MWA.556Magazine20", "MWA.556Magazine25", "MWA.556Magazine30", }
 }
 SWMG_Magazine.MAG_TYPE_KEY = "MWAMagazineType"
 
@@ -13,18 +19,6 @@ function SWMG_Magazine.isMagazineInProfile(magType, profileList)
         end
     end
     return false
-end
-
-function SWMG_Magazine.manageMagazineAttachment(weapon, magazine, insert)
-    if not weapon then return end
-
-    if insert then
-        weapon:attachWeaponPart(instanceItem(magazine:getFullType()), true)
-    end
-
-    if not insert then
-        weapon:detachWeaponPart(weapon:getWeaponPart("Clip"))
-    end
 end
 
 function SWMG_Magazine.reloadMagazine(playerObj, magazine)

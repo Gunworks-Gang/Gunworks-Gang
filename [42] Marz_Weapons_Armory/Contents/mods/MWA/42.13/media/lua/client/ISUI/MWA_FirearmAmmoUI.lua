@@ -4,6 +4,8 @@ require "ISUI/ISLabel"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISItemDropBox"
 
+local SWMG_Ammo = require "Utils/MWA_AmmoUtils.lua"
+
 -----------------------------------------------------------
 -- MWA Firearm Ammo UI
 -- A drag-and-drop interface for loading ammo into firearms (non-magazine)
@@ -363,9 +365,9 @@ function MWA_FirearmAmmoUI:getAvailableAmmoTypes(weapon)
     local result = {}
     local inventory = self.player:getInventory()
 
-    local ammoProfile = weapon:getModData().AmmoProfile
-    if ammoProfile and MWA_Utils and MWA_Utils.AmmoProfilesList and MWA_Utils.AmmoProfilesList[ammoProfile] then
-        for _, ammoTypeKey in ipairs(MWA_Utils.AmmoProfilesList[ammoProfile]) do
+    local ammoProfile = SWMG_Ammo.WeaponAmmoProfile[weapon:getFullType()]
+    if ammoProfile and SWMG_Ammo and SWMG_Ammo.AmmoProfilesList and SWMG_Ammo.AmmoProfilesList[ammoProfile] then
+        for _, ammoTypeKey in ipairs(SWMG_Ammo.AmmoProfilesList[ammoProfile]) do
             local count = inventory:getCountTypeRecurse(ammoTypeKey)
             local script = getScriptManager():FindItem(ammoTypeKey)
             local name = script and script:getDisplayName() or ammoTypeKey
@@ -505,7 +507,7 @@ function MWA_FirearmAmmoUI:performLoad()
     ISInventoryPaneContextMenu.transferBullets(self.player, self.selectedAmmoType, weapon:getCurrentAmmoCount(),
         weapon:getCurrentAmmoCount() + self.transferAmount)
 
-    MWA_Utils.AmmoProfileSetter(weapon, self.selectedAmmoType)
+    SWMG_Ammo.AmmoProfileSetter(weapon, self.selectedAmmoType)
 
     ISInventoryPaneContextMenu.equipWeapon(weapon, true, false, self.player:getPlayerNum())
     ISTimedActionQueue.add(ISReloadWeaponAction:new(self.player, weapon, self.transferAmount))

@@ -15,38 +15,6 @@ function MWAOpenModel(weapon, open)
     end
 end
 
-function MWAFoldedModel(weapon, folded)
-    if not weapon then return end
-
-    local currentSprite = weapon:getWeaponSprite()
-    local hasOpen = currentSprite:match("_OPEN$") ~= nil
-    local baseSprite = currentSprite:gsub("_OPEN$", ""):gsub("_FOLDED$", "")
-
-    local newSprite = baseSprite
-    if folded then
-        newSprite = newSprite .. "_FOLDED"
-    end
-    if hasOpen then
-        newSprite = newSprite .. "_OPEN"
-    end
-
-    weapon:setWeaponSprite(newSprite)
-end
-
-function MWABipodModel(weapon, deployed)
-    if not weapon then return end
-
-    local currentSprite = weapon:getWeaponSprite()
-    local baseSprite = currentSprite:gsub("_DEPLOYED$", "")
-
-    local newSprite = baseSprite
-    if deployed then
-        newSprite = newSprite .. "_DEPLOYED"
-    end
-
-    weapon:setWeaponSprite(newSprite)
-end
-
 MWA_OpenModels = {
     --Pistols
     ["MWA.M92FS"] = setOpenModel,

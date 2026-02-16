@@ -3,17 +3,23 @@ require "MWA_FoldStock"
 require "MWA_FoldBipod"
 require "MWA_BayonetAttachment"
 
+local SWMG_FoldingStock = require "Utils/MWA_FoldingStockUtils.lua"
+local SWMG_FoldingBipod = require "Utils/MWA_FoldingBipodUtils.lua"
+local SWMG_Bayonet = require "Utils/MWA_BayonetUtils"
+local SWMG_Magazine = require "Utils/MWA_MagazineUtils.lua"
+local SWMG_Ammo = require "Utils/MWA_AmmoUtils.lua"
+
 -------------------------------------------------
 -- Foldable Stock Context Menu
 -------------------------------------------------
 local function addFoldableStockOption(playerObj, item, context)
-    if not MWA_Utils then return end
+    if not SWMG_FoldingStock then return end
     if not instanceof(item, "HandWeapon") then return end
     if not item:isRanged() then return end
-    if not MWA_Utils.HasFoldableStock(item) then return end
+    if not SWMG_FoldingStock.HasFoldableStock(item) then return end
 
     local isInInventory = item:getContainer() == playerObj:getInventory()
-    local isFolded = MWA_Utils.IsStockFolded(item)
+    local isFolded = SWMG_FoldingStock.IsStockFolded(item)
 
     local actionString
     if isFolded then
@@ -46,13 +52,13 @@ end
 -- Foldable Bipod Context Menu
 -------------------------------------------------
 local function addFoldableBipodOption(playerObj, item, context)
-    if not MWA_Utils then return end
+    if not SWMG_FoldingBipod then return end
     if not instanceof(item, "HandWeapon") then return end
     if not item:isRanged() then return end
-    if not MWA_Utils.HasFoldableBipod(item) then return end
+    if not SWMG_FoldingBipod.HasFoldableBipod(item) then return end
 
     local isInInventory = item:getContainer() == playerObj:getInventory()
-    local isDeployed = MWA_Utils.IsBipodDeployed(item)
+    local isDeployed = SWMG_FoldingBipod.IsBipodDeployed(item)
 
     local actionString
     if isDeployed then
@@ -85,13 +91,13 @@ end
 -- Bayonet Attachment Context Menu
 -------------------------------------------------
 local function addBayonetAttachmentOption(playerObj, item, context)
-    if not MWA_Utils then return end
+    if not SWMG_Bayonet then return end
     if not instanceof(item, "HandWeapon") then return end
     if not item:isRanged() then return end
 
     local isInInventory = item:getContainer() == playerObj:getInventory()
 
-    if MWA_Utils.CanRemoveBayonet(item) then
+    if SWMG_Bayonet.CanRemoveBayonet(item) then
         local actionString = getText("IGUI_MWA_RemoveBayonet")
         local listEntry = context:addOption(actionString, playerObj, MWA_BayonetAttachmentContext.removeBayonet, item)
 
@@ -111,7 +117,7 @@ local function addBayonetAttachmentOption(playerObj, item, context)
         local inventory = playerObj:getInventory():getItems()
         for i = 0, inventory:size() - 1 do
             local invItem = inventory:get(i)
-            if invItem:getModData().BayonetAttachment and MWA_Utils.CanAttachBayonet(item, invItem) then
+            if invItem:getModData().BayonetAttachment and SWMG_Bayonet.CanAttachBayonet(item, invItem) then
                 local actionString = getText("IGUI_MWA_AttachBayonet")
                 local listEntry = context:addOption(actionString, playerObj, MWA_BayonetAttachmentContext.attachBayonet, item, invItem)
 
@@ -162,9 +168,9 @@ ISInventoryPaneContextMenu.doReloadMenuForMagazine = function(playerObj, magazin
     for i = 1, weapons:size() do
         local weapon = weapons:get(i - 1)
         if not weapon:isContainsClip() then
-            local profileName = weapon:getModData().MagazineProfile
-            if profileName and MWA_Utils.MagazineProfileList[profileName] then
-                if MWA_Utils.isMagazineInProfile(magType, MWA_Utils.MagazineProfileList[profileName]) then
+            local profileName = SWMG_Magazine.WeaponMagazineProfile[weapon:getFullType()]
+            if profileName and SWMG_Magazine.MagazineProfileList[profileName] then
+                if SWMG_Magazine.isMagazineInProfile(magType, SWMG_Magazine.MagazineProfileList[profileName]) then
                     local insertOption = context:addOption(getText("ContextMenu_InsertMagazine"), playerObj,
                         ISInventoryPaneContextMenu.onInsertMagazine, weapon, magazine)
                     local tooltip = ISInventoryPaneContextMenu.addToolTip()
@@ -183,9 +189,9 @@ end
 
 local ISInventoryPaneContextMenu_doMagazineMenu_Original = ISInventoryPaneContextMenu.doMagazineMenu
 ISInventoryPaneContextMenu.doMagazineMenu = function(playerObj, magazine, context)
-    if magazine:getModData().AmmoProfile then
+    if SWMG_Ammo.MagazineAmmoProfile[magazine:getFullType()] then
         if magazine:getCurrentAmmoCount() < magazine:getMaxAmmo() then
-            local typeList = MWA_Utils.AmmoProfilesList[magazine:getModData().AmmoProfile]
+            local typeList = SWMG_Ammo.AmmoProfilesList[SWMG_Ammo.MagazineAmmoProfile[magazine:getFullType()]]
             for _, typeName in ipairs(typeList) do
                 local itemKey = typeName;
                 local bulletName = getScriptManager():FindItem(itemKey):getDisplayName();
@@ -220,7 +226,7 @@ ISInventoryPaneContextMenu.onLoadBulletsInMagazineFromDiffAmmoType = function(pl
     ISInventoryPaneContextMenu.transferIfNeeded(playerObj, magazine)
     local items = playerObj:getInventory():getSomeTypeRecurse(itemKey, ammoCount)
     ISInventoryPaneContextMenu.transferIfNeeded(playerObj, items)
-    MWA_Utils.MagazineAmmoProfileSetter(magazine, itemKey)
+    SWMG_Ammo.MagazineAmmoProfileSetter(magazine, itemKey)
     if ammoCount > 0 then
         ISTimedActionQueue.add(ISLoadBulletsInMagazine:new(playerObj, magazine, ammoCount))
     end
@@ -228,8 +234,8 @@ end
 
 local ISInventoryPaneContextMenu_doBulletMenu_Original = ISInventoryPaneContextMenu.doBulletMenu
 ISInventoryPaneContextMenu.doBulletMenu = function(playerObj, weapon, context)
-    if weapon:getModData().AmmoProfile then
-        local typeList = MWA_Utils.AmmoProfilesList[weapon:getModData().AmmoProfile]
+    if SWMG_Ammo.WeaponAmmoProfile[weapon:getFullType()] then
+        local typeList = SWMG_Ammo.AmmoProfilesList[SWMG_Ammo.WeaponAmmoProfile[weapon:getFullType()]]
         for _, typeName in ipairs(typeList) do
             local itemKey = typeName;
             local bulletAvail = playerObj:getInventory():getItemCountRecurse(itemKey);
@@ -258,69 +264,6 @@ end
 ISInventoryPaneContextMenu.onLoadBulletsIntoFirearmFromDiffAmmoType = function(playerObj, weapon, itemKey)
     ISInventoryPaneContextMenu.transferBullets(playerObj, itemKey, weapon:getCurrentAmmoCount(), weapon:getMaxAmmo())
     ISInventoryPaneContextMenu.equipWeapon(weapon, true, false, playerObj:getPlayerNum())
-    MWA_Utils.AmmoProfileSetter(weapon, itemKey)
+    SWMG_Ammo.AmmoProfileSetter(weapon, itemKey)
     ISTimedActionQueue.add(ISReloadWeaponAction:new(playerObj, weapon));
 end
-
--- local ISInventoryPaneContextMenu_doReloadMenuForBullets_Original = ISInventoryPaneContextMenu.doReloadMenuForBullets
--- ISInventoryPaneContextMenu.doReloadMenuForBullets = function(playerObj, bullet, context)
---     local bulletType = bullet:getFullType()
-
---     for i = 0, playerObj:getInventory():getItems():size() - 1 do
---         local item = playerObj:getInventory():getItems():get(i)
---         local ammoType = item:getAmmoType()
---         if ammoType then
---             local baseAmmoKey = ammoType:getItemKey()
-
---             if not instanceof(item, "HandWeapon") then
---                 local ammoProfile = item:getModData().AmmoProfile
---                 if ammoProfile and MWA_Utils.AmmoProfilesList[ammoProfile] then
---                     if bulletType ~= baseAmmoKey and MWA_Utils.isAmmoInProfile(bulletType, MWA_Utils.AmmoProfilesList[ammoProfile]) then
---                         if item:getCurrentAmmoCount() < item:getMaxAmmo() then
---                             local bulletName = bullet:getDisplayName()
---                             local ammoCount = playerObj:getInventory():getItemCountRecurse(bulletType)
---                             if ammoCount > item:getMaxAmmo() then
---                                 ammoCount = item:getMaxAmmo()
---                             end
---                             if ammoCount > item:getMaxAmmo() - item:getCurrentAmmoCount() then
---                                 ammoCount = item:getMaxAmmo() - item:getCurrentAmmoCount()
---                             end
---                             local insertOption = context:addOption(
---                                 getText("IGUI_ContextMenu_InsertAltBulletsInMagazine", ammoCount, bulletName),
---                                 playerObj,
---                                 ISInventoryPaneContextMenu.onLoadBulletsInMagazineFromDiffAmmoType, item, ammoCount,
---                                 bulletType)
---                             local tooltip = ISInventoryPaneContextMenu.addToolTip()
---                             tooltip.description =
---                                 (getText("ContextMenu_Magazine") .. ": " .. getText(item:getDisplayName()) .. "\n" ..
---                                     getText("ContextMenu_GunType") .. ": " .. getText(getItemDisplayName(item:getGunType())) .. "\n" ..
---                                     getText("Tooltip_weapon_AmmoCount") .. ": " .. item:getCurrentAmmoCount() .. "/" .. item:getMaxAmmo())
---                             insertOption.toolTip = tooltip
---                         end
---                     end
---                 end
---             elseif instanceof(item, "HandWeapon") and not item:getMagazineType() then
---                 local ammoProfile = item:getModData().AmmoProfile
---                 if ammoProfile and MWA_Utils.AmmoProfilesList[ammoProfile] then
---                     if bulletType ~= baseAmmoKey and MWA_Utils.isAmmoInProfile(bulletType, MWA_Utils.AmmoProfilesList[ammoProfile]) then
---                         local bulletAvail = playerObj:getInventory():getItemCountRecurse(bulletType)
---                         local bulletNeeded = item:getMaxAmmo() - item:getCurrentAmmoCount()
---                         local bulletName = bullet:getDisplayName()
---                         if bulletNeeded > bulletAvail then
---                             bulletNeeded = bulletAvail
---                         end
---                         local insertOption = context:addOption(
---                             getText("ContextMenu_InsertBullets", bulletNeeded, bulletName, item:getDisplayName()),
---                             playerObj,
---                             ISInventoryPaneContextMenu.onLoadBulletsIntoFirearmFromDiffAmmoType, item, bulletType)
---                         if bulletNeeded <= 0 then
---                             insertOption.notAvailable = true
---                         end
---                     end
---                 end
---             end
---         end
---     end
-
---     ISInventoryPaneContextMenu_doReloadMenuForBullets_Original(playerObj, bullet, context)
--- end

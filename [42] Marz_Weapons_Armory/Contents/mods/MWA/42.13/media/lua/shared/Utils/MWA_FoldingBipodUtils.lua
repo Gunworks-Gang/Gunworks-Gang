@@ -1,9 +1,8 @@
 local SWMG_FoldingBipod = {}
 
-
-
-SWMG_FoldingBipod.BIPOD_DEPLOYED_KEY = "MWA_BipodDeployed"
-SWMG_FoldingBipod.FoldableBipodWeapons = {}
+SWMG_FoldingBipod.WeaponsWithFoldableBipod = {
+    ["MWA.BAR"] = true,
+}
 SWMG_FoldingBipod.DeployedBipodStats = {}
 
 function SWMG_FoldingBipod.DeployedBipodAdjustStats(weapon)
@@ -28,48 +27,59 @@ function SWMG_FoldingBipod.DeployedBipodAdjustStats(weapon)
     weapon:setRecoilDelay(baseRecoilDelay + (bipodStats.RecoilDelay or 0) * deployedMod)
 end
 
-function MWA_Utils.HasFoldableBipod(weapon)
-    if not weapon then return false end
-    local weaponType = weapon:getFullType()
-    return SWMG_FoldingBipod.FoldableBipodWeapons[weaponType]
+function SWMG_FoldingBipod.HasFoldableBipod(weapon)
+    return SWMG_FoldingBipod.WeaponsWithFoldableBipod[weapon:getFullType()]
 end
 
-function MWA_Utils.IsBipodDeployed(weapon)
+function SWMG_FoldingBipod.IsBipodDeployed(weapon)
     if not weapon then return false end
-    local modData = weapon:getModData()
-    return modData.BipodDeployed == true
+    return weapon:getModData().BipodDeployed
 end
 
-function MWA_Utils.ToggleDeployBipod(weapon)
+function SWMG_FoldingBipod.ToggleDeployBipod(weapon)
     if not weapon then return end
-    if not MWA_Utils.HasFoldableBipod(weapon) then return end
+    if not SWMG_FoldingBipod.HasFoldableBipod(weapon) then return end
 
-    local isDeployed = MWA_Utils.IsBipodDeployed(weapon)
+    local isDeployed = SWMG_FoldingBipod.IsBipodDeployed(weapon)
     local newDeployed = not isDeployed
 
     weapon:getModData().BipodDeployed = newDeployed
-    MWABipodModel(weapon, newDeployed)
-    MWA_Utils.DeployedBipodAdjustStats(weapon)
+    SWMG_FoldingBipod.SwapBipodModel(weapon, newDeployed)
+    SWMG_FoldingBipod.DeployedBipodAdjustStats(weapon)
 end
 
-function MWA_Utils.SetBipodDeployed(weapon, deployed)
+function SWMG_FoldingBipod.SetBipodDeployed(weapon, deployed)
     if not weapon then return end
-    if not MWA_Utils.HasFoldableBipod(weapon) then return end
+    if not SWMG_FoldingBipod.HasFoldableBipod(weapon) then return end
 
     weapon:getModData().BipodDeployed = deployed
-    MWABipodModel(weapon, deployed)
-    MWA_Utils.DeployedBipodAdjustStats(weapon)
+    SWMG_FoldingBipod.SwapBipodModel(weapon, deployed)
+    SWMG_FoldingBipod.DeployedBipodAdjustStats(weapon)
 end
 
-function MWA_Utils.RestoreDeployedBipodState(weapon)
+function SWMG_FoldingBipod.RestoreDeployedBipodState(weapon)
     if not weapon then return end
-    if not MWA_Utils.HasFoldableBipod(weapon) then return end
+    if not SWMG_FoldingBipod.HasFoldableBipod(weapon) then return end
 
-    local isDeployed = weapon:getModData().BipodDeployed
+    local isDeployed = SWMG_FoldingBipod.IsBipodDeployed(weapon)
     if isDeployed then
-        MWABipodModel(weapon, true)
-        MWA_Utils.DeployedBipodAdjustStats(weapon)
+        SWMG_FoldingBipod.SwapBipodModel(weapon, true)
+        SWMG_FoldingBipod.DeployedBipodAdjustStats(weapon)
     end
+end
+
+function SWMG_FoldingBipod.SwapBipodModel(weapon, deployed)
+    if not weapon then return end
+
+    local currentSprite = weapon:getWeaponSprite()
+    local baseSprite = currentSprite:gsub("_DEPLOYED$", "")
+
+    local newSprite = baseSprite
+    if deployed then
+        newSprite = newSprite .. "_DEPLOYED"
+    end
+
+    weapon:setWeaponSprite(newSprite)
 end
 
 return SWMG_FoldingBipod
