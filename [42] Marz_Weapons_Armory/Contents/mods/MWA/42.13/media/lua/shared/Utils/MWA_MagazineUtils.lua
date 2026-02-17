@@ -77,7 +77,7 @@ function SWMG_Magazine.getBestMagazineFromList(playerObj, gun, typeList)
 end
 
 function SWMG_Magazine.getBestMagazineForGun(playerObj, gun)
-    local typeList = SWMG_Magazine.MagazineProfileList[gun:getModData().MagazineProfile]
+    local typeList = SWMG_Magazine.MagazineProfileList[SWMG_Magazine.WeaponMagazineProfile[gun:getFullType()]]
     return SWMG_Magazine.getBestMagazineFromList(playerObj, gun, typeList)
 end
 

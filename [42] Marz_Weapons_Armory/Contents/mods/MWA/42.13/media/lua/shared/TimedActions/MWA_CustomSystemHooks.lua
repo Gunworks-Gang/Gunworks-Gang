@@ -35,7 +35,7 @@ local SWMG_Bayonet = require "Utils/MWA_BayonetUtils.lua"
 -------------------------------------------------
 local ISReloadWeaponAction_BeginAutomaticReload_Original = ISReloadWeaponAction.BeginAutomaticReload
 ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
-    if gun:getModData().MagazineProfile then
+    if SWMG_Magazine.WeaponMagazineProfile[gun:getFullType()] then
         local magazine = SWMG_Magazine.getBestMagazineForGun(playerObj, gun)
         local hasMagazine = gun:isContainsClip()
         if hasMagazine then
