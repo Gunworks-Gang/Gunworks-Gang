@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+	<m_Name>BrenMK2_RackRifle</m_Name>
+	<m_AnimName>Bob_Bren_Rack</m_AnimName>
+	<m_deferredBoneAxis>Y</m_deferredBoneAxis>
+	<m_Looped>false</m_Looped>
+	<m_SyncTrackingEnabled>false</m_SyncTrackingEnabled>
+	<m_EarlyTransitionOut>true</m_EarlyTransitionOut>
+	<m_SpeedScale>ReloadSpeed</m_SpeedScale>
+    <m_ConditionPriority>10</m_ConditionPriority>
+	<m_BlendTime>0.20</m_BlendTime>
+	<m_Conditions>
+		<m_Name>PerformingAction</m_Name>
+		<m_Type>STRING</m_Type>
+		<m_StringValue>Reload</m_StringValue>
+	</m_Conditions>
+	<m_Conditions>
+		<m_Name>WeaponReloadType</m_Name>
+		<m_Type>STRING</m_Type>
+		<m_StringValue>brenmk2reload</m_StringValue>
+	</m_Conditions>
+    <m_Conditions>
+		<m_Name>isRackingShort</m_Name>
+        <m_Type>BOOL</m_Type>
+		<m_BoolValue>false</m_BoolValue>
+	</m_Conditions>
+	<m_Conditions>
+		<m_Name>isRacking</m_Name>
+        <m_Type>BOOL</m_Type>
+		<m_BoolValue>true</m_BoolValue>
+	</m_Conditions>
+	<m_Events>
+		<m_EventName>rackingFinished</m_EventName>
+        <m_Time>End</m_Time>
+		<m_ParameterValue></m_ParameterValue>
+	</m_Events>
+	<m_Events>
+    <m_EventName>playReloadSound</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>rack</m_ParameterValue>
+	</m_Events>
+	<m_Events>
+		<m_EventName>rackBullet</m_EventName>
+		<m_TimePc>0.6</m_TimePc>
+		<m_ParameterValue>insertAmmoStart</m_ParameterValue>
+	</m_Events>
+</animNode>
