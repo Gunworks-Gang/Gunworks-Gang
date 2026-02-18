@@ -1,4 +1,4 @@
-local Ammo = require("Utils/AmmoUtils")
+local Ammo = require("WeaponSystems/Utils/AmmoUtils")
 local Client = {}
 
 function Client.OnServerCommand(module, command, args)

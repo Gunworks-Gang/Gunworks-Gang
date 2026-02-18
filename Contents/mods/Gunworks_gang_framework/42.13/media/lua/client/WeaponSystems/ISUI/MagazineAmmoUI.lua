@@ -4,15 +4,15 @@ require("ISUI/ISLabel")
 require("ISUI/ISScrollingListBox")
 require("ISUI/ISItemDropBox")
 
-local SWMG_Ammo = require("WeaponSystems/Utils/MWA_AmmoUtils")
+local Ammo = require("WeaponSystems/Utils/AmmoUtils")
 
 -----------------------------------------------------------
--- MWA Magazine Ammo UI
+-- Magazine Ammo UI
 -- A drag-and-drop interface for loading ammo into magazines
 -----------------------------------------------------------
 
-MWA_MagazineAmmoUI = ISPanelJoypad:derive("MWA_MagazineAmmoUI")
-MWA_MagazineAmmoUI.instance = nil
+MagazineAmmoUI = ISPanelJoypad:derive("MagazineAmmoUI")
+MagazineAmmoUI.instance = nil
 
 local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 local FONT_HGT_MEDIUM = getTextManager():getFontHeight(UIFont.Medium)
@@ -22,17 +22,17 @@ local BUTTON_HGT = FONT_HGT_SMALL + 6
 -----------------------------------------------------------
 -- Magazine Drop Panel - handles drag and drop of magazines
 -----------------------------------------------------------
-MWA_MagazineDropPanel = ISPanel:derive("MWA_MagazineDropPanel")
+MagazineDropPanel = ISPanel:derive("MagazineDropPanel")
 
-function MWA_MagazineDropPanel:initialise()
+function MagazineDropPanel:initialise()
     ISPanel.initialise(self)
 end
 
-function MWA_MagazineDropPanel:createChildren()
+function MagazineDropPanel:createChildren()
     local y = UI_BORDER_SPACING
 
     self.titleLabel = ISLabel:new(self.width / 2, y, FONT_HGT_SMALL,
-        getText("IGUI_MWA_DropMagazine") or "Drop Magazine Here", 1, 1, 1, 1, UIFont.Small, true)
+        getText("IGUI_DropMagazine") or "Drop Magazine Here", 1, 1, 1, 1, UIFont.Small, true)
     self.titleLabel.center = true
     self.titleLabel:initialise()
     self.titleLabel:instantiate()
@@ -48,16 +48,16 @@ function MWA_MagazineDropPanel:createChildren()
         boxSize,
         true,
         self,
-        MWA_MagazineDropPanel.onItemAdd,
-        MWA_MagazineDropPanel.onItemRemove,
-        MWA_MagazineDropPanel.onItemVerify,
+        MagazineDropPanel.onItemAdd,
+        MagazineDropPanel.onItemRemove,
+        MagazineDropPanel.onItemVerify,
         nil
     )
     self.itemDropBox.allowDropAlways = true
     self.itemDropBox.player = self.player
     self.itemDropBox:initialise()
-    self.itemDropBox:setToolTip(true, getText("IGUI_MWA_DragMagazineHere") or "Drag a magazine here")
-    self.itemDropBox.toolTipTextItem = getText("IGUI_MWA_ClickToRemove") or "Click to remove"
+    self.itemDropBox:setToolTip(true, getText("IGUI_DragMagazineHere") or "Drag a magazine here")
+    self.itemDropBox.toolTipTextItem = getText("IGUI_ClickToRemove") or "Click to remove"
     self:addChild(self.itemDropBox)
 
     y = y + boxSize + UI_BORDER_SPACING
@@ -77,7 +77,7 @@ function MWA_MagazineDropPanel:createChildren()
     self:addChild(self.ammoCountLabel)
 end
 
-function MWA_MagazineDropPanel:onItemAdd(items)
+function MagazineDropPanel:onItemAdd(items)
     for _, item in ipairs(items) do
         if self:onItemVerify(item) then
             self.itemDropBox:setStoredItem(item)
@@ -90,7 +90,7 @@ function MWA_MagazineDropPanel:onItemAdd(items)
     end
 end
 
-function MWA_MagazineDropPanel:onItemRemove()
+function MagazineDropPanel:onItemRemove()
     self.itemDropBox:setStoredItem(nil)
     self:updateMagazineInfo(nil)
     if self.onMagazineRemoved then
@@ -98,11 +98,11 @@ function MWA_MagazineDropPanel:onItemRemove()
     end
 end
 
-function MWA_MagazineDropPanel:onItemVerify(item)
+function MagazineDropPanel:onItemVerify(item)
     return item:getMaxAmmo() > 0 and not instanceof(item, "HandWeapon")
 end
 
-function MWA_MagazineDropPanel:updateMagazineInfo(magazine)
+function MagazineDropPanel:updateMagazineInfo(magazine)
     if magazine then
         self.magazineNameLabel:setName(magazine:getDisplayName() or magazine:getName())
         local current = magazine:getCurrentAmmoCount()
@@ -114,17 +114,17 @@ function MWA_MagazineDropPanel:updateMagazineInfo(magazine)
     end
 end
 
-function MWA_MagazineDropPanel:getMagazine()
+function MagazineDropPanel:getMagazine()
     return self.itemDropBox and self.itemDropBox.storedItem
 end
 
-function MWA_MagazineDropPanel:prerender()
+function MagazineDropPanel:prerender()
     ISPanel.prerender(self)
     self:drawRect(0, 0, self.width, self.height, 0.8, 0.1, 0.1, 0.1)
     self:drawRectBorder(0, 0, self.width, self.height, 1, 0.4, 0.4, 0.4)
 end
 
-function MWA_MagazineDropPanel:new(x, y, width, height, player)
+function MagazineDropPanel:new(x, y, width, height, player)
     local o = ISPanel.new(self, x, y, width, height)
     o.player = player
     o.backgroundColor = { r = 0.1, g = 0.1, b = 0.1, a = 0.8 }
@@ -135,11 +135,11 @@ end
 -----------------------------------------------------------
 -- Main Magazine Ammo UI
 -----------------------------------------------------------
-function MWA_MagazineAmmoUI.OpenPanel(player)
+function MagazineAmmoUI.OpenPanel(player)
     if not player then return end
 
-    if MWA_MagazineAmmoUI.instance then
-        MWA_MagazineAmmoUI.instance:close()
+    if MagazineAmmoUI.instance then
+        MagazineAmmoUI.instance:close()
     end
 
     local screenW = getCore():getScreenWidth()
@@ -150,13 +150,13 @@ function MWA_MagazineAmmoUI.OpenPanel(player)
     local x = (screenW - width) / 2
     local y = (screenH - height) / 2
 
-    local ui = MWA_MagazineAmmoUI:new(x, y, width, height, player)
+    local ui = MagazineAmmoUI:new(x, y, width, height, player)
     ui:initialise()
     ui:instantiate()
     ui:setVisible(true)
     ui:addToUIManager()
 
-    MWA_MagazineAmmoUI.instance = ui
+    MagazineAmmoUI.instance = ui
 
     local playerNum = player:getPlayerNum()
     if getJoypadData(playerNum) then
@@ -164,25 +164,25 @@ function MWA_MagazineAmmoUI.OpenPanel(player)
     end
 end
 
-function MWA_MagazineAmmoUI.TogglePanel(player)
-    if MWA_MagazineAmmoUI.instance then
-        MWA_MagazineAmmoUI.instance:close()
+function MagazineAmmoUI.TogglePanel(player)
+    if MagazineAmmoUI.instance then
+        MagazineAmmoUI.instance:close()
     else
-        MWA_MagazineAmmoUI.OpenPanel(player)
+        MagazineAmmoUI.OpenPanel(player)
     end
 end
 
-function MWA_MagazineAmmoUI:initialise()
+function MagazineAmmoUI:initialise()
     ISPanelJoypad.initialise(self)
 end
 
-function MWA_MagazineAmmoUI:createChildren()
+function MagazineAmmoUI:createChildren()
     ISPanelJoypad.createChildren(self)
 
     local y = UI_BORDER_SPACING
 
     self.titleLabel = ISLabel:new(self.width / 2, y, FONT_HGT_MEDIUM,
-        getText("IGUI_MWA_MagazineAmmo_Title") or "Magazine Ammo", 1, 1, 1, 1, UIFont.Medium, true)
+        getText("IGUI_MagazineAmmo_Title") or "Magazine Ammo", 1, 1, 1, 1, UIFont.Medium, true)
     self.titleLabel.center = true
     self.titleLabel:initialise()
     self.titleLabel:instantiate()
@@ -193,7 +193,7 @@ function MWA_MagazineAmmoUI:createChildren()
     local panelWidth = 150
     local panelHeight = 160
 
-    self.magazinePanel = MWA_MagazineDropPanel:new(UI_BORDER_SPACING, y, panelWidth, panelHeight, self.player)
+    self.magazinePanel = MagazineDropPanel:new(UI_BORDER_SPACING, y, panelWidth, panelHeight, self.player)
     self.magazinePanel.funcTarget = self
     self.magazinePanel.onMagazineAdded = self.onMagazineAdded
     self.magazinePanel.onMagazineRemoved = self.onMagazineRemoved
@@ -212,7 +212,7 @@ function MWA_MagazineAmmoUI:createChildren()
 
     local midY = UI_BORDER_SPACING
 
-    self.amountTitleLabel = ISLabel:new(middleWidth / 2, midY, FONT_HGT_SMALL, getText("IGUI_MWA_Amount") or "Amount", 1,
+    self.amountTitleLabel = ISLabel:new(middleWidth / 2, midY, FONT_HGT_SMALL, getText("IGUI_Amount") or "Amount", 1,
         1, 1, 1, UIFont.Small, true)
     self.amountTitleLabel.center = true
     self.amountTitleLabel:initialise()
@@ -222,7 +222,7 @@ function MWA_MagazineAmmoUI:createChildren()
     midY = midY + FONT_HGT_SMALL + UI_BORDER_SPACING
 
     self.btnPlus = ISButton:new((middleWidth - BUTTON_HGT) / 2, midY, BUTTON_HGT, BUTTON_HGT, "+", self,
-        MWA_MagazineAmmoUI.onAmountButton)
+        MagazineAmmoUI.onAmountButton)
     self.btnPlus.internal = "PLUS"
     self.btnPlus:initialise()
     self.btnPlus:instantiate()
@@ -240,7 +240,7 @@ function MWA_MagazineAmmoUI:createChildren()
     midY = self.amountLabel:getBottom() + 5
 
     self.btnMinus = ISButton:new((middleWidth - BUTTON_HGT) / 2, midY, BUTTON_HGT, BUTTON_HGT, "-", self,
-        MWA_MagazineAmmoUI.onAmountButton)
+        MagazineAmmoUI.onAmountButton)
     self.btnMinus.internal = "MINUS"
     self.btnMinus:initialise()
     self.btnMinus:instantiate()
@@ -250,7 +250,7 @@ function MWA_MagazineAmmoUI:createChildren()
     midY = self.btnMinus:getBottom() + UI_BORDER_SPACING
 
     self.btnMax = ISButton:new((middleWidth - 50) / 2, midY, 50, BUTTON_HGT, "MAX", self,
-        MWA_MagazineAmmoUI.onAmountButton)
+        MagazineAmmoUI.onAmountButton)
     self.btnMax.internal = "MAX"
     self.btnMax:initialise()
     self.btnMax:instantiate()
@@ -268,7 +268,7 @@ function MWA_MagazineAmmoUI:createChildren()
     self:addChild(self.rightPanel)
 
     self.ammoTypeTitleLabel = ISLabel:new(rightWidth / 2, UI_BORDER_SPACING, FONT_HGT_SMALL,
-        getText("IGUI_MWA_AmmoType") or "Ammo Type", 1, 1, 1, 1, UIFont.Small, true)
+        getText("IGUI_AmmoType") or "Ammo Type", 1, 1, 1, 1, UIFont.Small, true)
     self.ammoTypeTitleLabel.center = true
     self.ammoTypeTitleLabel:initialise()
     self.ammoTypeTitleLabel:instantiate()
@@ -281,9 +281,9 @@ function MWA_MagazineAmmoUI:createChildren()
     self.ammoList.itemheight = BUTTON_HGT
     self.ammoList.selected = 0
     self.ammoList.font = UIFont.Small
-    self.ammoList.doDrawItem = MWA_MagazineAmmoUI.doDrawAmmoItem
+    self.ammoList.doDrawItem = MagazineAmmoUI.doDrawAmmoItem
     self.ammoList.target = self
-    self.ammoList.onMouseDown = MWA_MagazineAmmoUI.onAmmoListMouseDown
+    self.ammoList.onMouseDown = MagazineAmmoUI.onAmmoListMouseDown
     self.ammoList.backgroundColor = { r = 0.05, g = 0.05, b = 0.05, a = 0.9 }
     self.ammoList.borderColor = { r = 0.3, g = 0.3, b = 0.3, a = 1 }
     self.rightPanel:addChild(self.ammoList)
@@ -292,8 +292,8 @@ function MWA_MagazineAmmoUI:createChildren()
 
     local buttonWidth = (self.width - UI_BORDER_SPACING * 3) / 2
 
-    self.btnLoad = ISButton:new(UI_BORDER_SPACING, y, buttonWidth, BUTTON_HGT, getText("IGUI_MWA_Load") or "Load", self,
-        MWA_MagazineAmmoUI.onButton)
+    self.btnLoad = ISButton:new(UI_BORDER_SPACING, y, buttonWidth, BUTTON_HGT, getText("IGUI_Load") or "Load", self,
+        MagazineAmmoUI.onButton)
     self.btnLoad.internal = "LOAD"
     self.btnLoad:initialise()
     self.btnLoad:instantiate()
@@ -301,7 +301,7 @@ function MWA_MagazineAmmoUI:createChildren()
     self:addChild(self.btnLoad)
 
     self.btnClose = ISButton:new(self.btnLoad:getRight() + UI_BORDER_SPACING, y, buttonWidth, BUTTON_HGT,
-        getText("UI_Close") or "Close", self, MWA_MagazineAmmoUI.onButton)
+        getText("UI_Close") or "Close", self, MagazineAmmoUI.onButton)
     self.btnClose.internal = "CLOSE"
     self.btnClose:initialise()
     self.btnClose:instantiate()
@@ -320,12 +320,12 @@ end
 -----------------------------------------------------------
 -- Magazine added/removed callbacks
 -----------------------------------------------------------
-function MWA_MagazineAmmoUI:onMagazineAdded(magazine)
+function MagazineAmmoUI:onMagazineAdded(magazine)
     self:populateAmmoList()
     self:updateMaxAmount()
 end
 
-function MWA_MagazineAmmoUI:onMagazineRemoved()
+function MagazineAmmoUI:onMagazineRemoved()
     self.ammoList:clear()
     self.selectedAmmoType = nil
     self.transferAmount = 0
@@ -337,7 +337,7 @@ end
 -----------------------------------------------------------
 -- Populate ammo list based on magazine's AmmoProfile
 -----------------------------------------------------------
-function MWA_MagazineAmmoUI:populateAmmoList()
+function MagazineAmmoUI:populateAmmoList()
     self.ammoList:clear()
     self.selectedAmmoType = nil
 
@@ -356,13 +356,13 @@ function MWA_MagazineAmmoUI:populateAmmoList()
     end
 end
 
-function MWA_MagazineAmmoUI:getAvailableAmmoTypes(magazine)
+function MagazineAmmoUI:getAvailableAmmoTypes(magazine)
     local result = {}
     local inventory = self.player:getInventory()
 
-    local ammoProfile = SWMG_Ammo.MagazineAmmoProfile[magazine:getFullType()]
-    if ammoProfile and SWMG_Ammo and SWMG_Ammo.AmmoProfilesList and SWMG_Ammo.AmmoProfilesList[ammoProfile] then
-        for _, ammoTypeKey in ipairs(SWMG_Ammo.AmmoProfilesList[ammoProfile]) do
+    local ammoProfile = Ammo.MagazineAmmoProfile[magazine:getFullType()]
+    if ammoProfile and Ammo and Ammo.AmmoProfilesList and Ammo.AmmoProfilesList[ammoProfile] then
+        for _, ammoTypeKey in ipairs(Ammo.AmmoProfilesList[ammoProfile]) do
             local count = inventory:getCountTypeRecurse(ammoTypeKey)
             local script = getScriptManager():FindItem(ammoTypeKey)
             local name = script and script:getDisplayName() or ammoTypeKey
@@ -393,7 +393,7 @@ end
 -----------------------------------------------------------
 -- Draw ammo list item
 -----------------------------------------------------------
-function MWA_MagazineAmmoUI.doDrawAmmoItem(self, y, item, alt)
+function MagazineAmmoUI.doDrawAmmoItem(self, y, item, alt)
     local ammoData = item.item
     local isSelected = self.selected == item.index
 
@@ -415,7 +415,7 @@ function MWA_MagazineAmmoUI.doDrawAmmoItem(self, y, item, alt)
     return y + self.itemheight
 end
 
-function MWA_MagazineAmmoUI.onAmmoListMouseDown(self, x, y)
+function MagazineAmmoUI.onAmmoListMouseDown(self, x, y)
     if #self.items == 0 then return end
 
     local row = self:rowAt(x, y)
@@ -430,7 +430,7 @@ end
 -----------------------------------------------------------
 -- Update max amount
 -----------------------------------------------------------
-function MWA_MagazineAmmoUI:updateMaxAmount()
+function MagazineAmmoUI:updateMaxAmount()
     local magazine = self.magazinePanel:getMagazine()
     if not magazine or not self.selectedAmmoType then
         self.maxTransferAmount = 0
@@ -456,14 +456,14 @@ function MWA_MagazineAmmoUI:updateMaxAmount()
     self.btnLoad:setEnable(self.transferAmount > 0)
 end
 
-function MWA_MagazineAmmoUI:updateAmountLabel()
+function MagazineAmmoUI:updateAmountLabel()
     self.amountLabel:setName(tostring(self.transferAmount))
 end
 
 -----------------------------------------------------------
 -- Amount button handlers
 -----------------------------------------------------------
-function MWA_MagazineAmmoUI:onAmountButton(button)
+function MagazineAmmoUI:onAmountButton(button)
     if button.internal == "PLUS" then
         if self.transferAmount < self.maxTransferAmount then
             self.transferAmount = self.transferAmount + 1
@@ -483,7 +483,7 @@ end
 -----------------------------------------------------------
 -- Main button handlers
 -----------------------------------------------------------
-function MWA_MagazineAmmoUI:onButton(button)
+function MagazineAmmoUI:onButton(button)
     if button.internal == "LOAD" then
         self:performLoad()
     elseif button.internal == "CLOSE" then
@@ -491,7 +491,7 @@ function MWA_MagazineAmmoUI:onButton(button)
     end
 end
 
-function MWA_MagazineAmmoUI:performLoad()
+function MagazineAmmoUI:performLoad()
     local magazine = self.magazinePanel:getMagazine()
     if not magazine then return end
     if self.transferAmount <= 0 then return end
@@ -502,7 +502,7 @@ function MWA_MagazineAmmoUI:performLoad()
     ISInventoryPaneContextMenu.transferBullets(self.player, self.selectedAmmoType, magazine:getCurrentAmmoCount(),
         magazine:getCurrentAmmoCount() + self.transferAmount)
 
-    SWMG_Ammo.MagazineAmmoProfileSetter(magazine, self.selectedAmmoType)
+    Ammo.MagazineAmmoProfileSetter(magazine, self.selectedAmmoType)
 
     ISTimedActionQueue.add(ISLoadBulletsInMagazine:new(self.player, magazine, self.transferAmount, self.transferAmount))
 
@@ -512,7 +512,7 @@ end
 -----------------------------------------------------------
 -- Update loop
 -----------------------------------------------------------
-function MWA_MagazineAmmoUI:update()
+function MagazineAmmoUI:update()
     ISPanelJoypad.update(self)
 
     for _, listItem in ipairs(self.ammoList.items) do
@@ -534,7 +534,7 @@ end
 -----------------------------------------------------------
 -- Render
 -----------------------------------------------------------
-function MWA_MagazineAmmoUI:prerender()
+function MagazineAmmoUI:prerender()
     ISPanelJoypad.prerender(self)
     self:drawRect(0, 0, self.width, self.height, self.backgroundColor.a, self.backgroundColor.r, self.backgroundColor.g,
         self.backgroundColor.b)
@@ -545,8 +545,8 @@ end
 -----------------------------------------------------------
 -- Close
 -----------------------------------------------------------
-function MWA_MagazineAmmoUI:close()
-    MWA_MagazineAmmoUI.instance = nil
+function MagazineAmmoUI:close()
+    MagazineAmmoUI.instance = nil
 
     local playerNum = self.player:getPlayerNum()
     if JoypadState.players[playerNum + 1] then
@@ -560,13 +560,13 @@ end
 -----------------------------------------------------------
 -- Joypad support
 -----------------------------------------------------------
-function MWA_MagazineAmmoUI:onGainJoypadFocus(joypadData)
+function MagazineAmmoUI:onGainJoypadFocus(joypadData)
     ISPanelJoypad.onGainJoypadFocus(self, joypadData)
     self:setISButtonForA(self.btnLoad)
     self:setISButtonForB(self.btnClose)
 end
 
-function MWA_MagazineAmmoUI:onJoypadDown(button, joypadData)
+function MagazineAmmoUI:onJoypadDown(button, joypadData)
     if button == Joypad.DPadUp then
         self:onAmountButton({ internal = "PLUS" })
     elseif button == Joypad.DPadDown then
@@ -591,7 +591,7 @@ end
 -----------------------------------------------------------
 -- Constructor
 -----------------------------------------------------------
-function MWA_MagazineAmmoUI:new(x, y, width, height, player)
+function MagazineAmmoUI:new(x, y, width, height, player)
     local o = ISPanelJoypad.new(self, x, y, width, height)
     o.backgroundColor = { r = 0, g = 0, b = 0, a = 0.9 }
     o.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
@@ -614,7 +614,7 @@ local function onKeyPressed(key)
             if UIManager.getSpeedControls() and UIManager.getSpeedControls():getCurrentGameSpeed() == 0 then
                 return
             end
-            MWA_MagazineAmmoUI.TogglePanel(player)
+            MagazineAmmoUI.TogglePanel(player)
         end
     end
 end

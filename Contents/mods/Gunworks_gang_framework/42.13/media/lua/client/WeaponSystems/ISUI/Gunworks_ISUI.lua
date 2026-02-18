@@ -20,9 +20,9 @@ local function addFoldableStockOption(playerObj, item, context)
 
     local actionString
     if isFolded then
-        actionString = getText("IGUI_MWA_UnfoldStock")
+        actionString = getText("IGUI_UnfoldStock")
     else
-        actionString = getText("IGUI_MWA_FoldStock")
+        actionString = getText("IGUI_FoldStock")
     end
 
     local listEntry = context:addOption(actionString, playerObj, FoldStockContext.callAction, item)
@@ -33,13 +33,13 @@ local function addFoldableStockOption(playerObj, item, context)
 
     if isInInventory then
         if isFolded then
-            tooltip.description = getText("IGUI_MWA_UnfoldStockDesc")
+            tooltip.description = getText("IGUI_UnfoldStockDesc")
         else
-            tooltip.description = getText("IGUI_MWA_FoldStockDesc")
+            tooltip.description = getText("IGUI_FoldStockDesc")
         end
     else
         listEntry.notAvailable = true
-        tooltip.description = getText("IGUI_MWA_MoveToInventory")
+        tooltip.description = getText("IGUI_MoveToInventory")
     end
 
     listEntry.toolTip = tooltip
@@ -59,9 +59,9 @@ local function addFoldableBipodOption(playerObj, item, context)
 
     local actionString
     if isDeployed then
-        actionString = getText("IGUI_MWA_FoldBipod")
+        actionString = getText("IGUI_FoldBipod")
     else
-        actionString = getText("IGUI_MWA_DeployBipod")
+        actionString = getText("IGUI_DeployBipod")
     end
 
     local listEntry = context:addOption(actionString, playerObj, FoldBipodContext.callAction, item)
@@ -72,13 +72,13 @@ local function addFoldableBipodOption(playerObj, item, context)
 
     if isInInventory then
         if isDeployed then
-            tooltip.description = getText("IGUI_MWA_FoldBipodDesc")
+            tooltip.description = getText("IGUI_FoldBipodDesc")
         else
-            tooltip.description = getText("IGUI_MWA_DeployBipodDesc")
+            tooltip.description = getText("IGUI_DeployBipodDesc")
         end
     else
         listEntry.notAvailable = true
-        tooltip.description = getText("IGUI_MWA_MoveToInventory")
+        tooltip.description = getText("IGUI_MoveToInventory")
     end
 
     listEntry.toolTip = tooltip
@@ -95,7 +95,7 @@ local function addBayonetAttachmentOption(playerObj, item, context)
     local isInInventory = item:getContainer() == playerObj:getInventory()
 
     if Bayonet.CanRemoveBayonet(item) then
-        local actionString = getText("IGUI_MWA_RemoveBayonet")
+        local actionString = getText("IGUI_RemoveBayonet")
         local listEntry = context:addOption(actionString, playerObj, BayonetAttachmentContext.removeBayonet, item)
 
         local tooltip = ISInventoryPaneContextMenu.addToolTip()
@@ -103,10 +103,10 @@ local function addBayonetAttachmentOption(playerObj, item, context)
         tooltip.texture = item:getTex()
 
         if isInInventory then
-            tooltip.description = getText("IGUI_MWA_RemoveBayonetDesc")
+            tooltip.description = getText("IGUI_RemoveBayonetDesc")
         else
             listEntry.notAvailable = true
-            tooltip.description = getText("IGUI_MWA_MoveToInventory")
+            tooltip.description = getText("IGUI_MoveToInventory")
         end
 
         listEntry.toolTip = tooltip
@@ -115,7 +115,7 @@ local function addBayonetAttachmentOption(playerObj, item, context)
         for i = 0, inventory:size() - 1 do
             local invItem = inventory:get(i)
             if Bayonet.BayonetKnives[invItem:getFullType()] and Bayonet.CanAttachBayonet(item, invItem) then
-                local actionString = getText("IGUI_MWA_AttachBayonet")
+                local actionString = getText("IGUI_AttachBayonet")
                 local listEntry = context:addOption(actionString, playerObj, BayonetAttachmentContext.attachBayonet, item, invItem)
 
                 local tooltip = ISInventoryPaneContextMenu.addToolTip()
@@ -123,10 +123,10 @@ local function addBayonetAttachmentOption(playerObj, item, context)
                 tooltip.texture = item:getTex()
 
                 if isInInventory then
-                    tooltip.description = getText("IGUI_MWA_AttachBayonetDesc")
+                    tooltip.description = getText("IGUI_AttachBayonetDesc")
                 else
                     listEntry.notAvailable = true
-                    tooltip.description = getText("IGUI_MWA_MoveToInventory")
+                    tooltip.description = getText("IGUI_MoveToInventory")
                 end
 
                 listEntry.toolTip = tooltip
@@ -136,7 +136,7 @@ local function addBayonetAttachmentOption(playerObj, item, context)
     end
 end
 
-local MWA_onFillInventoryObjectContextMenu = function(playerid, context, items)
+local onFillInventoryObjectContextMenu = function(playerid, context, items)
     local player = getSpecificPlayer(playerid)
     for _, v in ipairs(items) do
         local item = v
@@ -151,7 +151,7 @@ local MWA_onFillInventoryObjectContextMenu = function(playerid, context, items)
     end
 end
 
-Events.OnFillInventoryObjectContextMenu.Add(MWA_onFillInventoryObjectContextMenu)
+Events.OnFillInventoryObjectContextMenu.Add(onFillInventoryObjectContextMenu)
 
 -------------------------------------------------
 -- Original Magazine Profile Menu Overrides

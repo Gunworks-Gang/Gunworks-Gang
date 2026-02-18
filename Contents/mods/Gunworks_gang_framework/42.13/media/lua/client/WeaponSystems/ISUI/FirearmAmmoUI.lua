@@ -7,12 +7,12 @@ require("ISUI/ISItemDropBox")
 local Ammo = require("WeaponSystems/Utils/AmmoUtils")
 
 -----------------------------------------------------------
--- MWA Firearm Ammo UI
+-- Firearm Ammo UI
 -- A drag-and-drop interface for loading ammo into firearms (non-magazine)
 -----------------------------------------------------------
 
-MWA_FirearmAmmoUI = ISPanelJoypad:derive("MWA_FirearmAmmoUI")
-MWA_FirearmAmmoUI.instance = nil
+FirearmAmmoUI = ISPanelJoypad:derive("FirearmAmmoUI")
+FirearmAmmoUI.instance = nil
 
 local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 local FONT_HGT_MEDIUM = getTextManager():getFontHeight(UIFont.Medium)
@@ -22,17 +22,17 @@ local BUTTON_HGT = FONT_HGT_SMALL + 6
 -----------------------------------------------------------
 -- Firearm Drop Panel - handles drag and drop of firearms
 -----------------------------------------------------------
-MWA_FirearmDropPanel = ISPanel:derive("MWA_FirearmDropPanel")
+FirearmDropPanel = ISPanel:derive("FirearmDropPanel")
 
-function MWA_FirearmDropPanel:initialise()
+function FirearmDropPanel:initialise()
     ISPanel.initialise(self)
 end
 
-function MWA_FirearmDropPanel:createChildren()
+function FirearmDropPanel:createChildren()
     local y = UI_BORDER_SPACING
 
     self.titleLabel = ISLabel:new(self.width / 2, y, FONT_HGT_SMALL,
-        getText("IGUI_MWA_DropFirearm") or "Drop Firearm Here", 1, 1, 1, 1, UIFont.Small, true)
+        getText("IGUI_DropFirearm") or "Drop Firearm Here", 1, 1, 1, 1, UIFont.Small, true)
     self.titleLabel.center = true
     self.titleLabel:initialise()
     self.titleLabel:instantiate()
@@ -48,16 +48,16 @@ function MWA_FirearmDropPanel:createChildren()
         boxSize,
         true,
         self,
-        MWA_FirearmDropPanel.onItemAdd,
-        MWA_FirearmDropPanel.onItemRemove,
-        MWA_FirearmDropPanel.onItemVerify,
+        FirearmDropPanel.onItemAdd,
+        FirearmDropPanel.onItemRemove,
+        FirearmDropPanel.onItemVerify,
         nil
     )
     self.itemDropBox.allowDropAlways = true
     self.itemDropBox.player = self.player
     self.itemDropBox:initialise()
-    self.itemDropBox:setToolTip(true, getText("IGUI_MWA_DragFirearmHere") or "Drag a firearm here")
-    self.itemDropBox.toolTipTextItem = getText("IGUI_MWA_ClickToRemove") or "Click to remove"
+    self.itemDropBox:setToolTip(true, getText("IGUI_DragFirearmHere") or "Drag a firearm here")
+    self.itemDropBox.toolTipTextItem = getText("IGUI_ClickToRemove") or "Click to remove"
     self:addChild(self.itemDropBox)
 
     y = y + boxSize + UI_BORDER_SPACING
@@ -77,7 +77,7 @@ function MWA_FirearmDropPanel:createChildren()
     self:addChild(self.ammoCountLabel)
 end
 
-function MWA_FirearmDropPanel:onItemAdd(items)
+function FirearmDropPanel:onItemAdd(items)
     for _, item in ipairs(items) do
         if self:onItemVerify(item) then
             self.itemDropBox:setStoredItem(item)
@@ -90,7 +90,7 @@ function MWA_FirearmDropPanel:onItemAdd(items)
     end
 end
 
-function MWA_FirearmDropPanel:onItemRemove()
+function FirearmDropPanel:onItemRemove()
     self.itemDropBox:setStoredItem(nil)
     self:updateWeaponInfo(nil)
     if self.onWeaponRemoved then
@@ -98,7 +98,7 @@ function MWA_FirearmDropPanel:onItemRemove()
     end
 end
 
-function MWA_FirearmDropPanel:onItemVerify(item)
+function FirearmDropPanel:onItemVerify(item)
     if not item then return false end
     if not item:isInPlayerInventory() then return false end
     if not instanceof(item, "HandWeapon") then return false end
@@ -107,7 +107,7 @@ function MWA_FirearmDropPanel:onItemVerify(item)
     return true
 end
 
-function MWA_FirearmDropPanel:updateWeaponInfo(weapon)
+function FirearmDropPanel:updateWeaponInfo(weapon)
     if weapon then
         self.weaponNameLabel:setName(weapon:getDisplayName() or weapon:getName())
         local current = weapon:getCurrentAmmoCount()
@@ -119,17 +119,17 @@ function MWA_FirearmDropPanel:updateWeaponInfo(weapon)
     end
 end
 
-function MWA_FirearmDropPanel:getWeapon()
+function FirearmDropPanel:getWeapon()
     return self.itemDropBox and self.itemDropBox.storedItem
 end
 
-function MWA_FirearmDropPanel:prerender()
+function FirearmDropPanel:prerender()
     ISPanel.prerender(self)
     self:drawRect(0, 0, self.width, self.height, 0.8, 0.1, 0.1, 0.1)
     self:drawRectBorder(0, 0, self.width, self.height, 1, 0.4, 0.4, 0.4)
 end
 
-function MWA_FirearmDropPanel:new(x, y, width, height, player)
+function FirearmDropPanel:new(x, y, width, height, player)
     local o = ISPanel.new(self, x, y, width, height)
     o.player = player
     o.backgroundColor = { r = 0.1, g = 0.1, b = 0.1, a = 0.8 }
@@ -140,11 +140,11 @@ end
 -----------------------------------------------------------
 -- Main Firearm Ammo UI
 -----------------------------------------------------------
-function MWA_FirearmAmmoUI.OpenPanel(player)
+function FirearmAmmoUI.OpenPanel(player)
     if not player then return end
 
-    if MWA_FirearmAmmoUI.instance then
-        MWA_FirearmAmmoUI.instance:close()
+    if FirearmAmmoUI.instance then
+        FirearmAmmoUI.instance:close()
     end
 
     local screenW = getCore():getScreenWidth()
@@ -155,13 +155,13 @@ function MWA_FirearmAmmoUI.OpenPanel(player)
     local x = (screenW - width) / 2
     local y = (screenH - height) / 2
 
-    local ui = MWA_FirearmAmmoUI:new(x, y, width, height, player)
+    local ui = FirearmAmmoUI:new(x, y, width, height, player)
     ui:initialise()
     ui:instantiate()
     ui:setVisible(true)
     ui:addToUIManager()
 
-    MWA_FirearmAmmoUI.instance = ui
+    FirearmAmmoUI.instance = ui
 
     local playerNum = player:getPlayerNum()
     if getJoypadData(playerNum) then
@@ -169,25 +169,25 @@ function MWA_FirearmAmmoUI.OpenPanel(player)
     end
 end
 
-function MWA_FirearmAmmoUI.TogglePanel(player)
-    if MWA_FirearmAmmoUI.instance then
-        MWA_FirearmAmmoUI.instance:close()
+function FirearmAmmoUI.TogglePanel(player)
+    if FirearmAmmoUI.instance then
+        FirearmAmmoUI.instance:close()
     else
-        MWA_FirearmAmmoUI.OpenPanel(player)
+        FirearmAmmoUI.OpenPanel(player)
     end
 end
 
-function MWA_FirearmAmmoUI:initialise()
+function FirearmAmmoUI:initialise()
     ISPanelJoypad.initialise(self)
 end
 
-function MWA_FirearmAmmoUI:createChildren()
+function FirearmAmmoUI:createChildren()
     ISPanelJoypad.createChildren(self)
 
     local y = UI_BORDER_SPACING
 
     self.titleLabel = ISLabel:new(self.width / 2, y, FONT_HGT_MEDIUM,
-        getText("IGUI_MWA_FirearmAmmo_Title") or "Firearm Ammo", 1, 1, 1, 1, UIFont.Medium, true)
+        getText("IGUI_FirearmAmmo_Title") or "Firearm Ammo", 1, 1, 1, 1, UIFont.Medium, true)
     self.titleLabel.center = true
     self.titleLabel:initialise()
     self.titleLabel:instantiate()
@@ -198,7 +198,7 @@ function MWA_FirearmAmmoUI:createChildren()
     local panelWidth = 150
     local panelHeight = 160
 
-    self.weaponPanel = MWA_FirearmDropPanel:new(UI_BORDER_SPACING, y, panelWidth, panelHeight, self.player)
+    self.weaponPanel = FirearmDropPanel:new(UI_BORDER_SPACING, y, panelWidth, panelHeight, self.player)
     self.weaponPanel.funcTarget = self
     self.weaponPanel.onWeaponAdded = self.onWeaponAdded
     self.weaponPanel.onWeaponRemoved = self.onWeaponRemoved
@@ -217,7 +217,7 @@ function MWA_FirearmAmmoUI:createChildren()
 
     local midY = UI_BORDER_SPACING
 
-    self.amountTitleLabel = ISLabel:new(middleWidth / 2, midY, FONT_HGT_SMALL, getText("IGUI_MWA_Amount") or "Amount", 1,
+    self.amountTitleLabel = ISLabel:new(middleWidth / 2, midY, FONT_HGT_SMALL, getText("IGUI_Amount") or "Amount", 1,
         1, 1, 1, UIFont.Small, true)
     self.amountTitleLabel.center = true
     self.amountTitleLabel:initialise()
@@ -227,7 +227,7 @@ function MWA_FirearmAmmoUI:createChildren()
     midY = midY + FONT_HGT_SMALL + UI_BORDER_SPACING
 
     self.btnPlus = ISButton:new((middleWidth - BUTTON_HGT) / 2, midY, BUTTON_HGT, BUTTON_HGT, "+", self,
-        MWA_FirearmAmmoUI.onAmountButton)
+        FirearmAmmoUI.onAmountButton)
     self.btnPlus.internal = "PLUS"
     self.btnPlus:initialise()
     self.btnPlus:instantiate()
@@ -245,7 +245,7 @@ function MWA_FirearmAmmoUI:createChildren()
     midY = self.amountLabel:getBottom() + 5
 
     self.btnMinus = ISButton:new((middleWidth - BUTTON_HGT) / 2, midY, BUTTON_HGT, BUTTON_HGT, "-", self,
-        MWA_FirearmAmmoUI.onAmountButton)
+        FirearmAmmoUI.onAmountButton)
     self.btnMinus.internal = "MINUS"
     self.btnMinus:initialise()
     self.btnMinus:instantiate()
@@ -255,7 +255,7 @@ function MWA_FirearmAmmoUI:createChildren()
     midY = self.btnMinus:getBottom() + UI_BORDER_SPACING
 
     self.btnMax = ISButton:new((middleWidth - 50) / 2, midY, 50, BUTTON_HGT, "MAX", self,
-        MWA_FirearmAmmoUI.onAmountButton)
+        FirearmAmmoUI.onAmountButton)
     self.btnMax.internal = "MAX"
     self.btnMax:initialise()
     self.btnMax:instantiate()
@@ -273,7 +273,7 @@ function MWA_FirearmAmmoUI:createChildren()
     self:addChild(self.rightPanel)
 
     self.ammoTypeTitleLabel = ISLabel:new(rightWidth / 2, UI_BORDER_SPACING, FONT_HGT_SMALL,
-        getText("IGUI_MWA_AmmoType") or "Ammo Type", 1, 1, 1, 1, UIFont.Small, true)
+        getText("IGUI_AmmoType") or "Ammo Type", 1, 1, 1, 1, UIFont.Small, true)
     self.ammoTypeTitleLabel.center = true
     self.ammoTypeTitleLabel:initialise()
     self.ammoTypeTitleLabel:instantiate()
@@ -286,9 +286,9 @@ function MWA_FirearmAmmoUI:createChildren()
     self.ammoList.itemheight = BUTTON_HGT
     self.ammoList.selected = 0
     self.ammoList.font = UIFont.Small
-    self.ammoList.doDrawItem = MWA_FirearmAmmoUI.doDrawAmmoItem
+    self.ammoList.doDrawItem = FirearmAmmoUI.doDrawAmmoItem
     self.ammoList.target = self
-    self.ammoList.onMouseDown = MWA_FirearmAmmoUI.onAmmoListMouseDown
+    self.ammoList.onMouseDown = FirearmAmmoUI.onAmmoListMouseDown
     self.ammoList.backgroundColor = { r = 0.05, g = 0.05, b = 0.05, a = 0.9 }
     self.ammoList.borderColor = { r = 0.3, g = 0.3, b = 0.3, a = 1 }
     self.rightPanel:addChild(self.ammoList)
@@ -297,8 +297,8 @@ function MWA_FirearmAmmoUI:createChildren()
 
     local buttonWidth = (self.width - UI_BORDER_SPACING * 3) / 2
 
-    self.btnLoad = ISButton:new(UI_BORDER_SPACING, y, buttonWidth, BUTTON_HGT, getText("IGUI_MWA_Load") or "Load", self,
-        MWA_FirearmAmmoUI.onButton)
+    self.btnLoad = ISButton:new(UI_BORDER_SPACING, y, buttonWidth, BUTTON_HGT, getText("IGUI_Load") or "Load", self,
+        FirearmAmmoUI.onButton)
     self.btnLoad.internal = "LOAD"
     self.btnLoad:initialise()
     self.btnLoad:instantiate()
@@ -306,7 +306,7 @@ function MWA_FirearmAmmoUI:createChildren()
     self:addChild(self.btnLoad)
 
     self.btnClose = ISButton:new(self.btnLoad:getRight() + UI_BORDER_SPACING, y, buttonWidth, BUTTON_HGT,
-        getText("UI_Close") or "Close", self, MWA_FirearmAmmoUI.onButton)
+        getText("UI_Close") or "Close", self, FirearmAmmoUI.onButton)
     self.btnClose.internal = "CLOSE"
     self.btnClose:initialise()
     self.btnClose:instantiate()
@@ -325,12 +325,12 @@ end
 -----------------------------------------------------------
 -- Weapon added/removed callbacks
 -----------------------------------------------------------
-function MWA_FirearmAmmoUI:onWeaponAdded(weapon)
+function FirearmAmmoUI:onWeaponAdded(weapon)
     self:populateAmmoList()
     self:updateMaxAmount()
 end
 
-function MWA_FirearmAmmoUI:onWeaponRemoved()
+function FirearmAmmoUI:onWeaponRemoved()
     self.ammoList:clear()
     self.selectedAmmoType = nil
     self.transferAmount = 0
@@ -342,7 +342,7 @@ end
 -----------------------------------------------------------
 -- Populate ammo list based on weapon's AmmoProfile
 -----------------------------------------------------------
-function MWA_FirearmAmmoUI:populateAmmoList()
+function FirearmAmmoUI:populateAmmoList()
     self.ammoList:clear()
     self.selectedAmmoType = nil
 
@@ -361,7 +361,7 @@ function MWA_FirearmAmmoUI:populateAmmoList()
     end
 end
 
-function MWA_FirearmAmmoUI:getAvailableAmmoTypes(weapon)
+function FirearmAmmoUI:getAvailableAmmoTypes(weapon)
     local result = {}
     local inventory = self.player:getInventory()
 
@@ -398,7 +398,7 @@ end
 -----------------------------------------------------------
 -- Draw ammo list item
 -----------------------------------------------------------
-function MWA_FirearmAmmoUI.doDrawAmmoItem(self, y, item, alt)
+function FirearmAmmoUI.doDrawAmmoItem(self, y, item, alt)
     local ammoData = item.item
     local isSelected = self.selected == item.index
 
@@ -420,7 +420,7 @@ function MWA_FirearmAmmoUI.doDrawAmmoItem(self, y, item, alt)
     return y + self.itemheight
 end
 
-function MWA_FirearmAmmoUI.onAmmoListMouseDown(self, x, y)
+function FirearmAmmoUI.onAmmoListMouseDown(self, x, y)
     if #self.items == 0 then return end
 
     local row = self:rowAt(x, y)
@@ -435,7 +435,7 @@ end
 -----------------------------------------------------------
 -- Update max amount
 -----------------------------------------------------------
-function MWA_FirearmAmmoUI:updateMaxAmount()
+function FirearmAmmoUI:updateMaxAmount()
     local weapon = self.weaponPanel:getWeapon()
     if not weapon or not self.selectedAmmoType then
         self.maxTransferAmount = 0
@@ -461,14 +461,14 @@ function MWA_FirearmAmmoUI:updateMaxAmount()
     self.btnLoad:setEnable(self.transferAmount > 0)
 end
 
-function MWA_FirearmAmmoUI:updateAmountLabel()
+function FirearmAmmoUI:updateAmountLabel()
     self.amountLabel:setName(tostring(self.transferAmount))
 end
 
 -----------------------------------------------------------
 -- Amount button handlers
 -----------------------------------------------------------
-function MWA_FirearmAmmoUI:onAmountButton(button)
+function FirearmAmmoUI:onAmountButton(button)
     if button.internal == "PLUS" then
         if self.transferAmount < self.maxTransferAmount then
             self.transferAmount = self.transferAmount + 1
@@ -488,7 +488,7 @@ end
 -----------------------------------------------------------
 -- Main button handlers
 -----------------------------------------------------------
-function MWA_FirearmAmmoUI:onButton(button)
+function FirearmAmmoUI:onButton(button)
     if button.internal == "LOAD" then
         self:performLoad()
     elseif button.internal == "CLOSE" then
@@ -496,7 +496,7 @@ function MWA_FirearmAmmoUI:onButton(button)
     end
 end
 
-function MWA_FirearmAmmoUI:performLoad()
+function FirearmAmmoUI:performLoad()
     local weapon = self.weaponPanel:getWeapon()
     if not weapon then return end
     if self.transferAmount <= 0 then return end
@@ -518,7 +518,7 @@ end
 -----------------------------------------------------------
 -- Update loop
 -----------------------------------------------------------
-function MWA_FirearmAmmoUI:update()
+function FirearmAmmoUI:update()
     ISPanelJoypad.update(self)
 
     for _, listItem in ipairs(self.ammoList.items) do
@@ -540,7 +540,7 @@ end
 -----------------------------------------------------------
 -- Render
 -----------------------------------------------------------
-function MWA_FirearmAmmoUI:prerender()
+function FirearmAmmoUI:prerender()
     ISPanelJoypad.prerender(self)
     self:drawRect(0, 0, self.width, self.height, self.backgroundColor.a, self.backgroundColor.r, self.backgroundColor.g,
         self.backgroundColor.b)
@@ -551,8 +551,8 @@ end
 -----------------------------------------------------------
 -- Close
 -----------------------------------------------------------
-function MWA_FirearmAmmoUI:close()
-    MWA_FirearmAmmoUI.instance = nil
+function FirearmAmmoUI:close()
+    FirearmAmmoUI.instance = nil
 
     local playerNum = self.player:getPlayerNum()
     if JoypadState.players[playerNum + 1] then
@@ -566,13 +566,13 @@ end
 -----------------------------------------------------------
 -- Joypad support
 -----------------------------------------------------------
-function MWA_FirearmAmmoUI:onGainJoypadFocus(joypadData)
+function FirearmAmmoUI:onGainJoypadFocus(joypadData)
     ISPanelJoypad.onGainJoypadFocus(self, joypadData)
     self:setISButtonForA(self.btnLoad)
     self:setISButtonForB(self.btnClose)
 end
 
-function MWA_FirearmAmmoUI:onJoypadDown(button, joypadData)
+function FirearmAmmoUI:onJoypadDown(button, joypadData)
     if button == Joypad.DPadUp then
         self:onAmountButton({ internal = "PLUS" })
     elseif button == Joypad.DPadDown then
@@ -597,7 +597,7 @@ end
 -----------------------------------------------------------
 -- Constructor
 -----------------------------------------------------------
-function MWA_FirearmAmmoUI:new(x, y, width, height, player)
+function FirearmAmmoUI:new(x, y, width, height, player)
     local o = ISPanelJoypad.new(self, x, y, width, height)
     o.backgroundColor = { r = 0, g = 0, b = 0, a = 0.9 }
     o.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
@@ -620,7 +620,7 @@ local function onKeyPressed(key)
             if UIManager.getSpeedControls() and UIManager.getSpeedControls():getCurrentGameSpeed() == 0 then
                 return
             end
-            MWA_FirearmAmmoUI.TogglePanel(player)
+            FirearmAmmoUI.TogglePanel(player)
         end
     end
 end
