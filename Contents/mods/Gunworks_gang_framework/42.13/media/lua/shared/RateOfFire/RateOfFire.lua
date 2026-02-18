@@ -1,4 +1,4 @@
-require "TimedActions/ISReloadWeaponAction"
+require("TimedActions/ISReloadWeaponAction")
 -------------------------------------------------
 -- Rate of Fire Control System
 -------------------------------------------------

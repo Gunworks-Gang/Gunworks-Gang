@@ -1,6 +1,6 @@
-require "TimedActions/ISBaseTimedAction"
+require("TimedActions/ISBaseTimedAction")
 
-local FoldingStock = require "WeaponSystems/Utils/FoldingStockUtils.lua"
+local FoldingStock = require("WeaponSystems/Utils/FoldingStockUtils")
 
 -------------------------------------------------
 -- Foldable Stock Timed Action

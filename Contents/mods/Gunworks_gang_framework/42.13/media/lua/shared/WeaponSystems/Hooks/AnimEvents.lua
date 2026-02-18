@@ -1,5 +1,5 @@
-require "TimedActions/ISReloadWeaponAction"
-require "TimedActions/ISRackFirearm"
+require("TimedActions/ISReloadWeaponAction")
+require("TimedActions/ISRackFirearm")
 
 local ISReloadWeaponAction_stop_old = ISReloadWeaponAction.stop
 function ISReloadWeaponAction:stop()

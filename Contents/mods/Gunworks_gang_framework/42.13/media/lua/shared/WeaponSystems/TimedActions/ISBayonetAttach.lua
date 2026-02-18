@@ -1,6 +1,6 @@
-require "TimedActions/ISBaseTimedAction"
+require("TimedActions/ISBaseTimedAction")
 
-local Bayonet = require "WeaponSystems/Utils/BayonetUtils.lua"
+local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
 
 -------------------------------------------------
 -- Attach Bayonet Timed Action

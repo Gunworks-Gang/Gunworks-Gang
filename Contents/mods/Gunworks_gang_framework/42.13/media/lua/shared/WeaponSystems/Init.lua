@@ -1,5 +1,5 @@
-local FoldingStock = require "Utils/FoldingStockUtils.lua"
-local FoldingBipod = require "Utils/FoldingBipodUtils.lua"
+local FoldingStock = require("Utils/FoldingStockUtils")
+local FoldingBipod = require("Utils/FoldingBipodUtils")
 
 local function restoreContainer(container)
     if not container then return end

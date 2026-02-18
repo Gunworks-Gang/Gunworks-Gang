@@ -1,6 +1,5 @@
-require 'ISUI/ISInventoryPaneContextMenu'
-
-local RateOfFire_ClientSide = require 'RateOfFire/Client.lua'
+require('ISUI/ISInventoryPaneContextMenu')
+local RateOfFire_ClientSide = require('RateOfFire/Client')
 
 ISInventoryPaneContextMenu.onChangefiremode = function(playerObj, weapon, newfiremode)
     if RateOfFire_ClientSide.isFiremodeStandard(newfiremode) then

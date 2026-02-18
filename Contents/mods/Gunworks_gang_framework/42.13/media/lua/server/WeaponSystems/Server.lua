@@ -1,6 +1,6 @@
 local MWA_Server = {}
 
-local SWMG_Ammo = require "Utils/MWA_AmmoUtils.lua"
+local SWMG_Ammo = require("Utils/MWA_AmmoUtils")
 
 function MWA_Server.getWeaponById(player, itemId)
     if not player or not itemId then return nil end

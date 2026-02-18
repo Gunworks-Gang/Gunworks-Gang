@@ -1,4 +1,4 @@
-local RateOfFire = require 'RateOfFire/RateOfFire.lua'
+local RateOfFire = require('RateOfFire/RateOfFire')
 local RateOfFire_ClientSide = {}
 
 function RateOfFire_ClientSide.getFiremodeMenuKey(firemode)

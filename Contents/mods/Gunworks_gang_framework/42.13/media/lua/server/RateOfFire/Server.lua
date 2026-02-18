@@ -1,4 +1,4 @@
-local RateOfFire = require 'RateOfFire/RateOfFire.lua'
+local RateOfFire = require('RateOfFire/RateOfFire')
 local RateOfFire_ServerSide = {}
 
 function RateOfFire_ServerSide.OnClientCommand(module, command, player, args)

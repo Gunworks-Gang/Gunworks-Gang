@@ -1,10 +1,10 @@
-require "ISUI/ISPanelJoypad"
-require "ISUI/ISButton"
-require "ISUI/ISLabel"
-require "ISUI/ISScrollingListBox"
-require "ISUI/ISItemDropBox"
+require("ISUI/ISPanelJoypad")
+require("ISUI/ISButton")
+require("ISUI/ISLabel")
+require("ISUI/ISScrollingListBox")
+require("ISUI/ISItemDropBox")
 
-local SWMG_Ammo = require "Utils/MWA_AmmoUtils.lua"
+local SWMG_Ammo = require("Utils/MWA_AmmoUtils")
 
 -----------------------------------------------------------
 -- MWA Magazine Ammo UI

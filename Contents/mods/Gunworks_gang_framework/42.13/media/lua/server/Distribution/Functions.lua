@@ -1,7 +1,7 @@
-require "Items/Distribution"
-require "Vehicles/VehicleDistributions"
-require "Items/ProceduralDistributions"
-require "Items/Distribution_BagsAndContainers"
+require("Items/Distribution")
+require("Vehicles/VehicleDistributions")
+require("Items/ProceduralDistributions")
+require("Items/Distribution_BagsAndContainers")
 
 local WeaponDistribution = {}
 

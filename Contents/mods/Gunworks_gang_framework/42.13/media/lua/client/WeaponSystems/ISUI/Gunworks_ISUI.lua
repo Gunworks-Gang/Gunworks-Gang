@@ -1,10 +1,10 @@
-require "ISUI/ISInventoryPaneContextMenu"
+require("ISUI/ISInventoryPaneContextMenu")
 
-local FoldingStock = require "Utils/FoldingStockUtils.lua"
-local FoldingBipod = require "Utils/FoldingBipodUtils.lua"
-local Bayonet = require "Utils/BayonetUtils.lua"
-local Magazine = require "Utils/MagazineUtils.lua"
-local Ammo = require "Utils/AmmoUtils.lua"
+local FoldingStock = require("Utils/FoldingStockUtils")
+local FoldingBipod = require("Utils/FoldingBipodUtils")
+local Bayonet = require("Utils/BayonetUtils")
+local Magazine = require("Utils/MagazineUtils")
+local Ammo = require("Utils/AmmoUtils")
 
 -------------------------------------------------
 -- Foldable Stock Context Menu

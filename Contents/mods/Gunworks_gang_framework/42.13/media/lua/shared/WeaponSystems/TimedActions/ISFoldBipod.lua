@@ -1,6 +1,6 @@
-require "TimedActions/ISBaseTimedAction"
+require("TimedActions/ISBaseTimedAction")
 
-local FoldingBipod = require "WeaponSystems/Utils/FoldingBipodUtils.lua"
+local FoldingBipod = require("WeaponSystems/Utils/FoldingBipodUtils")
 
 -------------------------------------------------
 -- Foldable Bipod Timed Action

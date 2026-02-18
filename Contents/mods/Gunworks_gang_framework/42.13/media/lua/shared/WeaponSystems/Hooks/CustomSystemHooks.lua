@@ -1,13 +1,13 @@
-require 'TimedActions/ISReloadWeaponAction'
-require 'TimedActions/ISLoadBulletsInMagazine'
-require 'TimedActions/ISUnloadBulletsFromMagazine'
-require "TimedActions/ISInsertMagazine"
-require "TimedActions/ISEjectMagazine"
-require "TimedActions/ISRackFirearm"
+require('TimedActions/ISReloadWeaponAction')
+require('TimedActions/ISLoadBulletsInMagazine')
+require('TimedActions/ISUnloadBulletsFromMagazine')
+require("TimedActions/ISInsertMagazine")
+require("TimedActions/ISEjectMagazine")
+require("TimedActions/ISRackFirearm")
 
-local Magazine = require "WeaponSystems/Utils/MagazineUtils.lua"
-local Ammo = require "WeaponSystems/Utils/AmmoUtils.lua"
-local Bayonet = require "WeaponSystems/Utils/BayonetUtils.lua"
+local Magazine = require("WeaponSystems/Utils/MagazineUtils")
+local Ammo = require("WeaponSystems/Utils/AmmoUtils")
+local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
 
 -------------------------------------------------
 -- BeginAutomaticReload (MagazineProfile support)
