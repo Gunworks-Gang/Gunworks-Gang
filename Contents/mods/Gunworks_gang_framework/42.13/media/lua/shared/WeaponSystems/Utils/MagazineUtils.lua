@@ -9,7 +9,6 @@ Magazine.WeaponMagazineProfile = {
 Magazine.MagazineProfileList = {
     ['Stanag'] = { "MWA.556Magazine20", "MWA.556Magazine25", "MWA.556Magazine30", }
 }
-Magazine.MAG_TYPE_KEY = "MagazineType"
 
 function Magazine.isMagazineInProfile(magType, profileList)
     if not profileList then return false end
@@ -93,19 +92,19 @@ end
 function Magazine.SaveMagazineType(gun, magType)
     if not gun or not magType then return end
     local modData = gun:getModData()
-    modData[Magazine.MAG_TYPE_KEY] = magType
+    modData.MagazineType = magType
 end
 
 function Magazine.GetMagazineType(gun)
     if not gun then return nil end
     local modData = gun:getModData()
-    return modData and modData[Magazine.MAG_TYPE_KEY]
+    return modData and modData.MagazineType
 end
 
 function Magazine.ClearMagazineType(gun)
     if not gun then return end
     local modData = gun:getModData()
-    modData[Magazine.MAG_TYPE_KEY] = nil
+    modData.MagazineType = nil
 end
 
 return Magazine

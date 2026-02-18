@@ -1,7 +1,7 @@
 local FoldingBipod = {}
 
 FoldingBipod.WeaponsWithFoldableBipod = {
-    ["MWA.BAR"] = true,
+    "MWA.BAR",
 }
 FoldingBipod.DeployedBipodStats = {}
 
@@ -28,7 +28,12 @@ function FoldingBipod.DeployedBipodAdjustStats(weapon)
 end
 
 function FoldingBipod.HasFoldableBipod(weapon)
-    return FoldingBipod.WeaponsWithFoldableBipod[weapon:getFullType()]
+    if not weapon then return false end
+    local weaponType = weapon:getFullType()
+    for _, entry in ipairs(FoldingBipod.WeaponsWithFoldableBipod) do
+        if entry == weaponType then return true end
+    end
+    return false
 end
 
 function FoldingBipod.IsBipodDeployed(weapon)
