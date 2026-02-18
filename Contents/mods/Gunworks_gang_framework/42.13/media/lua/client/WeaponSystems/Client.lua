@@ -1,0 +1,31 @@
+local Ammo = require "Utils/AmmoUtils.lua"
+local Client = {}
+
+function Client.OnServerCommand(module, command, args)
+    if module ~= "MWA" or not args then return end
+
+    local playerObj = getSpecificPlayer(0)
+    if not playerObj then return end
+
+    if command == "applyAmmoProfile" then
+        local item = playerObj:getInventory():getItemWithIDRecursiv(args.itemId)
+        if item and instanceof(item, "HandWeapon") then
+            local bulletType = args.bulletType
+            local ammoEnum = Ammo.ItemFullTypeToAmmoType and Ammo.ItemFullTypeToAmmoType[bulletType]
+            if ammoEnum then
+                Ammo.AmmoAdjustWeaponStats(item, bulletType, ammoEnum)
+            end
+        end
+    elseif command == "applyMagazineAmmoProfile" then
+        local item = playerObj:getInventory():getItemWithIDRecursiv(args.itemId)
+        if item then
+            local bulletType = args.bulletType
+            local ammoEnum = Ammo.ItemFullTypeToAmmoType and Ammo.ItemFullTypeToAmmoType[bulletType]
+            if ammoEnum then
+                item:setAmmoType(ammoEnum)
+            end
+        end
+    end
+end
+
+Events.OnServerCommand.Add(Client.OnServerCommand)
