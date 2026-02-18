@@ -1,10 +1,10 @@
 require("ISUI/ISInventoryPaneContextMenu")
 
-local FoldingStock = require("Utils/FoldingStockUtils")
-local FoldingBipod = require("Utils/FoldingBipodUtils")
-local Bayonet = require("Utils/BayonetUtils")
-local Magazine = require("Utils/MagazineUtils")
-local Ammo = require("Utils/AmmoUtils")
+local FoldingStock = require("WeaponSystems/Utils/FoldingStockUtils")
+local FoldingBipod = require("WeaponSystems/Utils/FoldingBipodUtils")
+local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
+local Magazine = require("WeaponSystems/Utils/MagazineUtils")
+local Ammo = require("WeaponSystems/Utils/AmmoUtils")
 
 -------------------------------------------------
 -- Foldable Stock Context Menu
@@ -25,7 +25,7 @@ local function addFoldableStockOption(playerObj, item, context)
         actionString = getText("IGUI_MWA_FoldStock")
     end
 
-    local listEntry = context:addOption(actionString, playerObj, MWA_FoldStockContext.callAction, item)
+    local listEntry = context:addOption(actionString, playerObj, FoldStockContext.callAction, item)
 
     local tooltip = ISInventoryPaneContextMenu.addToolTip()
     tooltip:setName(actionString)
@@ -64,7 +64,7 @@ local function addFoldableBipodOption(playerObj, item, context)
         actionString = getText("IGUI_MWA_DeployBipod")
     end
 
-    local listEntry = context:addOption(actionString, playerObj, MWA_FoldBipodContext.callAction, item)
+    local listEntry = context:addOption(actionString, playerObj, FoldBipodContext.callAction, item)
 
     local tooltip = ISInventoryPaneContextMenu.addToolTip()
     tooltip:setName(actionString)
@@ -96,7 +96,7 @@ local function addBayonetAttachmentOption(playerObj, item, context)
 
     if Bayonet.CanRemoveBayonet(item) then
         local actionString = getText("IGUI_MWA_RemoveBayonet")
-        local listEntry = context:addOption(actionString, playerObj, MWA_BayonetAttachmentContext.removeBayonet, item)
+        local listEntry = context:addOption(actionString, playerObj, BayonetAttachmentContext.removeBayonet, item)
 
         local tooltip = ISInventoryPaneContextMenu.addToolTip()
         tooltip:setName(actionString)
@@ -116,7 +116,7 @@ local function addBayonetAttachmentOption(playerObj, item, context)
             local invItem = inventory:get(i)
             if Bayonet.BayonetKnives[invItem:getFullType()] and Bayonet.CanAttachBayonet(item, invItem) then
                 local actionString = getText("IGUI_MWA_AttachBayonet")
-                local listEntry = context:addOption(actionString, playerObj, MWA_BayonetAttachmentContext.attachBayonet, item, invItem)
+                local listEntry = context:addOption(actionString, playerObj, BayonetAttachmentContext.attachBayonet, item, invItem)
 
                 local tooltip = ISInventoryPaneContextMenu.addToolTip()
                 tooltip:setName(actionString)

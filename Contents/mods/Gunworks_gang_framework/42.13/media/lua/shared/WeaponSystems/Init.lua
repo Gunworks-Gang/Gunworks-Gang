@@ -1,5 +1,5 @@
-local FoldingStock = require("Utils/FoldingStockUtils")
-local FoldingBipod = require("Utils/FoldingBipodUtils")
+local FoldingStock = require("WeaponSystems/Utils/FoldingStockUtils")
+local FoldingBipod = require("WeaponSystems/Utils/FoldingBipodUtils")
 
 local function restoreContainer(container)
     if not container then return end

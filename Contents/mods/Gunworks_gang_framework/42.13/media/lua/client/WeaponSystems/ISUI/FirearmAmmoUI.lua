@@ -4,7 +4,7 @@ require("ISUI/ISLabel")
 require("ISUI/ISScrollingListBox")
 require("ISUI/ISItemDropBox")
 
-local Ammo = require("Utils/AmmoUtils")
+local Ammo = require("WeaponSystems/Utils/AmmoUtils")
 
 -----------------------------------------------------------
 -- MWA Firearm Ammo UI
