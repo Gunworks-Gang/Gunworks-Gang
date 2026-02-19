@@ -148,7 +148,7 @@ function Ammo.GetAmmoCharacteristics(bulletType)
 end
 
 function Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
-    local baseStats   = instanceItem(weapon:getFullType())
+    local baseStats   = StatsFactory.GetBaseStatsWithAttachments(weapon)
     local profileName = Ammo.GetAmmoCharacteristics(bulletType)
     local modifiers   = Ammo.AmmoStats[profileName]
 

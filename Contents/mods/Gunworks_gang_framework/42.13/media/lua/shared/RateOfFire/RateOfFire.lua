@@ -1,4 +1,5 @@
 require("TimedActions/ISReloadWeaponAction")
+local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 -------------------------------------------------
 -- Rate of Fire Control System
 -------------------------------------------------
@@ -162,22 +163,7 @@ end)
 -------------------------------------------------
 
 function RateOfFire.CalcRecoilDelayShadow(weapon)
-    local shadow = instanceItem(weapon:getFullType())
-
-    local parts = weapon:getAllWeaponParts()
-    if parts then
-        for i = 0, parts:size() - 1 do
-            local part = parts:get(i)
-            if part then
-                local partCopy = instanceItem(part:getFullType())
-                if partCopy and instanceof(partCopy, "WeaponPart") then
-                    if shadow.canAttachWeaponPart == nil or shadow:canAttachWeaponPart(partCopy) then
-                        shadow:attachWeaponPart(partCopy)
-                    end
-                end
-            end
-        end
-    end
+    local shadow = StatsFactory.GetBaseStatsWithAttachments(weapon)
     return shadow:getRecoilDelay()
 end
 

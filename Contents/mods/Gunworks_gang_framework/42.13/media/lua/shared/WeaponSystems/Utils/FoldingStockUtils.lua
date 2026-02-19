@@ -39,7 +39,7 @@ function FoldingStock.FoldedStockAdjustStats(weapon)
     local entry = FoldingStock.WeaponsWithFoldableStock[weapon:getFullType()]
     if not entry or not entry.modifiers then return end
 
-    local baseStats = instanceItem(weapon:getFullType())
+    local baseStats = StatsFactory.GetBaseStatsWithAttachments(weapon)
     local isFolded  = FoldingStock.IsStockFolded(weapon)
 
     if isFolded then

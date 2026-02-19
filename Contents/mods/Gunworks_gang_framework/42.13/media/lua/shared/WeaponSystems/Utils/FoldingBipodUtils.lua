@@ -39,7 +39,7 @@ function FoldingBipod.DeployedBipodAdjustStats(weapon)
     local entry = FoldingBipod.WeaponsWithFoldableBipod[weapon:getFullType()]
     if not entry or not entry.modifiers then return end
 
-    local baseStats  = instanceItem(weapon:getFullType())
+    local baseStats  = StatsFactory.GetBaseStatsWithAttachments(weapon)
     local isDeployed = FoldingBipod.IsBipodDeployed(weapon)
 
     if isDeployed then
