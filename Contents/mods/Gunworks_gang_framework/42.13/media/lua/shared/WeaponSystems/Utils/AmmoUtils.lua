@@ -67,11 +67,7 @@ Ammo.AmmoFamilies = {
 -- Ammo Stats: each profile is an array of modifier functions
 -- Use StatsFactory.Adjust / StatsFactory.Set / StatsFactory.Multiply or raw function(weapon, base)
 -------------------------------------------------
-Ammo.AmmoStats = {
-    ["BaseAmmo"] = {
-        -- no modifiers, use base stats
-    },
-}
+Ammo.AmmoStats = {}
 
 -------------------------------------------------
 -- Helper functions (query AmmoFamilies directly)
