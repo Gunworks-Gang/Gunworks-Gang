@@ -1,4 +1,5 @@
 local Ammo = {}
+local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
 -------------------------------------------------
 -- Table 1: Item -> Ammo Family
@@ -63,15 +64,51 @@ Ammo.AmmoFamilies = {
 }
 
 -------------------------------------------------
--- Ammo Stats (shared config, rarely changed by modders)
+-- Ammo Stats: each profile is an array of modifier functions
+-- Use Ammo.Adjust / Ammo.Set / Ammo.Multiply or raw function(weapon, base)
 -------------------------------------------------
 Ammo.AmmoStats = {
-    ["BaseAmmo"]          = { "We will use base stats when this is selected." },
-    ["SubsonicAmmo"]      = { MaxDamage = -0.5, MinDamage = -0.5, PiercingBullets = false, MaxHitCount = 1, ProjectileCount = 1, SoundRadius = -50, SoundVolume = -20, RackAfterShot = true },
-    ["ArmorPiercingAmmo"] = { MaxDamage = -0.2, MinDamage = -0.2, PiercingBullets = true, MaxHitCount = 3, ProjectileCount = 1 },
-    ["HollowPointAmmo"]   = { MaxDamage = 1.5, MinDamage = 1.5, PiercingBullets = false, MaxHitCount = 1, ProjectileCount = 1 },
-    ["SlugAmmo"]          = { MaxDamage = 2.0, MinDamage = 2.0, PiercingBullets = true, MaxHitCount = 2, ProjectileCount = 1 },
-    ["CivilianAmmo"]      = { MaxDamage = -0.3, MinDamage = -0.3, PiercingBullets = false, MaxHitCount = 1, ProjectileCount = 1 },
+    ["BaseAmmo"] = {
+        -- Empty: keep base weapon stats as-is
+    },
+    ["SubsonicAmmo"] = {
+        StatsFactory.Adjust("MaxDamage", -0.5),
+        StatsFactory.Adjust("MinDamage", -0.5),
+        StatsFactory.Set("PiercingBullets", false),
+        StatsFactory.Set("MaxHitCount", 1),
+        StatsFactory.Set("ProjectileCount", 1),
+        StatsFactory.Adjust("SoundRadius", -50),
+        StatsFactory.Adjust("SoundVolume", -20),
+        StatsFactory.Set("RackAfterShot", true),
+    },
+    ["ArmorPiercingAmmo"] = {
+        StatsFactory.Adjust("MaxDamage", -0.2),
+        StatsFactory.Adjust("MinDamage", -0.2),
+        StatsFactory.Set("PiercingBullets", true),
+        StatsFactory.Set("MaxHitCount", 3),
+        StatsFactory.Set("ProjectileCount", 1),
+    },
+    ["HollowPointAmmo"] = {
+        StatsFactory.Adjust("MaxDamage", 1.5),
+        StatsFactory.Adjust("MinDamage", 1.5),
+        StatsFactory.Set("PiercingBullets", false),
+        StatsFactory.Set("MaxHitCount", 1),
+        StatsFactory.Set("ProjectileCount", 1),
+    },
+    ["SlugAmmo"] = {
+        StatsFactory.Adjust("MaxDamage", 2.0),
+        StatsFactory.Adjust("MinDamage", 2.0),
+        StatsFactory.Set("PiercingBullets", true),
+        StatsFactory.Set("MaxHitCount", 2),
+        StatsFactory.Set("ProjectileCount", 1),
+    },
+    ["CivilianAmmo"] = {
+        StatsFactory.Adjust("MaxDamage", -0.3),
+        StatsFactory.Adjust("MinDamage", -0.3),
+        StatsFactory.Set("PiercingBullets", false),
+        StatsFactory.Set("MaxHitCount", 1),
+        StatsFactory.Set("ProjectileCount", 1),
+    },
 }
 
 -------------------------------------------------
@@ -137,10 +174,10 @@ function Ammo.RegisterAmmoFamily(family, bullets)
 end
 
 --- Register a new ammo stat profile or overwrite an existing one
---- @param profileName string  e.g. "SubsonicAmmo"
---- @param stats table  e.g. { MaxDamage = -0.5, MinDamage = -0.5, SoundRadius = -50 }
-function Ammo.RegisterAmmoStats(profileName, stats)
-    Ammo.AmmoStats[profileName] = stats
+--- @param profileName string  e.g. "IncendiaryAmmo"
+--- @param modifiers table  array of modifier functions (Ammo.Adjust / Ammo.Set / Ammo.Multiply / raw function)
+function Ammo.RegisterAmmoStats(profileName, modifiers)
+    Ammo.AmmoStats[profileName] = modifiers
 end
 
 function Ammo.GetAmmoCharacteristics(bulletType)
@@ -149,51 +186,14 @@ function Ammo.GetAmmoCharacteristics(bulletType)
 end
 
 function Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
-    local weaponBaseStats     = instanceItem(weapon:getFullType())
-    local ammoCharacteristics = Ammo.GetAmmoCharacteristics(bulletType)
-    local ammoStats           = Ammo.AmmoStats[ammoCharacteristics] or {}
+    local baseStats   = instanceItem(weapon:getFullType())
+    local profileName = Ammo.GetAmmoCharacteristics(bulletType)
+    local modifiers   = Ammo.AmmoStats[profileName]
 
-    local baseMaxDamage       = weaponBaseStats:getMaxDamage()
-    local baseMinDamage       = weaponBaseStats:getMinDamage()
-    local basePiercingBullets = weaponBaseStats:isPiercingBullets()
-    local baseMaxHitCount     = weaponBaseStats:getMaxHitCount()
-    local baseProjectileCount = weaponBaseStats:getProjectileCount()
-    local baseSoundRadius     = weaponBaseStats:getSoundRadius()
-    local baseSoundVolume     = weaponBaseStats:getSoundVolume()
-    local baseRackAfterShot   = weaponBaseStats:isRackAfterShoot()
-
-    local newMaxDamage        = baseMaxDamage + (ammoStats.MaxDamage or 0)
-    local newMinDamage        = baseMinDamage + (ammoStats.MinDamage or 0)
-    local newSoundRadius      = baseSoundRadius + (ammoStats.SoundRadius or 0)
-    local newSoundVolume      = baseSoundVolume + (ammoStats.SoundVolume or 0)
-
-    weapon:setMaxDamage(newMaxDamage)
-    weapon:setMinDamage(newMinDamage)
-    weapon:setSoundRadius(newSoundRadius)
-    weapon:setSoundVolume(newSoundVolume)
-
-    if ammoStats.PiercingBullets then
-        weapon:setPiercingBullets(ammoStats.PiercingBullets)
-    else
-        weapon:setPiercingBullets(basePiercingBullets)
-    end
-
-    if ammoStats.MaxHitCount then
-        weapon:setMaxHitCount(ammoStats.MaxHitCount)
-    else
-        weapon:setMaxHitCount(baseMaxHitCount)
-    end
-
-    if ammoStats.ProjectileCount then
-        weapon:setProjectileCount(ammoStats.ProjectileCount)
-    else
-        weapon:setProjectileCount(baseProjectileCount)
-    end
-
-    if ammoStats.RackAfterShot then
-        weapon:setRackAfterShoot(ammoStats.RackAfterShot)
-    else
-        weapon:setRackAfterShoot(baseRackAfterShot)
+    if modifiers then
+        for _, modifier in ipairs(modifiers) do
+            modifier(weapon, baseStats)
+        end
     end
 
     weapon:setAmmoType(ammoEnum)
