@@ -69,45 +69,7 @@ Ammo.AmmoFamilies = {
 -------------------------------------------------
 Ammo.AmmoStats = {
     ["BaseAmmo"] = {
-        -- Empty: keep base weapon stats as-is
-    },
-    ["SubsonicAmmo"] = {
-        StatsFactory.Adjust("MaxDamage", -0.5),
-        StatsFactory.Adjust("MinDamage", -0.5),
-        StatsFactory.Set("PiercingBullets", false),
-        StatsFactory.Set("MaxHitCount", 1),
-        StatsFactory.Set("ProjectileCount", 1),
-        StatsFactory.Adjust("SoundRadius", -50),
-        StatsFactory.Adjust("SoundVolume", -20),
-        StatsFactory.Set("RackAfterShot", true),
-    },
-    ["ArmorPiercingAmmo"] = {
-        StatsFactory.Adjust("MaxDamage", -0.2),
-        StatsFactory.Adjust("MinDamage", -0.2),
-        StatsFactory.Set("PiercingBullets", true),
-        StatsFactory.Set("MaxHitCount", 3),
-        StatsFactory.Set("ProjectileCount", 1),
-    },
-    ["HollowPointAmmo"] = {
-        StatsFactory.Adjust("MaxDamage", 1.5),
-        StatsFactory.Adjust("MinDamage", 1.5),
-        StatsFactory.Set("PiercingBullets", false),
-        StatsFactory.Set("MaxHitCount", 1),
-        StatsFactory.Set("ProjectileCount", 1),
-    },
-    ["SlugAmmo"] = {
-        StatsFactory.Adjust("MaxDamage", 2.0),
-        StatsFactory.Adjust("MinDamage", 2.0),
-        StatsFactory.Set("PiercingBullets", true),
-        StatsFactory.Set("MaxHitCount", 2),
-        StatsFactory.Set("ProjectileCount", 1),
-    },
-    ["CivilianAmmo"] = {
-        StatsFactory.Adjust("MaxDamage", -0.3),
-        StatsFactory.Adjust("MinDamage", -0.3),
-        StatsFactory.Set("PiercingBullets", false),
-        StatsFactory.Set("MaxHitCount", 1),
-        StatsFactory.Set("ProjectileCount", 1),
+        -- no modifiers, use base stats
     },
 }
 
