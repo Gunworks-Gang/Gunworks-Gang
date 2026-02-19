@@ -30,14 +30,16 @@ Ammo.AmmoProfilesList = {
 }
 
 Ammo.ItemFullTypeToAmmoType = {
+    ["Base.3030Bullets"] = AmmoType.BULLETS_3030,
+    ["Base.308Bullets"] = AmmoType.BULLETS_308,
+    ["Base.Bullets357"] = AmmoType.BULLETS_357,
     ["Base.Bullets38"] = AmmoType.BULLETS_38,
     ["Base.Bullets44"] = AmmoType.BULLETS_44,
     ["Base.Bullets45"] = AmmoType.BULLETS_45,
+    ["Base.556Bullets"] = AmmoType.BULLETS_556,
     ["Base.Bullets9mm"] = AmmoType.BULLETS_9MM,
     ["Base.ShotgunShells"] = AmmoType.SHOTGUN_SHELLS,
     ["Base.223Bullets"] = AmmoType.BULLETS_223,
-    ["Base.556Bullets"] = AmmoType.BULLETS_556,
-    ["Base.308Bullets"] = AmmoType.BULLETS_308,
 
     -- custom ones
 
@@ -58,10 +60,7 @@ Ammo.AmmoStats = {
 }
 
 function Ammo.GetAmmoCharacteristics(bulletType)
-    local AmmoProfile = Ammo.AmmunitionTypeProfile[bulletType]
-    if AmmoProfile then
-        return AmmoProfile
-    end
+    return Ammo.AmmunitionTypeProfile[bulletType]
 end
 
 function Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
