@@ -50,13 +50,8 @@ function ISRackFirearm:removeBullet()
     local ammoList = self.gun:getModData().AmmoList
     if ammoList and #ammoList > 0 then
         local bulletType = ammoList[#ammoList]
-        if SpentCasingPhysics and not self.gun:isManuallyRemoveSpentRounds() then
-            self.emptyRack = false
-            Ammo.AmmoProfileSetter(self.gun, bulletType)
-        else
-            local newBullet = instanceItem(bulletType)
-            self.character:getInventory():AddItem(newBullet)
-        end
+        local newBullet = instanceItem(bulletType)
+        self.character:getInventory():AddItem(newBullet)
         ammoList[#ammoList] = nil
     else
         ISRackFirearm_removeBullet_original(self)
@@ -316,39 +311,6 @@ function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
     end
 
     ISUnloadBulletsFromFirearm_animEvent_Original(self, event, parameter)
-end
-
-------------------------------------------------
--- EjectSpentRounds for manuallyRemoveSpentRounds firearms
--------------------------------------------------
-local ISReloadWeaponAction_ejectSpentRounds_Original = ISReloadWeaponAction.ejectSpentRounds
-function ISReloadWeaponAction:ejectSpentRounds()
-    if SpentCasingPhysics and self.gun:getModData().SpentAmmoList then
-        for _, bulletType in ipairs(self.gun:getModData().SpentAmmoList) do
-            Ammo.AmmoProfileSetter(self.gun, bulletType)
-            SpentCasingPhysics.rackCasing(self.character, self.gun, false)
-        end
-        self.gun:getModData().SpentAmmoList = nil
-        self.gun:setSpentRoundCount(0)
-        syncHandWeaponFields(self.character, self.gun)
-    else
-        ISReloadWeaponAction_ejectSpentRounds_Original(self)
-    end
-end
-
-local ISRackFirearm_ejectSpentRounds_Original = ISRackFirearm.ejectSpentRounds
-function ISRackFirearm:ejectSpentRounds()
-    if SpentCasingPhysics and self.gun:getModData().SpentAmmoList then
-        for _, bulletType in ipairs(self.gun:getModData().SpentAmmoList) do
-            Ammo.AmmoProfileSetter(self.gun, bulletType)
-            SpentCasingPhysics.rackCasing(self.character, self.gun, false)
-        end
-        self.gun:getModData().SpentAmmoList = nil
-        self.gun:setSpentRoundCount(0)
-        syncHandWeaponFields(self.character, self.gun)
-    else
-        ISRackFirearm_ejectSpentRounds_Original(self)
-    end
 end
 
 ------------------------------------------------

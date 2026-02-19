@@ -1,6 +1,9 @@
 local Ammo = {}
 
-Ammo.WeaponAmmoProfile = {}
+Ammo.WeaponAmmoProfile = {
+    ["MWA.SIDE_BY_SIDE"] = "12Gauge",
+    ["MWA.BENELLI_M4"] = "12Gauge",
+}
 
 Ammo.MagazineAmmoProfile = {
     ["MWA.556Magazine20"] = "5.56x45mm",
