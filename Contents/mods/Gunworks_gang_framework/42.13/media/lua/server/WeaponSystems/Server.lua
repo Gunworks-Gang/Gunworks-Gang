@@ -23,7 +23,7 @@ function Server.OnClientCommand(module, command, player, args)
         if not weapon then return end
 
         local bulletType = args.bulletType
-        local ammoEnum = Ammo.ItemFullTypeToAmmoType and Ammo.ItemFullTypeToAmmoType[bulletType]
+        local ammoEnum = Ammo.GetEnumForBullet(bulletType)
         if not ammoEnum then return end
 
         if weapon:getAmmoType() == ammoEnum then return end
@@ -39,7 +39,7 @@ function Server.OnClientCommand(module, command, player, args)
         if not item then return end
 
         local bulletType = args.bulletType
-        local ammoEnum = Ammo.ItemFullTypeToAmmoType and Ammo.ItemFullTypeToAmmoType[bulletType]
+        local ammoEnum = Ammo.GetEnumForBullet(bulletType)
         if not ammoEnum then return end
 
         if item:getAmmoType() == ammoEnum then return end

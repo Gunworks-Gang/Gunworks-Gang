@@ -365,9 +365,10 @@ function FirearmAmmoUI:getAvailableAmmoTypes(weapon)
     local result = {}
     local inventory = self.player:getInventory()
 
-    local ammoProfile = Ammo.WeaponAmmoProfile[weapon:getFullType()]
-    if ammoProfile and Ammo and Ammo.AmmoProfilesList and Ammo.AmmoProfilesList[ammoProfile] then
-        for _, ammoTypeKey in ipairs(Ammo.AmmoProfilesList[ammoProfile]) do
+    local ammoProfile = Ammo.ItemAmmoFamily[weapon:getFullType()]
+    local bulletTypes = ammoProfile and Ammo and Ammo.GetBulletTypesForFamily(ammoProfile)
+    if bulletTypes then
+        for _, ammoTypeKey in ipairs(bulletTypes) do
             local count = inventory:getCountTypeRecurse(ammoTypeKey)
             local script = getScriptManager():FindItem(ammoTypeKey)
             local name = script and script:getDisplayName() or ammoTypeKey

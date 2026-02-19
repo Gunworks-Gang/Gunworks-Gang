@@ -186,9 +186,9 @@ end
 
 local ISInventoryPaneContextMenu_doMagazineMenu_Original = ISInventoryPaneContextMenu.doMagazineMenu
 ISInventoryPaneContextMenu.doMagazineMenu = function(playerObj, magazine, context)
-    if Ammo.MagazineAmmoProfile[magazine:getFullType()] then
+    if Ammo.ItemAmmoFamily[magazine:getFullType()] then
         if magazine:getCurrentAmmoCount() < magazine:getMaxAmmo() then
-            local typeList = Ammo.AmmoProfilesList[Ammo.MagazineAmmoProfile[magazine:getFullType()]]
+            local typeList = Ammo.GetBulletTypesForFamily(Ammo.ItemAmmoFamily[magazine:getFullType()])
             for _, typeName in ipairs(typeList) do
                 local itemKey = typeName;
                 local bulletName = getScriptManager():FindItem(itemKey):getDisplayName();
@@ -231,8 +231,8 @@ end
 
 local ISInventoryPaneContextMenu_doBulletMenu_Original = ISInventoryPaneContextMenu.doBulletMenu
 ISInventoryPaneContextMenu.doBulletMenu = function(playerObj, weapon, context)
-    if Ammo.WeaponAmmoProfile[weapon:getFullType()] then
-        local typeList = Ammo.AmmoProfilesList[Ammo.WeaponAmmoProfile[weapon:getFullType()]]
+    if Ammo.ItemAmmoFamily[weapon:getFullType()] then
+        local typeList = Ammo.GetBulletTypesForFamily(Ammo.ItemAmmoFamily[weapon:getFullType()])
         for _, typeName in ipairs(typeList) do
             local itemKey = typeName;
             local bulletAvail = playerObj:getInventory():getItemCountRecurse(itemKey);

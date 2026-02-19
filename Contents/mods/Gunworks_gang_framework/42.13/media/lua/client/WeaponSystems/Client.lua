@@ -11,7 +11,7 @@ function Client.OnServerCommand(module, command, args)
         local item = playerObj:getInventory():getItemWithIDRecursiv(args.itemId)
         if item and instanceof(item, "HandWeapon") then
             local bulletType = args.bulletType
-            local ammoEnum = Ammo.ItemFullTypeToAmmoType and Ammo.ItemFullTypeToAmmoType[bulletType]
+            local ammoEnum = Ammo.GetEnumForBullet(bulletType)
             if ammoEnum then
                 Ammo.AmmoAdjustWeaponStats(item, bulletType, ammoEnum)
             end
@@ -20,7 +20,7 @@ function Client.OnServerCommand(module, command, args)
         local item = playerObj:getInventory():getItemWithIDRecursiv(args.itemId)
         if item then
             local bulletType = args.bulletType
-            local ammoEnum = Ammo.ItemFullTypeToAmmoType and Ammo.ItemFullTypeToAmmoType[bulletType]
+            local ammoEnum = Ammo.GetEnumForBullet(bulletType)
             if ammoEnum then
                 item:setAmmoType(ammoEnum)
             end
