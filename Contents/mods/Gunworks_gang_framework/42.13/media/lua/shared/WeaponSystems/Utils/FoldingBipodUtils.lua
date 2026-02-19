@@ -1,30 +1,48 @@
 local FoldingBipod = {}
+local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
-FoldingBipod.WeaponsWithFoldableBipod = {
-    "MWA.BAR",
-}
+FoldingBipod.WeaponsWithFoldableBipod = {}
+
+-------------------------------------------------
+-- Deployed Bipod Stats: weaponType -> array of modifier functions
+-- Modifiers only apply when bipod is deployed; base stats restore when folded
+-------------------------------------------------
 FoldingBipod.DeployedBipodStats = {}
+
+-------------------------------------------------
+-- Registration API for modders
+-------------------------------------------------
+
+-- FoldingBipod.RegisterWeapon("MyMod.MyLMG", {
+--     SF.Adjust("RecoilDelay", 10),
+--     SF.Multiply("AimingTime", 0.7),
+-- })
+
+--- Register a weapon as having a foldable bipod
+--- @param weaponType string  e.g. "MyMod.MyGun"
+--- @param modifiers table|nil  optional array of StatsFactory modifier functions
+function FoldingBipod.RegisterWeapon(weaponType, modifiers)
+    table.insert(FoldingBipod.WeaponsWithFoldableBipod, weaponType)
+    if modifiers then
+        FoldingBipod.DeployedBipodStats[weaponType] = modifiers
+    end
+end
 
 function FoldingBipod.DeployedBipodAdjustStats(weapon)
     if not weapon then return end
 
     local weaponType = weapon:getFullType()
-    local bipodStats = FoldingBipod.DeployedBipodStats[weaponType]
-    if not bipodStats then return end
+    local modifiers  = FoldingBipod.DeployedBipodStats[weaponType]
+    if not modifiers then return end
 
-    local isDeployed                      = FoldingBipod.IsBipodDeployed(weapon)
-    local deployedMod                     = isDeployed and 1 or 0
-    local weaponBaseStats                 = instanceItem(weaponType)
+    local baseStats  = instanceItem(weaponType)
+    local isDeployed = FoldingBipod.IsBipodDeployed(weapon)
 
-    local baseAimingPerkCritModifier      = weaponBaseStats:getAimingPerkCritModifier()
-    local baseAimingPerkHitChanceModifier = weaponBaseStats:getAimingPerkHitChanceModifier()
-    local baseAimingTime                  = weaponBaseStats:getAimingTime()
-    local baseRecoilDelay                 = weaponBaseStats:getRecoilDelay()
-
-    weapon:setAimingPerkCritModifier(baseAimingPerkCritModifier + (bipodStats.AimingPerkCritModifier or 0) * deployedMod)
-    weapon:setAimingPerkHitChanceModifier(baseAimingPerkHitChanceModifier + (bipodStats.AimingPerkHitChanceModifier or 0) * deployedMod)
-    weapon:setAimingTime(baseAimingTime + (bipodStats.AimingTime or 0) * deployedMod)
-    weapon:setRecoilDelay(baseRecoilDelay + (bipodStats.RecoilDelay or 0) * deployedMod)
+    if isDeployed then
+        StatsFactory.ApplyModifiers(weapon, baseStats, modifiers)
+    else
+        StatsFactory.RestoreBaseStats(weapon, baseStats)
+    end
 end
 
 function FoldingBipod.HasFoldableBipod(weapon)

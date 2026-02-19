@@ -65,7 +65,7 @@ Ammo.AmmoFamilies = {
 
 -------------------------------------------------
 -- Ammo Stats: each profile is an array of modifier functions
--- Use Ammo.Adjust / Ammo.Set / Ammo.Multiply or raw function(weapon, base)
+-- Use StatsFactory.Adjust / StatsFactory.Set / StatsFactory.Multiply or raw function(weapon, base)
 -------------------------------------------------
 Ammo.AmmoStats = {
     ["BaseAmmo"] = {
@@ -175,7 +175,7 @@ end
 
 --- Register a new ammo stat profile or overwrite an existing one
 --- @param profileName string  e.g. "IncendiaryAmmo"
---- @param modifiers table  array of modifier functions (Ammo.Adjust / Ammo.Set / Ammo.Multiply / raw function)
+--- @param modifiers table  array of modifier functions (StatsFactory.Adjust / .Set / .Multiply / raw function)
 function Ammo.RegisterAmmoStats(profileName, modifiers)
     Ammo.AmmoStats[profileName] = modifiers
 end
@@ -191,9 +191,7 @@ function Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
     local modifiers   = Ammo.AmmoStats[profileName]
 
     if modifiers then
-        for _, modifier in ipairs(modifiers) do
-            modifier(weapon, baseStats)
-        end
+        StatsFactory.ApplyModifiers(weapon, baseStats, modifiers)
     end
 
     weapon:setAmmoType(ammoEnum)

@@ -68,4 +68,23 @@ function StatsFactory.Multiply(statName, factor)
     end
 end
 
+--- Apply an array of modifier functions to a weapon
+--- @param weapon userdata  the weapon instance to modify
+--- @param baseStats userdata  the base stats from instanceItem()
+--- @param modifiers table  array of function(weapon, base)
+function StatsFactory.ApplyModifiers(weapon, baseStats, modifiers)
+    for _, modifier in ipairs(modifiers) do
+        modifier(weapon, baseStats)
+    end
+end
+
+--- Restore all stats in the registry back to base values
+--- @param weapon userdata  the weapon instance to restore
+--- @param baseStats userdata  the base stats from instanceItem()
+function StatsFactory.RestoreBaseStats(weapon, baseStats)
+    for _, reg in pairs(StatsFactory.StatRegistry) do
+        weapon[reg.set](weapon, baseStats[reg.get](baseStats))
+    end
+end
+
 return StatsFactory
