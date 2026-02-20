@@ -63,9 +63,11 @@ end
 -------------------------------------------------
 local ISInsertMagazine_loadAmmo_original = ISInsertMagazine.loadAmmo
 function ISInsertMagazine:loadAmmo()
+    local magazineInstance = instanceItem(self.magazine:getFullType())
     if self.magazine then
         if self.gun.setMagazineType then
             self.gun:setMagazineType(self.magazine:getFullType())
+            self.gun:setMaxAmmo(magazineInstance:getMaxAmmo())
         end
         Magazine.SaveMagazineType(self.gun, self.magazine:getFullType())
 
@@ -85,6 +87,7 @@ end
 local ISEjectMagazine_unloadAmmo_original = ISEjectMagazine.unloadAmmo
 function ISEjectMagazine:unloadAmmo()
     local savedMagType = Magazine.GetMagazineType(self.gun)
+    local magazineInstance = instanceItem(savedMagType)
     local gunModData = self.gun:getModData()
     local gunList = gunModData.AmmoList
 
@@ -112,6 +115,7 @@ function ISEjectMagazine:unloadAmmo()
 
     if self.gun:isContainsClip() and savedMagType then
         self.gun:setMagazineType(savedMagType)
+        self.gun:setMaxAmmo(magazineInstance:getMaxAmmo())
     end
 
     ISEjectMagazine_unloadAmmo_original(self)
