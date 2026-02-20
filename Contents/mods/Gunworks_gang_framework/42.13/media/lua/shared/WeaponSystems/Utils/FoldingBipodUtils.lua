@@ -42,10 +42,10 @@ function FoldingBipod.DeployedBipodAdjustStats(weapon)
     local baseStats  = StatsFactory.GetBaseStatsWithAttachments(weapon)
     local isDeployed = FoldingBipod.IsBipodDeployed(weapon)
 
+    StatsFactory.RestoreBaseStats(weapon, baseStats)
+
     if isDeployed then
         StatsFactory.ApplyModifiers(weapon, baseStats, entry.modifiers)
-    else
-        StatsFactory.RestoreBaseStats(weapon, baseStats)
     end
 end
 

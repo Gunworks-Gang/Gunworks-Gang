@@ -148,6 +148,8 @@ function Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
     local profileName = Ammo.GetAmmoCharacteristics(bulletType)
     local modifiers   = Ammo.AmmoStats[profileName]
 
+    StatsFactory.RestoreBaseStats(weapon, baseStats)
+
     if modifiers then
         StatsFactory.ApplyModifiers(weapon, baseStats, modifiers)
     end

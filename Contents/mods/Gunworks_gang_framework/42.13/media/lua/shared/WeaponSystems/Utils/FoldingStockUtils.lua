@@ -42,10 +42,10 @@ function FoldingStock.FoldedStockAdjustStats(weapon)
     local baseStats = StatsFactory.GetBaseStatsWithAttachments(weapon)
     local isFolded  = FoldingStock.IsStockFolded(weapon)
 
+    StatsFactory.RestoreBaseStats(weapon, baseStats)
+
     if isFolded then
         StatsFactory.ApplyModifiers(weapon, baseStats, entry.modifiers)
-    else
-        StatsFactory.RestoreBaseStats(weapon, baseStats)
     end
 end
 
