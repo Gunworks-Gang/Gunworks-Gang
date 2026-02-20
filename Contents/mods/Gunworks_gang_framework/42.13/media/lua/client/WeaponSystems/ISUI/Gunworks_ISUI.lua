@@ -165,9 +165,9 @@ ISInventoryPaneContextMenu.doReloadMenuForMagazine = function(playerObj, magazin
     for i = 1, weapons:size() do
         local weapon = weapons:get(i - 1)
         if not weapon:isContainsClip() then
-            local profileName = Magazine.WeaponMagazineProfile[weapon:getFullType()]
-            if profileName and Magazine.MagazineProfileList[profileName] then
-                if Magazine.isMagazineInProfile(magType, Magazine.MagazineProfileList[profileName]) then
+            local profileName = Magazine.GetProfileForGun(weapon)
+            if profileName then
+                if Magazine.IsMagazineInProfile(magType, profileName) then
                     local insertOption = context:addOption(getText("ContextMenu_InsertMagazine"), playerObj,
                         ISInventoryPaneContextMenu.onInsertMagazine, weapon, magazine)
                     local tooltip = ISInventoryPaneContextMenu.addToolTip()

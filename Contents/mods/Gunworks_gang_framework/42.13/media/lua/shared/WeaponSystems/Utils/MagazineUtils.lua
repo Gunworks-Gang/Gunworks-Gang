@@ -1,24 +1,78 @@
 local Magazine = {}
 
-Magazine.WeaponMagazineProfile = {
-    ['MWA.M16A1'] = 'Stanag',
-    ['MWA.M16A2'] = 'Stanag',
-    ['MWA.M16A3'] = 'Stanag',
-}
+-------------------------------------------------
+-- Table 1: Weapon -> Magazine Profile
+-- Maps weapon fullType to a magazine profile name
+-------------------------------------------------
+Magazine.WeaponMagazineProfile = {}
 
-Magazine.MagazineProfileList = {
-    ['Stanag'] = { "MWA.556Magazine20", "MWA.556Magazine25", "MWA.556Magazine30", }
-}
+-------------------------------------------------
+-- Table 2: Magazine Profiles
+-- Maps profile name to an ordered list of magazine fullTypes
+-------------------------------------------------
+Magazine.MagazineProfiles = {}
 
-function Magazine.isMagazineInProfile(magType, profileList)
-    if not profileList then return false end
-    for _, allowedType in ipairs(profileList) do
+-------------------------------------------------
+-- Registration API
+-------------------------------------------------
+
+--- Register one or more weapons to a magazine profile.
+---@param weaponTypes string|string[]  single fullType or array of fullTypes
+---@param profileName string
+function Magazine.RegisterWeaponProfile(weaponTypes, profileName)
+    if type(weaponTypes) == "string" then
+        Magazine.WeaponMagazineProfile[weaponTypes] = profileName
+    else
+        for i = 1, #weaponTypes do
+            Magazine.WeaponMagazineProfile[weaponTypes[i]] = profileName
+        end
+    end
+end
+
+--- Register (or replace) a magazine profile.
+---@param profileName string
+---@param magazineTypes string[]  ordered list of magazine fullTypes
+function Magazine.RegisterMagazineProfile(profileName, magazineTypes)
+    Magazine.MagazineProfiles[profileName] = magazineTypes
+end
+
+-------------------------------------------------
+-- Query helpers
+-------------------------------------------------
+
+--- Get the magazine profile name for a weapon.
+---@param gun HandWeapon
+---@return string|nil
+function Magazine.GetProfileForGun(gun)
+    return Magazine.WeaponMagazineProfile[gun:getFullType()]
+end
+
+--- Get the magazine type list for a weapon.
+---@param gun HandWeapon
+---@return string[]|nil
+function Magazine.GetMagazineTypesForGun(gun)
+    local profile = Magazine.WeaponMagazineProfile[gun:getFullType()]
+    return profile and Magazine.MagazineProfiles[profile]
+end
+
+--- Check if a magazine type belongs to a given profile.
+---@param magType string
+---@param profileName string
+---@return boolean
+function Magazine.IsMagazineInProfile(magType, profileName)
+    local typeList = Magazine.MagazineProfiles[profileName]
+    if not typeList then return false end
+    for _, allowedType in ipairs(typeList) do
         if allowedType == magType then
             return true
         end
     end
     return false
 end
+
+-------------------------------------------------
+-- Magazine operations
+-------------------------------------------------
 
 function Magazine.reloadMagazine(playerObj, magazine)
     if not magazine then
@@ -76,8 +130,8 @@ function Magazine.getBestMagazineFromList(playerObj, gun, typeList)
 end
 
 function Magazine.getBestMagazineForGun(playerObj, gun)
-    local typeList = Magazine.MagazineProfileList[Magazine.WeaponMagazineProfile[gun:getFullType()]]
-    return Magazine.getBestMagazineFromList(playerObj, gun, typeList)
+    local typeList = Magazine.GetMagazineTypesForGun(gun)
+    return typeList and Magazine.getBestMagazineFromList(playerObj, gun, typeList)
 end
 
 function Magazine.ReloadBestMagazineFromList(playerObj, gun)

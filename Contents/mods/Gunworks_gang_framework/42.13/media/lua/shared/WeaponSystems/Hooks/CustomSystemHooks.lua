@@ -14,7 +14,7 @@ local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
 -------------------------------------------------
 local ISReloadWeaponAction_BeginAutomaticReload_Original = ISReloadWeaponAction.BeginAutomaticReload
 ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
-    if Magazine.WeaponMagazineProfile[gun:getFullType()] then
+    if Magazine.GetProfileForGun(gun) then
         local magazine = Magazine.getBestMagazineForGun(playerObj, gun)
         local hasMagazine = gun:isContainsClip()
         if hasMagazine then
