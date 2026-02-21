@@ -95,35 +95,27 @@ function Magazine.getBestMagazineFromList(playerObj, gun, typeList)
 
     local lastIndex = modData.MagazineTypeLastIndex or 0
 
-    local bestMag = nil
-    local bestAmmoCount = 0
-
-    for _, typeName in ipairs(typeList) do
+    for offset = 1, listSize do
+        local idx = ((lastIndex + offset - 1) % listSize) + 1
+        local typeName = typeList[idx]
         local items = inv:getAllTypeRecurse(typeName)
         if items then
             for i = 0, items:size() - 1 do
                 local mag = items:get(i)
-                if mag then
-                    local ammoCount = mag:getCurrentAmmoCount()
-                    if ammoCount > bestAmmoCount then
-                        bestMag = mag
-                        bestAmmoCount = ammoCount
-                    end
+                if mag and mag:getCurrentAmmoCount() > 0 then
+                    modData.MagazineTypeLastIndex = idx
+                    return mag
                 end
             end
         end
-    end
-
-    if bestMag then
-        return bestMag
     end
 
     for offset = 1, listSize do
         local idx = ((lastIndex + offset - 1) % listSize) + 1
         local typeName = typeList[idx]
         local mag = inv:getFirstTypeRecurse(typeName)
-        modData.MagazineTypeLastIndex = idx
         if mag then
+            modData.MagazineTypeLastIndex = idx
             return mag
         end
     end
@@ -136,10 +128,10 @@ end
 
 function Magazine.ReloadBestMagazineFromList(playerObj, gun)
     local magazine = Magazine.getBestMagazineForGun(playerObj, gun)
+    if not magazine then return end
     local ammoCount = Magazine.reloadMagazine(playerObj, magazine)
-    if not magazine or ammoCount == 0 then
-        return
-    end
+    if ammoCount == 0 then return end
+    ISInventoryPaneContextMenu.transferIfNeeded(playerObj, magazine)
     ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
 end
 
@@ -147,6 +139,16 @@ function Magazine.SaveMagazineType(gun, magType)
     if not gun or not magType then return end
     local modData = gun:getModData()
     modData.MagazineType = magType
+    -- Set the cycle index so the next reload starts after this mag type
+    local typeList = Magazine.GetMagazineTypesForGun(gun)
+    if typeList then
+        for i, t in ipairs(typeList) do
+            if t == magType then
+                modData.MagazineTypeLastIndex = i
+                break
+            end
+        end
+    end
 end
 
 function Magazine.GetMagazineType(gun)
