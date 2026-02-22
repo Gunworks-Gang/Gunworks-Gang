@@ -67,4 +67,28 @@ function WeaponDistribution.RemoveMany(tables, ...)
     end
 end
 
+function WeaponDistribution.SetChance(item, chance, tables)
+    local script = ScriptManager.instance:getItem(item)
+    local a, b = item, nil
+    if script then a, b = script:getName(), script:getFullName() end
+
+    for _, lootTable in pairs(tables) do
+        for _, data in pairs(lootTable) do
+            if data.items then
+                for i = 1, #data.items - 1, 2 do
+                    if data.items[i] == a or data.items[i] == b then
+                        data.items[i + 1] = chance
+                    end
+                end
+            end
+        end
+    end
+end
+
+function WeaponDistribution.SetChanceMany(chance, tables, ...)
+    for _, item in ipairs({ ... }) do
+        WeaponDistribution.SetChance(item, chance, tables)
+    end
+end
+
 return WeaponDistribution
