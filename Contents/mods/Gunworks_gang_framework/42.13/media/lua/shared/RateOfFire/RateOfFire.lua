@@ -7,43 +7,42 @@ local RateOfFire = {}
 
 RateOfFire.lastFireTime = {}
 RateOfFire.DEFAULT_RPM = 600
-RateOfFire.RPMTagList = {
-    { Gunworks_Tags.RPM1200, 1200 },
-    { Gunworks_Tags.RPM1150, 1150 },
-    { Gunworks_Tags.RPM1100, 1100 },
-    { Gunworks_Tags.RPM1050, 1050 },
-    { Gunworks_Tags.RPM1000, 1000 },
-    { Gunworks_Tags.RPM950,  950 },
-    { Gunworks_Tags.RPM900,  900 },
-    { Gunworks_Tags.RPM850,  850 },
-    { Gunworks_Tags.RPM800,  800 },
-    { Gunworks_Tags.RPM750,  750 },
-    { Gunworks_Tags.RPM700,  700 },
-    { Gunworks_Tags.RPM650,  650 },
-    { Gunworks_Tags.RPM600,  600 },
-    { Gunworks_Tags.RPM550,  550 },
-    { Gunworks_Tags.RPM500,  500 },
-    { Gunworks_Tags.RPM450,  450 },
-    { Gunworks_Tags.RPM400,  400 },
-    { Gunworks_Tags.RPM350,  350 },
-    { Gunworks_Tags.RPM300,  300 },
-}
-RateOfFire.burstState = {}
 RateOfFire.BURST_DEFAULT_COUNT = 3
 RateOfFire.BURST_DELAY_MS = 500
+RateOfFire.burstState = {}
 RateOfFire.burstCooldown = {}
-RateOfFire.BURSTTagList = {
-    { Gunworks_Tags.BURST4, 4 },
-    { Gunworks_Tags.BURST3, 3 },
-    { Gunworks_Tags.BURST2, 2 },
-}
+
+-------------------------------------------------
+-- Registry tables  (keyed by weapon fullType)
+-------------------------------------------------
+RateOfFire.WeaponProfiles = {} -- fullType -> { rpm = number, burstCount = number }
+
+--- Register a single weapon with custom RPM and/or burst count.
+---@param weaponType string       fullType e.g. "MWA.M16A3"
+---@param entry table             { rpm = number?, burstCount = number? }
+function RateOfFire.RegisterWeapon(weaponType, entry)
+    RateOfFire.WeaponProfiles[weaponType] = entry
+end
+
+--- Convenience: register the same profile for multiple weapon types.
+---@param weaponTypes string[]    array of fullType strings
+---@param entry table             { rpm = number?, burstCount = number? }
+function RateOfFire.RegisterWeapons(weaponTypes, entry)
+    for i = 1, #weaponTypes do
+        RateOfFire.WeaponProfiles[weaponTypes[i]] = entry
+    end
+end
+
+-------------------------------------------------
+-- Query helpers
+-------------------------------------------------
 
 function RateOfFire.getWeaponRPM(weapon)
     if not weapon then return RateOfFire.DEFAULT_RPM end
-    for _, entry in ipairs(RateOfFire.RPMTagList) do
-        local tag, rpm = entry[1], entry[2]
-        if weapon:hasTag(tag) then return rpm end
-    end
+
+    local profile = RateOfFire.WeaponProfiles[weapon:getFullType()]
+    if profile and profile.rpm then return profile.rpm end
+
     return RateOfFire.DEFAULT_RPM
 end
 
@@ -82,10 +81,10 @@ end
 
 function RateOfFire.getWeaponBurstCount(weapon)
     if not weapon then return RateOfFire.BURST_DEFAULT_COUNT end
-    for _, entry in ipairs(RateOfFire.BURSTTagList) do
-        local tag, rpm = entry[1], entry[2]
-        if weapon:hasTag(tag) then return rpm end
-    end
+
+    local profile = RateOfFire.WeaponProfiles[weapon:getFullType()]
+    if profile and profile.burstCount then return profile.burstCount end
+
     return RateOfFire.BURST_DEFAULT_COUNT
 end
 
