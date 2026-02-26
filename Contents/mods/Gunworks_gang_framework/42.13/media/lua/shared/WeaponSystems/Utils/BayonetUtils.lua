@@ -1,16 +1,29 @@
 local Bayonet = {}
 
-Bayonet.BayonetMauntableWeapons = {
-    ["MWA.M16A1"] = "MWA.M9_BAYONET",
-}
-
-Bayonet.BayonetKnives = {
-    ["MWA.M9_BAYONET_KNIFE"] = "MWA.M9_BAYONET",
-}
-
+Bayonet.BayonetMountableWeapons = {}
+Bayonet.BayonetKnives = {}
 Bayonet.MountableWeapons = {}
 Bayonet.PendingWeaponRestorations = {}
 Bayonet.PendingHotbarRestorations = {}
+
+-------------------------------------------------
+-- Registration API
+-------------------------------------------------
+
+--- Register a weapon that can accept a bayonet.
+---@param weaponType string   fullType e.g. "MWA.M16A1"
+---@param bayonetType string  the bayonet attachment fullType e.g. "MWA.M9_BAYONET"
+function Bayonet.RegisterMountableWeapon(weaponType, bayonetType)
+    Bayonet.BayonetMountableWeapons[weaponType] = bayonetType
+end
+
+--- Register a knife item that converts into a bayonet attachment.
+---@param knifeType string    fullType e.g. "MWA.M9_BAYONET_KNIFE"
+---@param bayonetType string  the bayonet attachment fullType e.g. "MWA.M9_BAYONET"
+function Bayonet.RegisterBayonetKnife(knifeType, bayonetType)
+    Bayonet.BayonetKnives[knifeType] = bayonetType
+end
+
 -------------------------------------------------
 -- Bayonet Attachment/Removal Utilities
 -------------------------------------------------
@@ -21,7 +34,7 @@ function Bayonet.CanAttachBayonet(weapon, bayonetKnife)
     if not weapon:isRanged() then return false end
     if weapon:getWeaponPart("Bayonet") then return false end
 
-    local weaponBayonetType = Bayonet.BayonetMauntableWeapons[weapon:getFullType()]
+    local weaponBayonetType = Bayonet.BayonetMountableWeapons[weapon:getFullType()]
     if not weaponBayonetType then return false end
 
     local knifeBayonetType = Bayonet.BayonetKnives[bayonetKnife:getFullType()]
