@@ -35,18 +35,7 @@ end
 
 function FoldingBipod.DeployedBipodAdjustStats(weapon)
     if not weapon then return end
-
-    local entry = FoldingBipod.WeaponsWithFoldableBipod[weapon:getFullType()]
-    if not entry or not entry.modifiers then return end
-
-    local baseStats  = StatsFactory.GetBaseStatsWithAttachments(weapon)
-    local isDeployed = FoldingBipod.IsBipodDeployed(weapon)
-
-    StatsFactory.RestoreBaseStats(weapon, baseStats)
-
-    if isDeployed then
-        StatsFactory.ApplyModifiers(weapon, baseStats, entry.modifiers)
-    end
+    StatsFactory.ReapplyAllModifiers(weapon)
 end
 
 function FoldingBipod.SwapBipodModel(weapon, deployed)
@@ -88,5 +77,14 @@ function FoldingBipod.RestoreDeployedBipodState(weapon)
         FoldingBipod.DeployedBipodAdjustStats(weapon)
     end
 end
+
+-------------------------------------------------
+-- Register modifier layer with StatsFactory
+-------------------------------------------------
+StatsFactory.RegisterModifierLayer("FoldingBipod", function(weapon)
+    if not FoldingBipod.IsBipodDeployed(weapon) then return nil end
+    local entry = FoldingBipod.WeaponsWithFoldableBipod[weapon:getFullType()]
+    return entry and entry.modifiers
+end)
 
 return FoldingBipod

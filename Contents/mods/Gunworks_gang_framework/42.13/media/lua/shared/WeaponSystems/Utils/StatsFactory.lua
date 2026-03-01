@@ -34,20 +34,19 @@ StatsFactory.StatRegistry = {
     SoundRadius                 = { get = "getSoundRadius", set = "setSoundRadius" },
     SoundVolume                 = { get = "getSoundVolume", set = "setSoundVolume" },
     ToHitModifier               = { get = "getToHitModifier", set = "setToHitModifier" },
-    WeaponSprite                = { get = "getWeaponSprite", set = "setWeaponSprite" },
 }
 
 -------------------------------------------------
 -- StatsFactory helpers: return modifier functions (weapon, baseStats) -> void
 -------------------------------------------------
 
---- Additive modifier: base + offset
+--- Additive modifier: current + offset (stacks across layers)
 --- @param statName string  key in StatRegistry, e.g. "MaxDamage"
 --- @param offset number    e.g. -0.5
 function StatsFactory.Adjust(statName, offset)
     local reg = StatsFactory.StatRegistry[statName]
     return function(weapon, base)
-        weapon[reg.set](weapon, base[reg.get](base) + offset)
+        weapon[reg.set](weapon, weapon[reg.get](weapon) + offset)
     end
 end
 
@@ -61,13 +60,13 @@ function StatsFactory.Set(statName, value)
     end
 end
 
---- Multiplicative modifier: base * factor
+--- Multiplicative modifier: current * factor (stacks across layers)
 --- @param statName string  key in StatRegistry
 --- @param factor number    e.g. 0.8
 function StatsFactory.Multiply(statName, factor)
     local reg = StatsFactory.StatRegistry[statName]
     return function(weapon, base)
-        weapon[reg.set](weapon, base[reg.get](base) * factor)
+        weapon[reg.set](weapon, weapon[reg.get](weapon) * factor)
     end
 end
 
@@ -89,6 +88,41 @@ function StatsFactory.RestoreBaseStats(weapon, baseStats)
         weapon[reg.set](weapon, baseStats[reg.get](baseStats))
     end
 end
+
+-------------------------------------------------
+-- Modifier Layer System
+-- Each subsystem (stock, bipod, ammo, etc.) registers a layer.
+-- ReapplyAllModifiers restores base once and applies all active layers.
+-------------------------------------------------
+StatsFactory.ModifierLayers = {}
+
+--- Register a modifier layer. Layers are applied in registration order.
+---@param id string                           unique layer name
+---@param getModifiersFn fun(weapon):table|nil  returns modifier array or nil if inactive
+function StatsFactory.RegisterModifierLayer(id, getModifiersFn)
+    StatsFactory.ModifierLayers[#StatsFactory.ModifierLayers + 1] = {
+        id = id,
+        getModifiers = getModifiersFn,
+    }
+end
+
+--- Restore base stats then apply every active modifier layer in order.
+---@param weapon userdata  the live weapon instance
+function StatsFactory.ReapplyAllModifiers(weapon)
+    local baseStats = StatsFactory.GetBaseStatsWithAttachments(weapon)
+    StatsFactory.RestoreBaseStats(weapon, baseStats)
+
+    for _, layer in ipairs(StatsFactory.ModifierLayers) do
+        local modifiers = layer.getModifiers(weapon)
+        if modifiers then
+            StatsFactory.ApplyModifiers(weapon, baseStats, modifiers)
+        end
+    end
+end
+
+-------------------------------------------------
+-- Shadow copy helper
+-------------------------------------------------
 
 --- Create a shadow copy of a weapon with its attachments applied.
 --- This gives you the true "base" stats that account for scopes, stocks, etc.

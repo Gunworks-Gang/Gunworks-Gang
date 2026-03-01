@@ -35,18 +35,7 @@ end
 
 function FoldingStock.FoldedStockAdjustStats(weapon)
     if not weapon then return end
-
-    local entry = FoldingStock.WeaponsWithFoldableStock[weapon:getFullType()]
-    if not entry or not entry.modifiers then return end
-
-    local baseStats = StatsFactory.GetBaseStatsWithAttachments(weapon)
-    local isFolded  = FoldingStock.IsStockFolded(weapon)
-
-    StatsFactory.RestoreBaseStats(weapon, baseStats)
-
-    if isFolded then
-        StatsFactory.ApplyModifiers(weapon, baseStats, entry.modifiers)
-    end
+    StatsFactory.ReapplyAllModifiers(weapon)
 end
 
 function FoldingStock.SwapStockModel(weapon, folded)
@@ -88,5 +77,14 @@ function FoldingStock.RestoreFoldedStockState(weapon)
         FoldingStock.FoldedStockAdjustStats(weapon)
     end
 end
+
+-------------------------------------------------
+-- Register modifier layer with StatsFactory
+-------------------------------------------------
+StatsFactory.RegisterModifierLayer("FoldingStock", function(weapon)
+    if not FoldingStock.IsStockFolded(weapon) then return nil end
+    local entry = FoldingStock.WeaponsWithFoldableStock[weapon:getFullType()]
+    return entry and entry.modifiers
+end)
 
 return FoldingStock

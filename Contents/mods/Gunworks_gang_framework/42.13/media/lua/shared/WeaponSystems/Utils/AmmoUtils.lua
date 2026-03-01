@@ -94,17 +94,14 @@ function Ammo.GetAmmoCharacteristics(bulletType)
 end
 
 function Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
-    local baseStats   = StatsFactory.GetBaseStatsWithAttachments(weapon)
     local profileName = Ammo.GetAmmoCharacteristics(bulletType)
-    local modifiers   = Ammo.AmmoStats[profileName]
 
-    StatsFactory.RestoreBaseStats(weapon, baseStats)
-
-    if modifiers then
-        StatsFactory.ApplyModifiers(weapon, baseStats, modifiers)
-    end
+    -- Store active profile so the modifier layer can find it
+    weapon:getModData().ActiveAmmoProfile = profileName
 
     weapon:setAmmoType(ammoEnum)
+
+    StatsFactory.ReapplyAllModifiers(weapon)
 end
 
 function Ammo.AmmoProfileSetter(weapon, bulletType)
@@ -156,5 +153,14 @@ function Ammo.MagazineAmmoProfileSetter(magazine, bulletType)
 
     magazine:setAmmoType(ammoEnum)
 end
+
+-------------------------------------------------
+-- Register modifier layer with StatsFactory
+-------------------------------------------------
+StatsFactory.RegisterModifierLayer("Ammo", function(weapon)
+    local profileName = weapon:getModData().ActiveAmmoProfile
+    if not profileName then return nil end
+    return Ammo.AmmoStats[profileName]
+end)
 
 return Ammo
