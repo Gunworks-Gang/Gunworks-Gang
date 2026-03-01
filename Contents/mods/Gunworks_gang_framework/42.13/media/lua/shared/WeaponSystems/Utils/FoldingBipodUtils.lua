@@ -2,9 +2,12 @@ local FoldingBipod = {}
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
 -------------------------------------------------
--- Single source of truth: weaponType -> { modifiers, models }
--- modifiers: array of StatsFactory modifier functions (applied when deployed)
--- models:   { folded = "SPRITE_NAME", deployed = "SPRITE_NAME" }
+-- Single source of truth: weaponType -> { modifiers, models?, attachments? }
+-- modifiers:    array of StatsFactory modifier functions (applied when deployed)
+--
+-- Visual mode (pick ONE):
+--   models:      { folded = "SPRITE_NAME", deployed = "SPRITE_NAME" }
+--   attachments: { partType = "bipod", folded = "MyMod.BipodFolded", deployed = "MyMod.BipodDeployed" }
 -------------------------------------------------
 FoldingBipod.WeaponsWithFoldableBipod = {}
 
@@ -14,7 +17,7 @@ FoldingBipod.WeaponsWithFoldableBipod = {}
 
 --- Register a weapon as having a foldable bipod
 --- @param weaponType string   e.g. "MyMod.MyLMG"
---- @param entry table  { modifiers = { ... }, models = { folded = "...", deployed = "..." } }
+--- @param entry table  { modifiers = { ... }, models = { ... }?, attachments = { ... }? }
 function FoldingBipod.RegisterWeapon(weaponType, entry)
     FoldingBipod.WeaponsWithFoldableBipod[weaponType] = entry
 end
@@ -38,14 +41,34 @@ function FoldingBipod.DeployedBipodAdjustStats(weapon)
     StatsFactory.ReapplyAllModifiers(weapon)
 end
 
-function FoldingBipod.SwapBipodModel(weapon, deployed)
+function FoldingBipod.SwapBipodAttachment(weapon, partType, newItemType)
+    if not weapon or not partType or not newItemType then return end
+
+    local currentPart = weapon:getWeaponPart(partType)
+    if currentPart then
+        weapon:detachWeaponPart(currentPart)
+    end
+
+    local newPart = instanceItem(newItemType)
+    if newPart and instanceof(newPart, "WeaponPart") then
+        weapon:attachWeaponPart(newPart, true)
+    end
+end
+
+function FoldingBipod.SwapBipodVisual(weapon, deployed)
     if not weapon then return end
 
     local entry = FoldingBipod.WeaponsWithFoldableBipod[weapon:getFullType()]
-    if not entry or not entry.models then return end
+    if not entry then return end
 
-    local newSprite = deployed and entry.models.deployed or entry.models.folded
-    weapon:setWeaponSprite(newSprite)
+    if entry.attachments then
+        local att = entry.attachments
+        local itemType = deployed and att.deployed or att.folded
+        FoldingBipod.SwapBipodAttachment(weapon, att.partType, itemType)
+    elseif entry.models then
+        local newSprite = deployed and entry.models.deployed or entry.models.folded
+        weapon:setWeaponSprite(newSprite)
+    end
 end
 
 function FoldingBipod.ToggleDeployBipod(weapon)
@@ -54,7 +77,7 @@ function FoldingBipod.ToggleDeployBipod(weapon)
 
     local newDeployed = not FoldingBipod.IsBipodDeployed(weapon)
     weapon:getModData().BipodDeployed = newDeployed
-    FoldingBipod.SwapBipodModel(weapon, newDeployed)
+    FoldingBipod.SwapBipodVisual(weapon, newDeployed)
     FoldingBipod.DeployedBipodAdjustStats(weapon)
 end
 
@@ -63,7 +86,7 @@ function FoldingBipod.SetBipodDeployed(weapon, deployed)
     if not FoldingBipod.HasFoldableBipod(weapon) then return end
 
     weapon:getModData().BipodDeployed = deployed
-    FoldingBipod.SwapBipodModel(weapon, deployed)
+    FoldingBipod.SwapBipodVisual(weapon, deployed)
     FoldingBipod.DeployedBipodAdjustStats(weapon)
 end
 
@@ -73,7 +96,7 @@ function FoldingBipod.RestoreDeployedBipodState(weapon)
 
     local isDeployed = FoldingBipod.IsBipodDeployed(weapon)
     if isDeployed then
-        FoldingBipod.SwapBipodModel(weapon, true)
+        FoldingBipod.SwapBipodVisual(weapon, true)
         FoldingBipod.DeployedBipodAdjustStats(weapon)
     end
 end
