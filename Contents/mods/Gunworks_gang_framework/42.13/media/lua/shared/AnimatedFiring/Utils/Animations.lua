@@ -1,7 +1,19 @@
-require "MWA_OpenModels"
-AnimationWeaponAction = {}
+local Animations = {}
 
-function AnimationWeaponAction.scheduleActionClose(seconds, callback, ...)
+Animations.RegisterModels = {}
+
+function Animations.RegisterModel(fullType, modelFunction)
+    Animations.RegisterModels[fullType] = modelFunction
+end
+
+function Animations.CallAnimationFunction(weapon, open)
+    local modelFn = Animations.RegisterModels[weapon:getFullType()]
+    if modelFn then
+        modelFn(weapon, open)
+    end
+end
+
+function Animations.scheduleActionClose(seconds, callback, ...)
     local elapsed = 0
     local gameTime = GameTime.getInstance()
     local parameters = { ... }
@@ -21,35 +33,37 @@ function AnimationWeaponAction.scheduleActionClose(seconds, callback, ...)
     end
 end
 
-function AnimationWeaponAction.releaseActionLock(player, weapon)
+function Animations.releaseActionLock(player, weapon)
     if not weapon or not player then return end
     if weapon:isRoundChambered() and not weapon:isJammed() and weapon:haveChamber() then
-        MWAOpenModel(weapon, false)
+        Animations.CallAnimationFunction(weapon, false)
         player:resetEquippedHandsModels()
     end
 end
 
-function AnimationWeaponAction.lockActionOpen(player, weapon)
+function Animations.lockActionOpen(player, weapon)
     if not weapon or not weapon:isRanged() or not player then return end
     if weapon:isRackAfterShoot() then return end
 
     if weapon:isRoundChambered() and not weapon:isJammed() and weapon:haveChamber() then
-        MWAOpenModel(weapon, true)
+        Animations.CallAnimationFunction(weapon, true)
         player:resetEquippedHandsModels()
         local seconds = 10 / 60
-        AnimationWeaponAction.scheduleActionClose(seconds, AnimationWeaponAction.releaseActionLock, player, weapon)
+        Animations.scheduleActionClose(seconds, Animations.releaseActionLock, player, weapon)
     end
 end
 
-function AnimationWeaponAction.rackAction(player, weapon, starting)
+function Animations.rackAction(player, weapon, starting)
     if not weapon or not player then return end
     if starting then
-        MWAOpenModel(weapon, false)
+        Animations.CallAnimationFunction(weapon, false)
         player:resetEquippedHandsModels()
     else
-        MWAOpenModel(weapon, true)
+        Animations.CallAnimationFunction(weapon, true)
         player:resetEquippedHandsModels()
     end
 end
 
-Events.OnWeaponSwing.Add(AnimationWeaponAction.lockActionOpen)
+Events.OnWeaponSwing.Add(Animations.lockActionOpen)
+
+return Animations
