@@ -34,4 +34,4 @@ local function sillydebugger()
     end
 end
 
-Events.OnPlayerUpdate.Add(sillydebugger)
+-- Events.OnPlayerUpdate.Add(sillydebugger)
