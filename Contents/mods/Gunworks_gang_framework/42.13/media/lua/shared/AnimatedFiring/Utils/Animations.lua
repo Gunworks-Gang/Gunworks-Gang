@@ -1,7 +1,13 @@
 local Animations = {}
 
+-------------------------------------------------
+-- Registry tables  (keyed by weapon fullType)
+-------------------------------------------------
 Animations.RegisterModels = {}
 
+--- Register a single weapon with custom callback function to handle swaps.
+---@param fullType string       fullType e.g. "Base.M16A3"
+---@param modelFunction function  function to handle model swaps
 function Animations.RegisterModel(fullType, modelFunction)
     Animations.RegisterModels[fullType] = modelFunction
 end
