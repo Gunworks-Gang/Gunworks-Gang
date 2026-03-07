@@ -45,15 +45,23 @@ function Underbarrel.SwapToUnderbarrel(weapon, player)
     local attachment = weapon:getWeaponPart("Underbarrel")
     local underbarrelType = Underbarrel.UnderbarrelAttachments[attachment:getFullType()]
 
-    -- Reuse cached underbarrel weapon if available, otherwise create one
     local underbarrelWeapon = weapon:getModData().GW_CachedUnderbarrelWeapon
     if not underbarrelWeapon then
         underbarrelWeapon = instanceItem(underbarrelType)
         if not underbarrelWeapon then return end
         weapon:getModData().GW_CachedUnderbarrelWeapon = underbarrelWeapon
+
+        local ammo = weapon:getModData().GW_UnderbarrelAmmo
+        if ammo then
+            underbarrelWeapon:setCurrentAmmoCount(ammo)
+        end
+
+        local chambered = weapon:getModData().GW_UnderbarrelChambered
+        if chambered then
+            underbarrelWeapon:setRoundChambered(chambered)
+        end
     end
 
-    -- Mask visuals from the host weapon
     underbarrelWeapon:setWeaponSprite(weapon:getWeaponSprite())
     underbarrelWeapon:setIcon(weapon:getIcon())
     underbarrelWeapon:getModData().GW_UnderbarrelOriginalWeapon = weapon
@@ -113,6 +121,12 @@ function Underbarrel.RestoreOriginalWeapon(player)
         end
     end
     if not weapon then return end
+
+    local underbarrelWeapon = player:getPrimaryHandItem()
+    if underbarrelWeapon then
+        weapon:getModData().GW_UnderbarrelAmmo = underbarrelWeapon:getCurrentAmmoCount()
+        weapon:getModData().GW_UnderbarrelChambered = underbarrelWeapon:isRoundChambered()
+    end
 
     player:setPrimaryHandItem(weapon)
     if weapon:isTwoHandWeapon() then

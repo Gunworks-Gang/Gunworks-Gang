@@ -16,7 +16,7 @@ local function debugAmmoList(item, label)
     --     print("  AmmoList: empty/nil")
     -- end
 
-    print(item:getReloadTime())
+    print(item:getModData().GW_CachedUnderbarrelWeapon)
 end
 
 MWA_DebugAmmoList = debugAmmoList

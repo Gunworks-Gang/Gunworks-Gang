@@ -150,8 +150,13 @@ function Bayonet.BayonetAttack(character, chargeDelta, weapon, callback)
     local bayonet = weapon:getWeaponPart("Bayonet"):getFullType()
     local spearType = Bayonet.GetSpearTypeFromAttachment(bayonet)
     if not spearType then return end
-    local bayonetTempWeapon = instanceItem(spearType)
-    if not bayonetTempWeapon then return end
+
+    local bayonetTempWeapon = weapon:getModData().GW_CachedBayonetSpear
+    if not bayonetTempWeapon then
+        bayonetTempWeapon = instanceItem(spearType)
+        if not bayonetTempWeapon then return end
+        weapon:getModData().GW_CachedBayonetSpear = bayonetTempWeapon
+    end
 
     bayonetTempWeapon:setWeaponSprite(weapon:getWeaponSprite())
     bayonetTempWeapon:setIcon(weapon:getIcon())
