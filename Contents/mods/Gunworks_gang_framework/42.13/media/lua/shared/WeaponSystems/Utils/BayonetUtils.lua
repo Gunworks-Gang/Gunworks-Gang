@@ -151,6 +151,11 @@ function Bayonet.BayonetAttack(character, chargeDelta, weapon, callback)
     bayonetTempWeapon:setIcon(weapon:getIcon())
     bayonetTempWeapon:getModData().MWA_BayonetOriginalWeapon = weapon
 
+    local modelParts = weapon:getModelWeaponPart()
+    if modelParts then
+        bayonetTempWeapon:setModelWeaponPart(modelParts)
+    end
+
     local parts = weapon:getAllWeaponParts()
     if parts then
         for i = 0, parts:size() - 1 do
