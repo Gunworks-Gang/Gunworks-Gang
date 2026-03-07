@@ -10,18 +10,25 @@ Bayonet.PendingHotbarRestorations = {}
 -- Registration API
 -------------------------------------------------
 
---- Register a weapon that can accept a bayonet.
----@param weaponType string   fullType e.g. "MWA.M16A1"
----@param bayonetType string  the bayonet attachment fullType e.g. "MWA.M9_BAYONET"
-function Bayonet.RegisterMountableWeapon(weaponType, bayonetType)
-    Bayonet.BayonetMountableWeapons[weaponType] = bayonetType
+--- Register one or more weapons that can accept a bayonet.
+---@param weaponTypes string|string[]  fullType or table of fullTypes e.g. {"MWA.M16A2", "MWA.ACR"}
+---@param bayonetType string           the bayonet attachment fullType e.g. "MWA.M9_BAYONET"
+function Bayonet.RegisterMountableWeapon(weaponTypes, bayonetType)
+    if type(weaponTypes) == "table" then
+        for _, weaponType in ipairs(weaponTypes) do
+            Bayonet.BayonetMountableWeapons[weaponType] = bayonetType
+        end
+    else
+        Bayonet.BayonetMountableWeapons[weaponTypes] = bayonetType
+    end
 end
 
---- Register a knife item that converts into a bayonet attachment.
----@param knifeType string    fullType e.g. "MWA.M9_BAYONET_KNIFE"
----@param bayonetType string  the bayonet attachment fullType e.g. "MWA.M9_BAYONET"
-function Bayonet.RegisterBayonetKnife(knifeType, bayonetType)
-    Bayonet.BayonetKnives[knifeType] = bayonetType
+--- Register a knife item, its bayonet attachment, and the spear substitute used during melee.
+---@param knifeType string    fullType of the knife item e.g. "MWA.M9_BAYONET_KNIFE"
+---@param bayonetType string  fullType of the bayonet attachment e.g. "MWA.M9_BAYONET"
+---@param spearType string    fullType of the spear substitute item e.g. "MWA.M9_BAYONET_SPEAR"
+function Bayonet.RegisterBayonetKnife(knifeType, bayonetType, spearType)
+    Bayonet.BayonetKnives[knifeType] = { bayonetType = bayonetType, spearType = spearType }
 end
 
 -------------------------------------------------
@@ -37,10 +44,10 @@ function Bayonet.CanAttachBayonet(weapon, bayonetKnife)
     local weaponBayonetType = Bayonet.BayonetMountableWeapons[weapon:getFullType()]
     if not weaponBayonetType then return false end
 
-    local knifeBayonetType = Bayonet.BayonetKnives[bayonetKnife:getFullType()]
-    if not knifeBayonetType then return false end
+    local knifeEntry = Bayonet.BayonetKnives[bayonetKnife:getFullType()]
+    if not knifeEntry then return false end
 
-    if weaponBayonetType ~= knifeBayonetType then return false end
+    if weaponBayonetType ~= knifeEntry.bayonetType then return false end
 
     return true
 end
@@ -56,8 +63,8 @@ end
 function Bayonet.AttachBayonet(weapon, bayonetKnife, player)
     if not Bayonet.CanAttachBayonet(weapon, bayonetKnife) then return false end
 
-    local bayonetAttachmentType = Bayonet.BayonetKnives[bayonetKnife:getFullType()]
-    local bayonetAttachment = instanceItem(bayonetAttachmentType)
+    local knifeEntry = Bayonet.BayonetKnives[bayonetKnife:getFullType()]
+    local bayonetAttachment = instanceItem(knifeEntry.bayonetType)
 
     if bayonetAttachment and instanceof(bayonetAttachment, "WeaponPart") then
         weapon:attachWeaponPart(bayonetAttachment, true)
@@ -69,9 +76,18 @@ function Bayonet.AttachBayonet(weapon, bayonetKnife, player)
 end
 
 function Bayonet.GetKnifeTypeFromAttachment(attachmentType)
-    for knifeType, bayonetType in pairs(Bayonet.BayonetKnives) do
-        if bayonetType == attachmentType then
+    for knifeType, entry in pairs(Bayonet.BayonetKnives) do
+        if entry.bayonetType == attachmentType then
             return knifeType
+        end
+    end
+    return nil
+end
+
+function Bayonet.GetSpearTypeFromAttachment(attachmentType)
+    for _, entry in pairs(Bayonet.BayonetKnives) do
+        if entry.bayonetType == attachmentType then
+            return entry.spearType
         end
     end
     return nil
@@ -126,12 +142,19 @@ end
 
 function Bayonet.BayonetAttack(character, chargeDelta, weapon, callback)
     local bayonet = weapon:getWeaponPart("Bayonet"):getFullType()
-    local bayonetTempWeapon = instanceItem(bayonet .. "_SPEAR")
+    local spearType = Bayonet.GetSpearTypeFromAttachment(bayonet)
+    if not spearType then return end
+    local bayonetTempWeapon = instanceItem(spearType)
     if not bayonetTempWeapon then return end
 
     bayonetTempWeapon:setWeaponSprite(weapon:getWeaponSprite())
     bayonetTempWeapon:setIcon(weapon:getIcon())
     bayonetTempWeapon:getModData().MWA_BayonetOriginalWeapon = weapon
+
+    local modelParts = weapon:getModelWeaponPart()
+    if modelParts then
+        bayonetTempWeapon:setModelWeaponPart(modelParts)
+    end
 
     local parts = weapon:getAllWeaponParts()
     if parts then
