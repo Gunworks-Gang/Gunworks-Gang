@@ -137,6 +137,9 @@ end
 -------------------------------------------------
 -- Key Bindings
 -------------------------------------------------
+local function DisplayMessage(character, messageKey)
+    character:Say(getText(messageKey), 0.55, 0.55, 0.55, UIFont.Dialogue, 0, "default")
+end
 
 local function onKeyPressed(key)
     local player = getSpecificPlayer(0)
@@ -147,11 +150,13 @@ local function onKeyPressed(key)
             local primaryHand = player:getPrimaryHandItem()
             if primaryHand then
                 Underbarrel.SwapToUnderbarrel(primaryHand, player)
+                DisplayMessage(player, "Using underbarrel weapon")
             end
         end
     elseif key == Keyboard.KEY_Y then
         if Underbarrel.IsUsingUnderbarrel(player) then
             Underbarrel.RestoreOriginalWeapon(player)
+            DisplayMessage(player, "Using main weapon")
         end
     end
 end
