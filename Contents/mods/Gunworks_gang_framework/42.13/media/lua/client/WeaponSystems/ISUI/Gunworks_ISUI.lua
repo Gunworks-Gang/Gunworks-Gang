@@ -111,26 +111,57 @@ local function addBayonetAttachmentOption(playerObj, item, context)
 
         listEntry.toolTip = tooltip
     else
+        local compatibleKnives = {}
+        local seen = {}
         local inventory = playerObj:getInventory():getItems()
         for i = 0, inventory:size() - 1 do
             local invItem = inventory:get(i)
-            if Bayonet.BayonetKnives[invItem:getFullType()] and Bayonet.CanAttachBayonet(item, invItem) then
-                local actionString = getText("IGUI_AttachBayonet")
-                local listEntry = context:addOption(actionString, playerObj, BayonetAttachmentContext.attachBayonet, item, invItem)
+            local knifeFullType = invItem:getFullType()
+            if not seen[knifeFullType] and Bayonet.BayonetKnives[knifeFullType] and Bayonet.CanAttachBayonet(item, invItem) then
+                table.insert(compatibleKnives, invItem)
+                seen[knifeFullType] = true
+            end
+        end
+
+        if #compatibleKnives == 1 then
+            local invItem = compatibleKnives[1]
+            local actionString = getText("IGUI_AttachBayonet")
+            local listEntry = context:addOption(actionString, playerObj, BayonetAttachmentContext.attachBayonet, item, invItem)
+
+            local tooltip = ISInventoryPaneContextMenu.addToolTip()
+            tooltip:setName(actionString)
+            tooltip.texture = item:getTex()
+
+            if isInInventory then
+                tooltip.description = getText("IGUI_AttachBayonetDesc")
+            else
+                listEntry.notAvailable = true
+                tooltip.description = getText("IGUI_MoveToInventory")
+            end
+
+            listEntry.toolTip = tooltip
+        elseif #compatibleKnives > 1 then
+            local actionString = getText("IGUI_AttachBayonet")
+            local bayonetOption = context:addOption(actionString)
+            local subMenu = context:getNew(context)
+            context:addSubMenu(bayonetOption, subMenu)
+
+            for _, invItem in ipairs(compatibleKnives) do
+                local knifeName = invItem:getDisplayName()
+                local subEntry = subMenu:addOption(knifeName, playerObj, BayonetAttachmentContext.attachBayonet, item, invItem)
 
                 local tooltip = ISInventoryPaneContextMenu.addToolTip()
-                tooltip:setName(actionString)
-                tooltip.texture = item:getTex()
+                tooltip:setName(knifeName)
+                tooltip.texture = invItem:getTex()
 
                 if isInInventory then
                     tooltip.description = getText("IGUI_AttachBayonetDesc")
                 else
-                    listEntry.notAvailable = true
+                    subEntry.notAvailable = true
                     tooltip.description = getText("IGUI_MoveToInventory")
                 end
 
-                listEntry.toolTip = tooltip
-                break
+                subEntry.toolTip = tooltip
             end
         end
     end

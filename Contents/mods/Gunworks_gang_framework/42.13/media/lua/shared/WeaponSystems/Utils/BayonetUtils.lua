@@ -16,10 +16,16 @@ Bayonet.PendingHotbarRestorations = {}
 function Bayonet.RegisterMountableWeapon(weaponTypes, bayonetType)
     if type(weaponTypes) == "table" then
         for _, weaponType in ipairs(weaponTypes) do
-            Bayonet.BayonetMountableWeapons[weaponType] = bayonetType
+            if not Bayonet.BayonetMountableWeapons[weaponType] then
+                Bayonet.BayonetMountableWeapons[weaponType] = {}
+            end
+            Bayonet.BayonetMountableWeapons[weaponType][bayonetType] = true
         end
     else
-        Bayonet.BayonetMountableWeapons[weaponTypes] = bayonetType
+        if not Bayonet.BayonetMountableWeapons[weaponTypes] then
+            Bayonet.BayonetMountableWeapons[weaponTypes] = {}
+        end
+        Bayonet.BayonetMountableWeapons[weaponTypes][bayonetType] = true
     end
 end
 
@@ -41,13 +47,13 @@ function Bayonet.CanAttachBayonet(weapon, bayonetKnife)
     if not weapon:isRanged() then return false end
     if weapon:getWeaponPart("Bayonet") then return false end
 
-    local weaponBayonetType = Bayonet.BayonetMountableWeapons[weapon:getFullType()]
-    if not weaponBayonetType then return false end
+    local acceptedBayonets = Bayonet.BayonetMountableWeapons[weapon:getFullType()]
+    if not acceptedBayonets then return false end
 
     local knifeEntry = Bayonet.BayonetKnives[bayonetKnife:getFullType()]
     if not knifeEntry then return false end
 
-    if weaponBayonetType ~= knifeEntry.bayonetType then return false end
+    if not acceptedBayonets[knifeEntry.bayonetType] then return false end
 
     return true
 end
