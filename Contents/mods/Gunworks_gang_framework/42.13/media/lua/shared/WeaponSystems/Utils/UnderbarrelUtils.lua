@@ -19,6 +19,9 @@ end
 -------------------------------------------------
 -- Swap Utilities
 -------------------------------------------------
+local function DisplayMessage(character, messageKey)
+    character:Say(getText(messageKey), 0.55, 0.55, 0.55, UIFont.Dialogue, 0, "default")
+end
 
 function Underbarrel.CanSwapToUnderbarrel(weapon)
     if not weapon then return false end
@@ -46,6 +49,12 @@ function Underbarrel.SwapToUnderbarrel(weapon, player)
     local underbarrelType = Underbarrel.UnderbarrelAttachments[attachment:getFullType()]
 
     local underbarrelWeapon = weapon:getModData().GW_CachedUnderbarrelWeapon
+    if underbarrelWeapon and underbarrelWeapon:getFullType() ~= underbarrelType then
+        underbarrelWeapon = nil
+        weapon:getModData().GW_CachedUnderbarrelWeapon = nil
+        weapon:getModData().GW_UnderbarrelAmmo = nil
+        weapon:getModData().GW_UnderbarrelChambered = nil
+    end
     if not underbarrelWeapon then
         underbarrelWeapon = instanceItem(underbarrelType)
         if not underbarrelWeapon then return end
@@ -107,6 +116,7 @@ function Underbarrel.SwapToUnderbarrel(weapon, player)
     end
     player:resetEquippedHandsModels()
 
+    DisplayMessage(player, "Using underbarrel weapon")
     Underbarrel.PendingWeaponRestorations[player] = weapon
 end
 
@@ -145,15 +155,13 @@ function Underbarrel.RestoreOriginalWeapon(player)
         Underbarrel.PendingHotbarRestorations[player] = nil
     end
 
+    DisplayMessage(player, "Using main weapon")
     Underbarrel.PendingWeaponRestorations[player] = nil
 end
 
 -------------------------------------------------
 -- Key Bindings
 -------------------------------------------------
-local function DisplayMessage(character, messageKey)
-    character:Say(getText(messageKey), 0.55, 0.55, 0.55, UIFont.Dialogue, 0, "default")
-end
 
 local function onKeyPressed(key)
     local player = getSpecificPlayer(0)
@@ -164,13 +172,11 @@ local function onKeyPressed(key)
             local primaryHand = player:getPrimaryHandItem()
             if primaryHand then
                 Underbarrel.SwapToUnderbarrel(primaryHand, player)
-                DisplayMessage(player, "Using underbarrel weapon")
             end
         end
     elseif key == Keyboard.KEY_Y then
         if Underbarrel.IsUsingUnderbarrel(player) then
             Underbarrel.RestoreOriginalWeapon(player)
-            DisplayMessage(player, "Using main weapon")
         end
     end
 end
