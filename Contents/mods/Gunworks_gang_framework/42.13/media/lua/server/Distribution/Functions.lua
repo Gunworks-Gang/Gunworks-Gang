@@ -1,8 +1,3 @@
-require("Items/Distribution")
-require("Vehicles/VehicleDistributions")
-require("Items/ProceduralDistributions")
-require("Items/Distribution_BagsAndContainers")
-
 local WeaponDistribution = {}
 
 function WeaponDistribution.Insert(baseItem, chance, tables, newItem)
