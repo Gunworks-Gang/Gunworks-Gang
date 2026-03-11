@@ -1,0 +1,19 @@
+{
+  "IGUI_MWA_FirearmAmmo_Title": "Firearm Ammo Management",
+  "IGUI_MWA_MagazineAmmo_Title": "Magazine Ammo Management",
+  "IGUI_MWA_DropFirearm": "Drop Firearm",
+  "IGUI_MWA_DropMagazine": "Drop Magazine",
+  "IGUI_MWA_Amount": "Amount",
+  "IGUI_MWA_AmmoType": "Ammo Type",
+  "IGUI_MWA_Load": "Load into Firearm",
+  "IGUI_ContextMenu_InsertAltBulletsInMagazine": "Insert %1 %2 in Magazine",
+  "IGUI_MWA_FoldStock": "Fold Stock",
+  "IGUI_MWA_UnfoldStock": "Unfold Stock",
+  "IGUI_MWA_FoldStockDesc": "Fold the stock for more compact storage and handling.",
+  "IGUI_MWA_UnfoldStockDesc": "Extend the stock for improved stability and control.",
+  "IGUI_MWA_MoveToInventory": "Item must be in your inventory.",
+  "IGUI_MWA_FoldingStock": "Adjusting Stock",
+  "IGUI_SwapAttachment": "Swap to %1",
+  "IGUI_SwapAttachmentDesc": "Replace %1 with %2.",
+  "IGUI_MoveToInventory": "Item must be in your inventory."
+}
