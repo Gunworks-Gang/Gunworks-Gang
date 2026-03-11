@@ -6,6 +6,7 @@ local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
 local Magazine = require("WeaponSystems/Utils/MagazineUtils")
 local Ammo = require("WeaponSystems/Utils/AmmoUtils")
 local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachmentUtils")
+local Railing = require("WeaponSystems/Utils/RailingUtils")
 
 -------------------------------------------------
 -- Foldable Stock Context Menu
@@ -203,6 +204,98 @@ local function addSwapAttachmentOption(playerObj, item, context)
     listEntry.toolTip = tooltip
 end
 
+-------------------------------------------------
+-- Railing Mount / Unmount Context Menu
+-------------------------------------------------
+local function addRailingOptions(playerObj, item, context)
+    if not Railing then return end
+    if not instanceof(item, "HandWeapon") then return end
+    if not item:isRanged() then return end
+    if not Railing.HasRailing(item) then return end
+
+    local isInInventory = item:getContainer() == playerObj:getInventory()
+
+    -- Unmount: show options for each railing-mounted accessory currently on the weapon
+    local mounted = Railing.GetMountedAccessories(item)
+    for _, part in ipairs(mounted) do
+        local partName = part:getDisplayName()
+        local actionString = getText("IGUI_RailingUnmount", partName)
+        local listEntry = context:addOption(actionString, playerObj, RailingContext.unmountAccessory, item, part)
+
+        local tooltip = ISInventoryPaneContextMenu.addToolTip()
+        tooltip:setName(actionString)
+        tooltip.texture = item:getTex()
+
+        if isInInventory then
+            tooltip.description = getText("IGUI_RailingUnmountDesc", partName)
+        else
+            listEntry.notAvailable = true
+            tooltip.description = getText("IGUI_MoveToInventory")
+        end
+
+        listEntry.toolTip = tooltip
+    end
+
+    -- Mount: scan inventory for compatible accessories the railing accepts
+    local accepted = Railing.GetAcceptedAccessories(item)
+    if not accepted then return end
+
+    local compatibleItems = {}
+    local seen = {}
+    local inventory = playerObj:getInventory():getItems()
+    for i = 0, inventory:size() - 1 do
+        local invItem = inventory:get(i)
+        local invFullType = invItem:getFullType()
+        if not seen[invFullType] and instanceof(invItem, "WeaponPart") and Railing.CanMountAccessory(item, invFullType) then
+            table.insert(compatibleItems, invItem)
+            seen[invFullType] = true
+        end
+    end
+
+    if #compatibleItems == 1 then
+        local invItem = compatibleItems[1]
+        local accName = invItem:getDisplayName()
+        local actionString = getText("IGUI_RailingMount", accName)
+        local listEntry = context:addOption(actionString, playerObj, RailingContext.mountAccessory, item, invItem)
+
+        local tooltip = ISInventoryPaneContextMenu.addToolTip()
+        tooltip:setName(actionString)
+        tooltip.texture = invItem:getTex()
+
+        if isInInventory then
+            tooltip.description = getText("IGUI_RailingMountDesc", accName)
+        else
+            listEntry.notAvailable = true
+            tooltip.description = getText("IGUI_MoveToInventory")
+        end
+
+        listEntry.toolTip = tooltip
+    elseif #compatibleItems > 1 then
+        local actionString = getText("IGUI_RailingMountMenu")
+        local mountOption = context:addOption(actionString)
+        local subMenu = context:getNew(context)
+        context:addSubMenu(mountOption, subMenu)
+
+        for _, invItem in ipairs(compatibleItems) do
+            local accName = invItem:getDisplayName()
+            local subEntry = subMenu:addOption(accName, playerObj, RailingContext.mountAccessory, item, invItem)
+
+            local tooltip = ISInventoryPaneContextMenu.addToolTip()
+            tooltip:setName(accName)
+            tooltip.texture = invItem:getTex()
+
+            if isInInventory then
+                tooltip.description = getText("IGUI_RailingMountDesc", accName)
+            else
+                subEntry.notAvailable = true
+                tooltip.description = getText("IGUI_MoveToInventory")
+            end
+
+            subEntry.toolTip = tooltip
+        end
+    end
+end
+
 local onFillInventoryObjectContextMenu = function(playerid, context, items)
     local player = getSpecificPlayer(playerid)
     for _, v in ipairs(items) do
@@ -215,6 +308,7 @@ local onFillInventoryObjectContextMenu = function(playerid, context, items)
             addFoldableBipodOption(player, item, context)
             addBayonetAttachmentOption(player, item, context)
             addSwapAttachmentOption(player, item, context)
+            addRailingOptions(player, item, context)
         end
     end
 end
