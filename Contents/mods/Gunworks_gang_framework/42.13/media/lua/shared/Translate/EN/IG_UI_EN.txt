@@ -13,4 +13,7 @@ IGUI_EN = {
     IGUI_MWA_UnfoldStockDesc = "Extend the stock for improved stability and control.",
     IGUI_MWA_MoveToInventory = "Item must be in your inventory.",
     IGUI_MWA_FoldingStock = "Adjusting Stock",
+    IGUI_SwapAttachment = "Swap to %1",
+    IGUI_SwapAttachmentDesc = "Replace %1 with %2.",
+    IGUI_MoveToInventory = "Item must be in your inventory.",
 }

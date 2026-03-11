@@ -16,7 +16,7 @@ local function debugAmmoList(item, label)
     --     print("  AmmoList: empty/nil")
     -- end
 
-    print(item:getModData().GW_CachedUnderbarrelWeapon)
+    print(item:getAllWeaponParts())
 end
 
 MWA_DebugAmmoList = debugAmmoList
@@ -34,4 +34,4 @@ local function sillydebugger()
     end
 end
 
--- Events.OnPlayerUpdate.Add(sillydebugger)
+Events.OnPlayerUpdate.Add(sillydebugger)

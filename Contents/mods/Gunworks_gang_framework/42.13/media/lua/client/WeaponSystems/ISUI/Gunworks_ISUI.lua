@@ -5,6 +5,7 @@ local FoldingBipod = require("WeaponSystems/Utils/FoldingBipodUtils")
 local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
 local Magazine = require("WeaponSystems/Utils/MagazineUtils")
 local Ammo = require("WeaponSystems/Utils/AmmoUtils")
+local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachmentUtils")
 
 -------------------------------------------------
 -- Foldable Stock Context Menu
@@ -167,6 +168,41 @@ local function addBayonetAttachmentOption(playerObj, item, context)
     end
 end
 
+-------------------------------------------------
+-- Dynamic Attachment Swap Context Menu
+-------------------------------------------------
+local function addSwapAttachmentOption(playerObj, item, context)
+    if not DynamicAttachment then return end
+    if not instanceof(item, "HandWeapon") then return end
+    if not item:isRanged() then return end
+    if not DynamicAttachment.HasSwappableAttachment(item) then return end
+
+    local isInInventory = item:getContainer() == playerObj:getInventory()
+
+    local partnerType, _, currentPart = DynamicAttachment.GetSwappableAttachment(item)
+    if not partnerType or not currentPart then return end
+
+    -- Build a display name from the partner item's script
+    local partnerScript = ScriptManager.instance:getItem(partnerType)
+    local partnerName = partnerScript and partnerScript:getDisplayName() or partnerType
+    local actionString = getText("IGUI_SwapAttachment", partnerName)
+
+    local listEntry = context:addOption(actionString, playerObj, SwapAttachmentContext.callAction, item)
+
+    local tooltip = ISInventoryPaneContextMenu.addToolTip()
+    tooltip:setName(actionString)
+    tooltip.texture = item:getTex()
+
+    if isInInventory then
+        tooltip.description = getText("IGUI_SwapAttachmentDesc", currentPart:getDisplayName(), partnerName)
+    else
+        listEntry.notAvailable = true
+        tooltip.description = getText("IGUI_MoveToInventory")
+    end
+
+    listEntry.toolTip = tooltip
+end
+
 local onFillInventoryObjectContextMenu = function(playerid, context, items)
     local player = getSpecificPlayer(playerid)
     for _, v in ipairs(items) do
@@ -178,6 +214,7 @@ local onFillInventoryObjectContextMenu = function(playerid, context, items)
             addFoldableStockOption(player, item, context)
             addFoldableBipodOption(player, item, context)
             addBayonetAttachmentOption(player, item, context)
+            addSwapAttachmentOption(player, item, context)
         end
     end
 end
