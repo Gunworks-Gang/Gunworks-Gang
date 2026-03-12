@@ -32,11 +32,12 @@ end
 -- Query helpers
 -------------------------------------------------
 
---- Find the first installed railing on a weapon that is registered.
+--- Find all installed railings on a weapon that are registered.
 --- @param weapon HandWeapon
---- @return string|nil railingType, WeaponPart|nil railingPart
-function Railing.GetInstalledRailing(weapon)
-    if not weapon then return nil end
+--- @return table[] array of { railingType = string, part = WeaponPart }
+function Railing.GetInstalledRailings(weapon)
+    local railings = {}
+    if not weapon then return railings end
 
     local parts = weapon:getAllWeaponParts()
     for i = 0, parts:size() - 1 do
@@ -44,31 +45,46 @@ function Railing.GetInstalledRailing(weapon)
         if part then
             local fullType = part:getFullType()
             if Railing.AcceptedAccessories[fullType] then
-                return fullType, part
+                table.insert(railings, { railingType = fullType, part = part })
             end
         end
     end
-    return nil
+    return railings
 end
 
 --- Check if the weapon has any registered railing installed.
 --- @param weapon HandWeapon
 --- @return boolean
 function Railing.HasRailing(weapon)
-    return Railing.GetInstalledRailing(weapon) ~= nil
+    return #Railing.GetInstalledRailings(weapon) > 0
 end
 
---- Get the list of accessory fullTypes that the installed railing accepts.
+--- Get the combined list of accessory fullTypes that all installed railings accept.
 --- @param weapon HandWeapon
 --- @return string[]|nil
 function Railing.GetAcceptedAccessories(weapon)
-    local railingType = Railing.GetInstalledRailing(weapon)
-    if not railingType then return nil end
-    return Railing.AcceptedAccessories[railingType]
+    local railings = Railing.GetInstalledRailings(weapon)
+    if #railings == 0 then return nil end
+
+    local combined = {}
+    local seen = {}
+    for _, r in ipairs(railings) do
+        local accList = Railing.AcceptedAccessories[r.railingType]
+        if accList then
+            for _, acc in ipairs(accList) do
+                if not seen[acc] then
+                    seen[acc] = true
+                    table.insert(combined, acc)
+                end
+            end
+        end
+    end
+    if #combined == 0 then return nil end
+    return combined
 end
 
 --- Find installed accessories on the weapon that were mounted via the
---- railing system (i.e. their fullType is in KnownAccessories).
+--- railing system (i.e. their fullType is accepted by any installed railing).
 --- @param weapon HandWeapon
 --- @return WeaponPart[]  array of currently mounted railing accessories
 function Railing.GetMountedAccessories(weapon)
@@ -78,7 +94,7 @@ function Railing.GetMountedAccessories(weapon)
     local accepted = Railing.GetAcceptedAccessories(weapon)
     if not accepted then return mounted end
 
-    -- Build a quick lookup set from the railing's accepted list
+    -- Build a quick lookup set from ALL railings' accepted lists
     local acceptedSet = {}
     for _, acc in ipairs(accepted) do
         acceptedSet[acc] = true
@@ -96,6 +112,7 @@ end
 
 --- Check if a specific accessory type can be mounted right now.
 --- Returns false if the weapon already has a part in the same PartType slot.
+--- Checks across all installed railings.
 --- @param weapon HandWeapon
 --- @param accessoryType string
 --- @return boolean
@@ -105,7 +122,7 @@ function Railing.CanMountAccessory(weapon, accessoryType)
     local accepted = Railing.GetAcceptedAccessories(weapon)
     if not accepted then return false end
 
-    -- Is this accessory in the railing's accepted list?
+    -- Is this accessory in any railing's accepted list?
     local found = false
     for _, acc in ipairs(accepted) do
         if acc == accessoryType then

@@ -15,10 +15,10 @@
   "IGUI_MWA_FoldingStock": "Adjusting Stock",
   "IGUI_SwapAttachment": "Swap to %1",
   "IGUI_SwapAttachmentDesc": "Replace %1 with %2.",
-  "IGUI_RailingMount": "Mount %1",
-  "IGUI_RailingMountDesc": "Mount %1 onto the railing.",
-  "IGUI_RailingMountMenu": "Mount Accessory...",
-  "IGUI_RailingUnmount": "Remove %1",
-  "IGUI_RailingUnmountDesc": "Remove %1 from the railing.",
+  "IGUI_RailingMount": "Mount %1 (%2)",
+  "IGUI_RailingMountDesc": "Mount %1 onto %2.",
+  "IGUI_RailingMountMenu": "Mount on %1...",
+  "IGUI_RailingUnmount": "Remove %1 (%2)",
+  "IGUI_RailingUnmountDesc": "Remove %1 from %2.",
   "IGUI_MoveToInventory": "Item must be in your inventory."
 }
