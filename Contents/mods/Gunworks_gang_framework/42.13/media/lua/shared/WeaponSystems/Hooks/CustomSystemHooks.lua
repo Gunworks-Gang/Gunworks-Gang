@@ -359,6 +359,8 @@ ISReloadWeaponAction.attackHook = function(character, chargeDelta, weapon)
         local bayonetInstalled = weapon:getWeaponPart("Bayonet")
         if bayonetInstalled then
             Bayonet.BayonetAttack(character, chargeDelta, weapon, Attack_Hook_Original)
+        elseif Bayonet.HasIntegratedBayonet(weapon) and Bayonet.IsIntegratedBayonetDeployed(weapon) then
+            Bayonet.IntegratedBayonetAttack(character, chargeDelta, weapon, Attack_Hook_Original)
         else
             Attack_Hook_Original(character, chargeDelta, weapon)
         end

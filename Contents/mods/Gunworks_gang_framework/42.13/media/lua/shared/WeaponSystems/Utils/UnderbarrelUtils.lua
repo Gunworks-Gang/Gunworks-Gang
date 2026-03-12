@@ -5,6 +5,12 @@ Underbarrel.PendingWeaponRestorations = {}
 Underbarrel.PendingHotbarRestorations = {}
 
 -------------------------------------------------
+-- Integrated Underbarrel Registry
+-- weaponFullType -> underbarrelWeaponFullType
+-------------------------------------------------
+Underbarrel.IntegratedUnderbarrels = {}
+
+-------------------------------------------------
 -- Registration API
 -------------------------------------------------
 
@@ -14,6 +20,19 @@ Underbarrel.PendingHotbarRestorations = {}
 function Underbarrel.RegisterUnderbarrelAttachment(attachmentType, underbarrelType)
     if not attachmentType or not underbarrelType then return end
     Underbarrel.UnderbarrelAttachments[attachmentType] = underbarrelType
+end
+
+--- Register a weapon with an integrated (built-in) underbarrel.
+--- @param weaponType string|string[]  fullType or table of fullTypes e.g. "MWA.M4_M203"
+--- @param underbarrelType string      fullType of the underbarrel weapon e.g. "MWA.M203"
+function Underbarrel.RegisterIntegratedUnderbarrel(weaponType, underbarrelType)
+    if type(weaponType) == "table" then
+        for _, wt in ipairs(weaponType) do
+            Underbarrel.IntegratedUnderbarrels[wt] = underbarrelType
+        end
+    else
+        Underbarrel.IntegratedUnderbarrels[weaponType] = underbarrelType
+    end
 end
 
 -------------------------------------------------
@@ -160,6 +179,116 @@ function Underbarrel.RestoreOriginalWeapon(player)
 end
 
 -------------------------------------------------
+-- Integrated Underbarrel Helpers
+-------------------------------------------------
+
+--- Check if a weapon has an integrated underbarrel registered.
+--- @param weapon HandWeapon
+--- @return boolean
+function Underbarrel.HasIntegratedUnderbarrel(weapon)
+    if not weapon then return false end
+    return Underbarrel.IntegratedUnderbarrels[weapon:getFullType()] ~= nil
+end
+
+--- Check if the integrated underbarrel is currently deployed.
+--- @param weapon HandWeapon
+--- @return boolean
+function Underbarrel.IsIntegratedUnderbarrelDeployed(weapon)
+    if not weapon then return false end
+    return weapon:getModData().GW_IntegratedUnderbarrelDeployed == true
+end
+
+--- Toggle the integrated underbarrel between deployed and stowed.
+--- @param weapon HandWeapon
+function Underbarrel.ToggleIntegratedUnderbarrel(weapon)
+    if not weapon then return end
+    if not Underbarrel.HasIntegratedUnderbarrel(weapon) then return end
+    weapon:getModData().GW_IntegratedUnderbarrelDeployed = not Underbarrel.IsIntegratedUnderbarrelDeployed(weapon)
+end
+
+--- Swap to the integrated underbarrel weapon.
+--- @param weapon HandWeapon
+--- @param player IsoPlayer
+function Underbarrel.SwapToIntegratedUnderbarrel(weapon, player)
+    if not weapon or not player then return end
+    if not Underbarrel.HasIntegratedUnderbarrel(weapon) then return end
+    if not Underbarrel.IsIntegratedUnderbarrelDeployed(weapon) then return end
+
+    local underbarrelType = Underbarrel.IntegratedUnderbarrels[weapon:getFullType()]
+
+    local underbarrelWeapon = weapon:getModData().GW_CachedIntegratedUnderbarrel
+    if underbarrelWeapon and underbarrelWeapon:getFullType() ~= underbarrelType then
+        underbarrelWeapon = nil
+        weapon:getModData().GW_CachedIntegratedUnderbarrel = nil
+        weapon:getModData().GW_IntegratedUnderbarrelAmmo = nil
+        weapon:getModData().GW_IntegratedUnderbarrelChambered = nil
+    end
+    if not underbarrelWeapon then
+        underbarrelWeapon = instanceItem(underbarrelType)
+        if not underbarrelWeapon then return end
+        weapon:getModData().GW_CachedIntegratedUnderbarrel = underbarrelWeapon
+
+        local ammo = weapon:getModData().GW_IntegratedUnderbarrelAmmo
+        if ammo then
+            underbarrelWeapon:setCurrentAmmoCount(ammo)
+        end
+
+        local chambered = weapon:getModData().GW_IntegratedUnderbarrelChambered
+        if chambered then
+            underbarrelWeapon:setRoundChambered(chambered)
+        end
+    end
+
+    underbarrelWeapon:setWeaponSprite(weapon:getWeaponSprite())
+    underbarrelWeapon:setIcon(weapon:getIcon())
+    underbarrelWeapon:getModData().GW_UnderbarrelOriginalWeapon = weapon
+
+    local modelParts = weapon:getModelWeaponPart()
+    if modelParts then
+        underbarrelWeapon:setModelWeaponPart(modelParts)
+    end
+
+    local parts = weapon:getAllWeaponParts()
+    if parts then
+        for i = 0, parts:size() - 1 do
+            local part = parts:get(i)
+            if part then
+                local partCopy = instanceItem(part:getFullType())
+                if partCopy and instanceof(partCopy, "WeaponPart") then
+                    underbarrelWeapon:attachWeaponPart(partCopy, true)
+                end
+            end
+        end
+    end
+
+    local hotBar = getPlayerHotbar(player:getPlayerNum())
+    if hotBar and hotBar:isInHotbar(weapon) then
+        local itemSlot = weapon:getAttachedSlot()
+        local slotDef = hotBar.availableSlot[itemSlot].def
+        local attachmentSlot = slotDef.attachments[weapon:getAttachmentType()]
+
+        hotBar:removeItem(weapon, false)
+        hotBar.needsRefresh = true
+        hotBar:update()
+
+        Underbarrel.PendingHotbarRestorations[player] = {
+            slotIndex = itemSlot,
+            slotDef = slotDef,
+            attachment = attachmentSlot
+        }
+    end
+
+    player:setPrimaryHandItem(underbarrelWeapon)
+    if underbarrelWeapon:isTwoHandWeapon() then
+        player:setSecondaryHandItem(underbarrelWeapon)
+    end
+    player:resetEquippedHandsModels()
+
+    DisplayMessage(player, "Using underbarrel weapon")
+    Underbarrel.PendingWeaponRestorations[player] = weapon
+end
+
+-------------------------------------------------
 -- Key Bindings
 -------------------------------------------------
 
@@ -171,7 +300,11 @@ local function onKeyPressed(key)
         if not Underbarrel.IsUsingUnderbarrel(player) then
             local primaryHand = player:getPrimaryHandItem()
             if primaryHand then
-                Underbarrel.SwapToUnderbarrel(primaryHand, player)
+                if Underbarrel.CanSwapToUnderbarrel(primaryHand) then
+                    Underbarrel.SwapToUnderbarrel(primaryHand, player)
+                elseif Underbarrel.HasIntegratedUnderbarrel(primaryHand) and Underbarrel.IsIntegratedUnderbarrelDeployed(primaryHand) then
+                    Underbarrel.SwapToIntegratedUnderbarrel(primaryHand, player)
+                end
             end
         end
     elseif key == Keyboard.KEY_Y then

@@ -7,6 +7,12 @@ Bayonet.PendingWeaponRestorations = {}
 Bayonet.PendingHotbarRestorations = {}
 
 -------------------------------------------------
+-- Integrated Bayonet Registry
+-- weaponFullType -> spearFullType (melee substitute)
+-------------------------------------------------
+Bayonet.IntegratedBayonets = {}
+
+-------------------------------------------------
 -- Registration API
 -------------------------------------------------
 
@@ -35,6 +41,19 @@ end
 ---@param spearType string    fullType of the spear substitute item e.g. "MWA.M9_BAYONET_SPEAR"
 function Bayonet.RegisterBayonetKnife(knifeType, bayonetType, spearType)
     Bayonet.BayonetKnives[knifeType] = { bayonetType = bayonetType, spearType = spearType }
+end
+
+--- Register a weapon with an integrated (non-removable) bayonet.
+--- @param weaponType string   fullType of the weapon e.g. "MWA.SKS"
+--- @param spearType  string   fullType of the melee substitute e.g. "MWA.SKS_BAYONET_SPEAR"
+function Bayonet.RegisterIntegratedBayonet(weaponType, spearType)
+    if type(weaponType) == "table" then
+        for _, wt in ipairs(weaponType) do
+            Bayonet.IntegratedBayonets[wt] = spearType
+        end
+    else
+        Bayonet.IntegratedBayonets[weaponType] = spearType
+    end
 end
 
 -------------------------------------------------
@@ -156,6 +175,103 @@ function Bayonet.BayonetAttack(character, chargeDelta, weapon, callback)
         bayonetTempWeapon = instanceItem(spearType)
         if not bayonetTempWeapon then return end
         weapon:getModData().GW_CachedBayonetSpear = bayonetTempWeapon
+    end
+
+    bayonetTempWeapon:setWeaponSprite(weapon:getWeaponSprite())
+    bayonetTempWeapon:setIcon(weapon:getIcon())
+    bayonetTempWeapon:getModData().MWA_BayonetOriginalWeapon = weapon
+
+    local modelParts = weapon:getModelWeaponPart()
+    if modelParts then
+        bayonetTempWeapon:setModelWeaponPart(modelParts)
+    end
+
+    local parts = weapon:getAllWeaponParts()
+    if parts then
+        for i = 0, parts:size() - 1 do
+            local part = parts:get(i)
+            if part then
+                local partCopy = instanceItem(part:getFullType())
+                if partCopy and instanceof(partCopy, "WeaponPart") then
+                    bayonetTempWeapon:attachWeaponPart(partCopy, true)
+                end
+            end
+        end
+    end
+
+    local hotBar = getPlayerHotbar(character:getPlayerNum())
+    if hotBar and hotBar:isInHotbar(weapon) then
+        local itemSlot = weapon:getAttachedSlot()
+        local slotDef = hotBar.availableSlot[itemSlot].def
+        local attachment = slotDef.attachments[weapon:getAttachmentType()]
+
+        hotBar:removeItem(weapon, false)
+        hotBar.needsRefresh = true
+        hotBar:update()
+
+        Bayonet.PendingHotbarRestorations[character] = {
+            slotIndex = itemSlot,
+            slotDef = slotDef,
+            attachment = attachment
+        }
+    end
+
+    local wasDoingShove = character:isDoShove()
+
+    character:setPrimaryHandItem(bayonetTempWeapon)
+    character:setSecondaryHandItem(bayonetTempWeapon)
+    character:resetEquippedHandsModels()
+
+    if wasDoingShove then
+        character:setDoShove(false)
+    end
+
+    Bayonet.PendingWeaponRestorations[character] = weapon
+    callback(character, chargeDelta, bayonetTempWeapon)
+end
+
+-------------------------------------------------
+-- Integrated Bayonet Helpers
+-------------------------------------------------
+
+--- Check if a weapon has an integrated bayonet registered.
+--- @param weapon HandWeapon
+--- @return boolean
+function Bayonet.HasIntegratedBayonet(weapon)
+    if not weapon then return false end
+    return Bayonet.IntegratedBayonets[weapon:getFullType()] ~= nil
+end
+
+--- Check if the integrated bayonet is currently deployed (folded out).
+--- @param weapon HandWeapon
+--- @return boolean
+function Bayonet.IsIntegratedBayonetDeployed(weapon)
+    if not weapon then return false end
+    return weapon:getModData().GW_IntegratedBayonetDeployed == true
+end
+
+--- Toggle the integrated bayonet between deployed and folded.
+--- @param weapon HandWeapon
+function Bayonet.ToggleIntegratedBayonet(weapon)
+    if not weapon then return end
+    if not Bayonet.HasIntegratedBayonet(weapon) then return end
+    weapon:getModData().GW_IntegratedBayonetDeployed = not Bayonet.IsIntegratedBayonetDeployed(weapon)
+end
+
+--- Perform a bayonet attack using the integrated bayonet's spear substitute.
+--- @param character IsoPlayer
+--- @param chargeDelta number
+--- @param weapon HandWeapon
+--- @param callback function
+function Bayonet.IntegratedBayonetAttack(character, chargeDelta, weapon, callback)
+    local spearType = Bayonet.IntegratedBayonets[weapon:getFullType()]
+    if not spearType then return end
+
+    local bayonetTempWeapon = weapon:getModData().GW_CachedIntegratedSpear
+    if not bayonetTempWeapon then
+        bayonetTempWeapon = instanceItem(spearType)
+        if not bayonetTempWeapon then return end
+        weapon:getModData().GW_CachedIntegratedSpear = bayonetTempWeapon
     end
 
     bayonetTempWeapon:setWeaponSprite(weapon:getWeaponSprite())

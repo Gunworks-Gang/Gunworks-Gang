@@ -1,11 +1,10 @@
 {
-  "IGUI_FirearmAmmo_Title": "Firearm Ammo Management",
-  "IGUI_MagazineAmmo_Title": "Magazine Ammo Management",
-  "IGUI_DropFirearm": "Drop Firearm",
-  "IGUI_DropMagazine": "Drop Magazine",
+  "IGUI_AmmoLoader_Title": "Ammo Loader",
+  "IGUI_AmmoLoader_DropLabel": "Drop Firearm or Magazine",
+  "IGUI_AmmoLoader_DragTooltip": "Drag a firearm or magazine here",
   "IGUI_Amount": "Amount",
   "IGUI_AmmoType": "Ammo Type",
-  "IGUI_Load": "Load into Firearm",
+  "IGUI_Load": "Load",
   "IGUI_ContextMenu_InsertAltBulletsInMagazine": "Insert %1 %2 in Magazine",
   "IGUI_FoldStock": "Fold Stock",
   "IGUI_UnfoldStock": "Unfold Stock",
@@ -19,5 +18,13 @@
   "IGUI_RailingMountDesc": "Mount %1 onto %2.",
   "IGUI_RailingMountMenu": "Mount on %1...",
   "IGUI_RailingUnmount": "Remove %1 (%2)",
-  "IGUI_RailingUnmountDesc": "Remove %1 from %2."
+  "IGUI_RailingUnmountDesc": "Remove %1 from %2.",
+  "IGUI_DeployBayonet": "Deploy Bayonet",
+  "IGUI_DeployBayonetDesc": "Unfold the integrated bayonet for melee attacks.",
+  "IGUI_FoldBayonet": "Fold Bayonet",
+  "IGUI_FoldBayonetDesc": "Fold the bayonet back into the weapon.",
+  "IGUI_DeployUnderbarrel": "Deploy Underbarrel",
+  "IGUI_DeployUnderbarrelDesc": "Deploy the integrated underbarrel launcher.",
+  "IGUI_StowUnderbarrel": "Stow Underbarrel",
+  "IGUI_StowUnderbarrelDesc": "Stow the underbarrel launcher."
 }
