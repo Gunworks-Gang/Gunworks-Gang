@@ -62,11 +62,17 @@ end
 -- Registration API for modders
 -------------------------------------------------
 
---- Register a weapon or magazine to an ammo family
---- @param itemType string  e.g. "MyMod.MyGun" or "MyMod.MyMagazine"
---- @param family string    e.g. "5.56x45mm"
-function Ammo.RegisterItemFamily(itemType, family)
-    Ammo.ItemAmmoFamily[itemType] = family
+--- Register one or more weapons/magazines to an ammo family
+--- @param family string           e.g. "5.56x45mm"
+--- @param itemTypes string|table  single type string or array of type strings
+function Ammo.RegisterItemFamily(family, itemTypes)
+    if type(itemTypes) == "table" then
+        for _, itemType in ipairs(itemTypes) do
+            Ammo.ItemAmmoFamily[itemType] = family
+        end
+    else
+        Ammo.ItemAmmoFamily[itemTypes] = family
+    end
 end
 
 --- Register a new ammo family or add bullets to an existing one
