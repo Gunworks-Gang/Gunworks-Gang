@@ -72,6 +72,7 @@ function Underbarrel.SwapToUnderbarrel(weapon, player)
         underbarrelWeapon = nil
         weapon:getModData().GW_CachedUnderbarrelWeapon = nil
         weapon:getModData().GW_UnderbarrelAmmo = nil
+        weapon:getModData().GW_UnderbarrelAmmoType = nil
         weapon:getModData().GW_UnderbarrelChambered = nil
     end
     if not underbarrelWeapon then
@@ -155,6 +156,10 @@ function Underbarrel.RestoreOriginalWeapon(player)
     if underbarrelWeapon then
         weapon:getModData().GW_UnderbarrelAmmo = underbarrelWeapon:getCurrentAmmoCount()
         weapon:getModData().GW_UnderbarrelChambered = underbarrelWeapon:isRoundChambered()
+        local ammoType = underbarrelWeapon:getAmmoType()
+        if ammoType then
+            weapon:getModData().GW_UnderbarrelAmmoType = ammoType:getItemKey()
+        end
     end
 
     player:setPrimaryHandItem(weapon)
