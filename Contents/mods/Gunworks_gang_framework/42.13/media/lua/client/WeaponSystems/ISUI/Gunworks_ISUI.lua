@@ -499,30 +499,46 @@ ISInventoryPaneContextMenu.doMagazineMenu = function(playerObj, magazine, contex
     if Ammo.ItemAmmoFamily[magazine:getFullType()] then
         if magazine:getCurrentAmmoCount() < magazine:getMaxAmmo() then
             local typeList = Ammo.GetBulletTypesForFamily(Ammo.ItemAmmoFamily[magazine:getFullType()])
+            local freeSpace = magazine:getMaxAmmo() - magazine:getCurrentAmmoCount()
+
+            -- Build entries and count how many have ammo available
+            local entries = {}
+            local availableCount = 0
             for _, typeName in ipairs(typeList) do
-                local itemKey = typeName;
-                local bulletName = getScriptManager():FindItem(itemKey):getDisplayName();
-                local ammoCount = playerObj:getInventory():getItemCountRecurse(itemKey);
-                if ammoCount > magazine:getMaxAmmo() then
-                    ammoCount = magazine:getMaxAmmo();
-                end
-                if ammoCount > magazine:getMaxAmmo() - magazine:getCurrentAmmoCount() then
-                    ammoCount = magazine:getMaxAmmo() - magazine:getCurrentAmmoCount();
-                end
-                if ammoCount == 0 then
-                    local option = context:addOption(getText("ContextMenu_NoBullets", ammoCount));
-                    option.notAvailable = true;
+                local script = getScriptManager():FindItem(typeName)
+                local bulletName = script and script:getDisplayName() or typeName
+                local ammoCount = playerObj:getInventory():getItemCountRecurse(typeName)
+                if ammoCount > magazine:getMaxAmmo() then ammoCount = magazine:getMaxAmmo() end
+                if ammoCount > freeSpace then ammoCount = freeSpace end
+                table.insert(entries, { itemKey = typeName, bulletName = bulletName, ammoCount = ammoCount })
+                if ammoCount > 0 then availableCount = availableCount + 1 end
+            end
+
+            local targetMenu = context
+            if availableCount > 1 then
+                local parentOption = context:addOption(getText("IGUI_LoadAmmo") or "Load Ammo")
+                local subMenu = ISContextMenu:getNew(context)
+                context:addSubMenu(parentOption, subMenu)
+                targetMenu = subMenu
+            end
+
+            for _, entry in ipairs(entries) do
+                if entry.ammoCount == 0 then
+                    local option = targetMenu:addOption(getText("ContextMenu_NoBullets", entry.ammoCount))
+                    option.notAvailable = true
                 else
-                    context:addOption(getText("IGUI_ContextMenu_InsertAltBulletsInMagazine", ammoCount, bulletName),
+                    targetMenu:addOption(
+                        getText("IGUI_ContextMenu_InsertAltBulletsInMagazine", entry.ammoCount, entry.bulletName),
                         playerObj,
-                        ISInventoryPaneContextMenu.onLoadBulletsInMagazineFromDiffAmmoType, magazine, ammoCount, itemKey);
+                        ISInventoryPaneContextMenu.onLoadBulletsInMagazineFromDiffAmmoType, magazine, entry.ammoCount,
+                        entry.itemKey)
                 end
             end
         end
 
         if magazine:getCurrentAmmoCount() > 0 then
             context:addOption(getText("ContextMenu_UnloadMagazine"), playerObj,
-                ISInventoryPaneContextMenu.onUnloadBulletsFromMagazine, magazine);
+                ISInventoryPaneContextMenu.onUnloadBulletsFromMagazine, magazine)
         end
     else
         ISInventoryPaneContextMenu_doMagazineMenu_Original(playerObj, magazine, context)
@@ -543,25 +559,42 @@ local ISInventoryPaneContextMenu_doBulletMenu_Original = ISInventoryPaneContextM
 ISInventoryPaneContextMenu.doBulletMenu = function(playerObj, weapon, context)
     if Ammo.ItemAmmoFamily[weapon:getFullType()] then
         local typeList = Ammo.GetBulletTypesForFamily(Ammo.ItemAmmoFamily[weapon:getFullType()])
-        for _, typeName in ipairs(typeList) do
-            local itemKey = typeName;
-            local bulletAvail = playerObj:getInventory():getItemCountRecurse(itemKey);
-            local bulletNeeded = weapon:getMaxAmmo() - weapon:getCurrentAmmoCount();
-            local bulletName = getScriptManager():FindItem(itemKey):getDisplayName();
-            if bulletNeeded > bulletAvail then
-                bulletNeeded = bulletAvail;
-            end
-            local insertOption = context:addOption(
-                getText("ContextMenu_InsertBullets", bulletNeeded, bulletName, weapon:getDisplayName()), playerObj,
-                ISInventoryPaneContextMenu.onLoadBulletsIntoFirearmFromDiffAmmoType, weapon, itemKey);
-            if bulletNeeded <= 0 then
-                insertOption.notAvailable = true;
-            end
+        local freeSpace = weapon:getMaxAmmo() - weapon:getCurrentAmmoCount()
 
-            if weapon:getCurrentAmmoCount() > 0 then
-                context:addOption(getText("ContextMenu_UnloadRounds", weapon:getDisplayName()), playerObj,
-                    ISInventoryPaneContextMenu.onUnloadBulletsFromFirearm, weapon);
+        -- Build entries and count how many have ammo available
+        local entries = {}
+        local availableCount = 0
+        for _, typeName in ipairs(typeList) do
+            local script = getScriptManager():FindItem(typeName)
+            local bulletName = script and script:getDisplayName() or typeName
+            local bulletAvail = playerObj:getInventory():getItemCountRecurse(typeName)
+            local bulletNeeded = freeSpace
+            if bulletNeeded > bulletAvail then bulletNeeded = bulletAvail end
+            table.insert(entries, { itemKey = typeName, bulletName = bulletName, bulletNeeded = bulletNeeded })
+            if bulletNeeded > 0 then availableCount = availableCount + 1 end
+        end
+
+        local targetMenu = context
+        if availableCount > 1 then
+            local parentOption = context:addOption(getText("IGUI_LoadAmmo") or "Load Ammo")
+            local subMenu = ISContextMenu:getNew(context)
+            context:addSubMenu(parentOption, subMenu)
+            targetMenu = subMenu
+        end
+
+        for _, entry in ipairs(entries) do
+            local insertOption = targetMenu:addOption(
+                getText("ContextMenu_InsertBullets", entry.bulletNeeded, entry.bulletName, weapon:getDisplayName()),
+                playerObj,
+                ISInventoryPaneContextMenu.onLoadBulletsIntoFirearmFromDiffAmmoType, weapon, entry.itemKey)
+            if entry.bulletNeeded <= 0 then
+                insertOption.notAvailable = true
             end
+        end
+
+        if weapon:getCurrentAmmoCount() > 0 then
+            context:addOption(getText("ContextMenu_UnloadRounds", weapon:getDisplayName()), playerObj,
+                ISInventoryPaneContextMenu.onUnloadBulletsFromFirearm, weapon)
         end
     else
         ISInventoryPaneContextMenu_doBulletMenu_Original(playerObj, weapon, context)

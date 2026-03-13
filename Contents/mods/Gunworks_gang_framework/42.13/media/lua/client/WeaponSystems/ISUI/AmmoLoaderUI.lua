@@ -126,7 +126,19 @@ end
 
 function AmmoLoaderDropPanel:updateItemInfo(targetItem)
     if targetItem then
-        self.itemNameLabel:setName(targetItem:getDisplayName() or targetItem:getName())
+        local displayName = targetItem:getDisplayName() or targetItem:getName()
+        local maxWidth = self.width - 10
+        local nameWidth = getTextManager():MeasureStringX(UIFont.Small, displayName)
+        if nameWidth > maxWidth then
+            while string.len(displayName) > 1 do
+                displayName = string.sub(displayName, 1, string.len(displayName) - 1)
+                if getTextManager():MeasureStringX(UIFont.Small, displayName .. "...") <= maxWidth then
+                    break
+                end
+            end
+            displayName = displayName .. "..."
+        end
+        self.itemNameLabel:setName(displayName)
         local current = targetItem:getCurrentAmmoCount()
         local max = targetItem:getMaxAmmo()
         self.ammoCountLabel:setName(current .. " / " .. max)
@@ -151,6 +163,128 @@ function AmmoLoaderDropPanel:new(x, y, width, height, player)
     o.player = player
     o.backgroundColor = { r = 0.1, g = 0.1, b = 0.1, a = 0.8 }
     o.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
+    return o
+end
+
+-----------------------------------------------------------
+-- AmmoSlider - Horizontal integer slider
+-----------------------------------------------------------
+AmmoSlider = ISPanel:derive("AmmoSlider")
+
+function AmmoSlider:initialise()
+    ISPanel.initialise(self)
+end
+
+function AmmoSlider:createChildren()
+    self.valueLabel = ISLabel:new(self.width / 2, 0, FONT_HGT_SMALL, "0", 1, 1, 0.5, 1, UIFont.Small, true)
+    self.valueLabel.center = true
+    self.valueLabel:initialise()
+    self.valueLabel:instantiate()
+    self:addChild(self.valueLabel)
+end
+
+function AmmoSlider:setValues(currentVal, maxVal)
+    self.currentValue = math.max(0, math.min(currentVal or 0, maxVal or 0))
+    self.maxValue = maxVal or 0
+    self:updateLabel()
+end
+
+function AmmoSlider:setValue(val)
+    self.currentValue = math.max(0, math.min(val, self.maxValue))
+    self:updateLabel()
+end
+
+function AmmoSlider:getValue()
+    return self.currentValue
+end
+
+function AmmoSlider:updateLabel()
+    self.valueLabel:setName(tostring(self.currentValue))
+end
+
+function AmmoSlider:getTrackBounds()
+    local trackY = FONT_HGT_SMALL + 6
+    local trackH = 8
+    local trackX = 10
+    local trackW = self.width - 20
+    return trackX, trackY, trackW, trackH
+end
+
+function AmmoSlider:prerender()
+    ISPanel.prerender(self)
+
+    local trackX, trackY, trackW, trackH = self:getTrackBounds()
+
+    -- Track background
+    self:drawRect(trackX, trackY, trackW, trackH, 0.8, 0.15, 0.15, 0.15)
+    self:drawRectBorder(trackX, trackY, trackW, trackH, 1, 0.4, 0.4, 0.4)
+
+    -- Filled portion
+    if self.maxValue > 0 then
+        local fillW = (self.currentValue / self.maxValue) * trackW
+        self:drawRect(trackX, trackY, fillW, trackH, 0.8, 0.3, 0.6, 0.3)
+    end
+
+    -- Thumb
+    if self.maxValue > 0 then
+        local thumbW = 8
+        local thumbH = trackH + 8
+        local thumbX = trackX + (self.currentValue / self.maxValue) * trackW - thumbW / 2
+        local thumbY = trackY - 4
+        self:drawRect(thumbX, thumbY, thumbW, thumbH, 1, 0.8, 0.8, 0.8)
+        self:drawRectBorder(thumbX, thumbY, thumbW, thumbH, 1, 0.5, 0.5, 0.5)
+    end
+end
+
+function AmmoSlider:onMouseDown(x, y)
+    self.dragging = true
+    self:updateValueFromMouse(x)
+    return true
+end
+
+function AmmoSlider:onMouseUp(x, y)
+    self.dragging = false
+    return true
+end
+
+function AmmoSlider:onMouseMove(dx, dy)
+    if self.dragging then
+        self:updateValueFromMouse(self:getMouseX())
+    end
+end
+
+function AmmoSlider:onMouseMoveOutside(dx, dy)
+    if self.dragging then
+        self:updateValueFromMouse(self:getMouseX())
+    end
+end
+
+function AmmoSlider:onMouseUpOutside(x, y)
+    self.dragging = false
+    return true
+end
+
+function AmmoSlider:updateValueFromMouse(mouseX)
+    if self.maxValue <= 0 then return end
+    local trackX, _, trackW, _ = self:getTrackBounds()
+    local ratio = math.max(0, math.min(1, (mouseX - trackX) / trackW))
+    local newValue = math.floor(ratio * self.maxValue + 0.5)
+    if newValue ~= self.currentValue then
+        self.currentValue = newValue
+        self:updateLabel()
+        if self.onValueChanged then
+            self.onValueChanged(self.target, newValue)
+        end
+    end
+end
+
+function AmmoSlider:new(x, y, width, height)
+    local o = ISPanel.new(self, x, y, width, height)
+    o.currentValue = 0
+    o.maxValue = 0
+    o.dragging = false
+    o.backgroundColor = { r = 0, g = 0, b = 0, a = 0 }
+    o.borderColor = { r = 0, g = 0, b = 0, a = 0 }
     return o
 end
 
@@ -232,63 +366,7 @@ function AmmoLoaderUI:createChildren()
     self.dropPanel:instantiate()
     self:addChild(self.dropPanel)
 
-    local middleWidth = 80
-    local middleX = self.dropPanel:getRight() + UI_BORDER_SPACING
-
-    self.middlePanel = ISPanel:new(middleX, y, middleWidth, panelHeight)
-    self.middlePanel:noBackground()
-    self.middlePanel:initialise()
-    self.middlePanel:instantiate()
-    self:addChild(self.middlePanel)
-
-    local midY = UI_BORDER_SPACING
-
-    self.amountTitleLabel = ISLabel:new(middleWidth / 2, midY, FONT_HGT_SMALL, getText("IGUI_Amount") or "Amount", 1,
-        1, 1, 1, UIFont.Small, true)
-    self.amountTitleLabel.center = true
-    self.amountTitleLabel:initialise()
-    self.amountTitleLabel:instantiate()
-    self.middlePanel:addChild(self.amountTitleLabel)
-
-    midY = midY + FONT_HGT_SMALL + UI_BORDER_SPACING
-
-    self.btnPlus = ISButton:new((middleWidth - BUTTON_HGT) / 2, midY, BUTTON_HGT, BUTTON_HGT, "+", self,
-        AmmoLoaderUI.onAmountButton)
-    self.btnPlus.internal = "PLUS"
-    self.btnPlus:initialise()
-    self.btnPlus:instantiate()
-    self.btnPlus.borderColor = { r = 0.7, g = 0.7, b = 0.7, a = 0.5 }
-    self.middlePanel:addChild(self.btnPlus)
-
-    midY = self.btnPlus:getBottom() + 5
-
-    self.amountLabel = ISLabel:new(middleWidth / 2, midY, FONT_HGT_MEDIUM, "0", 1, 1, 0.5, 1, UIFont.Medium, true)
-    self.amountLabel.center = true
-    self.amountLabel:initialise()
-    self.amountLabel:instantiate()
-    self.middlePanel:addChild(self.amountLabel)
-
-    midY = self.amountLabel:getBottom() + 5
-
-    self.btnMinus = ISButton:new((middleWidth - BUTTON_HGT) / 2, midY, BUTTON_HGT, BUTTON_HGT, "-", self,
-        AmmoLoaderUI.onAmountButton)
-    self.btnMinus.internal = "MINUS"
-    self.btnMinus:initialise()
-    self.btnMinus:instantiate()
-    self.btnMinus.borderColor = { r = 0.7, g = 0.7, b = 0.7, a = 0.5 }
-    self.middlePanel:addChild(self.btnMinus)
-
-    midY = self.btnMinus:getBottom() + UI_BORDER_SPACING
-
-    self.btnMax = ISButton:new((middleWidth - 50) / 2, midY, 50, BUTTON_HGT, "MAX", self,
-        AmmoLoaderUI.onAmountButton)
-    self.btnMax.internal = "MAX"
-    self.btnMax:initialise()
-    self.btnMax:instantiate()
-    self.btnMax.borderColor = { r = 0.7, g = 0.7, b = 0.7, a = 0.5 }
-    self.middlePanel:addChild(self.btnMax)
-
-    local rightX = self.middlePanel:getRight() + UI_BORDER_SPACING
+    local rightX = self.dropPanel:getRight() + UI_BORDER_SPACING
     local rightWidth = self.width - rightX - UI_BORDER_SPACING
 
     self.rightPanel = ISPanel:new(rightX, y, rightWidth, panelHeight)
@@ -320,6 +398,51 @@ function AmmoLoaderUI:createChildren()
     self.rightPanel:addChild(self.ammoList)
 
     y = self.dropPanel:getBottom() + UI_BORDER_SPACING
+
+    -- Amount controls row: [-] slider [+]
+    local controlX = UI_BORDER_SPACING
+    local controlWidth = self.width - UI_BORDER_SPACING * 2
+    local btnSize = BUTTON_HGT + 4
+
+    self.btnMinus = ISButton:new(controlX, y, btnSize, btnSize, "-", self, AmmoLoaderUI.onAmountButton)
+    self.btnMinus.internal = "MINUS"
+    self.btnMinus:initialise()
+    self.btnMinus:instantiate()
+    self.btnMinus.borderColor = { r = 0.7, g = 0.7, b = 0.7, a = 0.5 }
+    self:addChild(self.btnMinus)
+
+    local sliderX = self.btnMinus:getRight() + 5
+    local sliderEndX = controlX + controlWidth - btnSize - 5
+    local sliderWidth = sliderEndX - sliderX
+    local sliderHeight = FONT_HGT_SMALL + 20
+
+    self.ammoSlider = AmmoSlider:new(sliderX, y + (btnSize - sliderHeight) / 2, sliderWidth, sliderHeight)
+    self.ammoSlider.target = self
+    self.ammoSlider.onValueChanged = AmmoLoaderUI.onSliderChanged
+    self.ammoSlider:initialise()
+    self.ammoSlider:instantiate()
+    self:addChild(self.ammoSlider)
+
+    self.btnPlus = ISButton:new(sliderEndX, y, btnSize, btnSize, "+", self, AmmoLoaderUI.onAmountButton)
+    self.btnPlus.internal = "PLUS"
+    self.btnPlus:initialise()
+    self.btnPlus:instantiate()
+    self.btnPlus.borderColor = { r = 0.7, g = 0.7, b = 0.7, a = 0.5 }
+    self:addChild(self.btnPlus)
+
+    y = y + math.max(btnSize, sliderHeight) + 5
+
+    -- MAX button centered
+    local maxBtnW = 60
+    self.btnMax = ISButton:new((self.width - maxBtnW) / 2, y, maxBtnW, BUTTON_HGT, "MAX", self,
+        AmmoLoaderUI.onAmountButton)
+    self.btnMax.internal = "MAX"
+    self.btnMax:initialise()
+    self.btnMax:instantiate()
+    self.btnMax.borderColor = { r = 0.7, g = 0.7, b = 0.7, a = 0.5 }
+    self:addChild(self.btnMax)
+
+    y = self.btnMax:getBottom() + UI_BORDER_SPACING
 
     local buttonWidth = (self.width - UI_BORDER_SPACING * 3) / 2
 
@@ -361,7 +484,7 @@ function AmmoLoaderUI:onItemRemoved()
     self.selectedAmmoType = nil
     self.transferAmount = 0
     self.maxTransferAmount = 0
-    self:updateAmountLabel()
+    self.ammoSlider:setValues(0, 0)
     self.btnLoad:setEnable(false)
 end
 
@@ -480,7 +603,7 @@ function AmmoLoaderUI:updateMaxAmount()
     if not targetItem or not self.selectedAmmoType then
         self.maxTransferAmount = 0
         self.transferAmount = 0
-        self:updateAmountLabel()
+        self.ammoSlider:setValues(0, 0)
         self.btnLoad:setEnable(false)
         return
     end
@@ -497,16 +620,20 @@ function AmmoLoaderUI:updateMaxAmount()
         self.transferAmount = self.maxTransferAmount
     end
 
-    self:updateAmountLabel()
+    self.ammoSlider:setValues(self.transferAmount, self.maxTransferAmount)
     self.btnLoad:setEnable(self.transferAmount > 0)
 end
 
-function AmmoLoaderUI:updateAmountLabel()
-    self.amountLabel:setName(tostring(self.transferAmount))
+-----------------------------------------------------------
+-- Slider callback
+-----------------------------------------------------------
+function AmmoLoaderUI:onSliderChanged(newValue)
+    self.transferAmount = newValue
+    self.btnLoad:setEnable(self.transferAmount > 0)
 end
 
 -----------------------------------------------------------
--- Amount button handlers
+-- Amount button handlers (fine-tuning)
 -----------------------------------------------------------
 function AmmoLoaderUI:onAmountButton(button)
     if button.internal == "PLUS" then
@@ -521,7 +648,7 @@ function AmmoLoaderUI:onAmountButton(button)
         self.transferAmount = self.maxTransferAmount
     end
 
-    self:updateAmountLabel()
+    self.ammoSlider:setValue(self.transferAmount)
     self.btnLoad:setEnable(self.transferAmount > 0)
 end
 
@@ -559,7 +686,7 @@ function AmmoLoaderUI:performLoad()
         ISTimedActionQueue.add(ISLoadBulletsInMagazine:new(self.player, targetItem, self.transferAmount, self.transferAmount))
     end
 
-    self:updateAmountLabel()
+    self.ammoSlider:setValues(self.transferAmount, self.maxTransferAmount)
 end
 
 -----------------------------------------------------------
@@ -621,9 +748,17 @@ end
 
 function AmmoLoaderUI:onJoypadDown(button, joypadData)
     if button == Joypad.DPadUp then
-        self:onAmountButton({ internal = "PLUS" })
+        if self.transferAmount < self.maxTransferAmount then
+            self.transferAmount = self.transferAmount + 1
+            self.ammoSlider:setValue(self.transferAmount)
+            self.btnLoad:setEnable(self.transferAmount > 0)
+        end
     elseif button == Joypad.DPadDown then
-        self:onAmountButton({ internal = "MINUS" })
+        if self.transferAmount > 0 then
+            self.transferAmount = self.transferAmount - 1
+            self.ammoSlider:setValue(self.transferAmount)
+            self.btnLoad:setEnable(self.transferAmount > 0)
+        end
     elseif button == Joypad.DPadLeft then
         if self.ammoList.selected > 1 then
             self.ammoList.selected = self.ammoList.selected - 1
