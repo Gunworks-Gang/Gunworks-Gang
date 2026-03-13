@@ -398,10 +398,12 @@ function AmmoLoaderUI:getAvailableAmmoTypes(targetItem)
             local count = inventory:getCountTypeRecurse(ammoTypeKey)
             local script = getScriptManager():FindItem(ammoTypeKey)
             local name = script and script:getDisplayName() or ammoTypeKey
+            local tex = script and script:getIcon() and getTexture("Item_" .. script:getIcon()) or nil
             table.insert(result, {
                 ammoTypeKey = ammoTypeKey,
                 name = name,
-                count = count
+                count = count,
+                texture = tex
             })
         end
     else
@@ -411,10 +413,12 @@ function AmmoLoaderUI:getAvailableAmmoTypes(targetItem)
             local count = inventory:getCountTypeRecurse(ammoTypeKey)
             local script = getScriptManager():FindItem(ammoTypeKey)
             local name = script and script:getDisplayName() or ammoTypeKey
+            local tex = script and script:getIcon() and getTexture("Item_" .. script:getIcon()) or nil
             table.insert(result, {
                 ammoTypeKey = ammoTypeKey,
                 name = name,
-                count = count
+                count = count,
+                texture = tex
             })
         end
     end
@@ -436,11 +440,20 @@ function AmmoLoaderUI.doDrawAmmoItem(self, y, item, alt)
     end
 
     local textY = y + (self.itemheight - FONT_HGT_SMALL) / 2
-    self:drawText(ammoData.name, 5, textY, 1, 1, 1, 1, UIFont.Small)
+    local textX = 5
+
+    if ammoData.texture then
+        local iconSize = self.itemheight - 4
+        self:drawTextureScaled(ammoData.texture, textX, y + 2, iconSize, iconSize, 1, 1, 1, 1)
+        textX = textX + iconSize + 4
+    end
+
+    local nameColor = ammoData.count > 0 and { r = 1, g = 1, b = 1 } or { r = 1, g = 0.4, b = 0.4 }
+    self:drawText(ammoData.name, textX, textY, nameColor.r, nameColor.g, nameColor.b, 1, UIFont.Small)
 
     local countText = "x" .. ammoData.count
     local countWidth = getTextManager():MeasureStringX(UIFont.Small, countText)
-    local countColor = ammoData.count > 0 and { r = 0.5, g = 1, b = 0.5 } or { r = 1, g = 0.5, b = 0.5 }
+    local countColor = ammoData.count > 0 and { r = 0.5, g = 1, b = 0.5 } or { r = 1, g = 0.4, b = 0.4 }
     self:drawText(countText, self.width - countWidth - 5, textY, countColor.r, countColor.g, countColor.b, 1,
         UIFont.Small)
 
