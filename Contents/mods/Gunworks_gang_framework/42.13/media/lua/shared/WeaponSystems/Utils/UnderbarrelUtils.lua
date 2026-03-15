@@ -11,6 +11,30 @@ Underbarrel.UnderbarrelAttachments = {}
 Underbarrel.IntegratedUnderbarrels = {}
 
 -------------------------------------------------
+-- Stat lists: modders declare which stats each system uses.
+-- swapStats  = stats to read from the UB shadow and apply onto the host
+-- saveStats  = operational state to persist between swaps
+-------------------------------------------------
+Underbarrel.SwapStats = {}
+Underbarrel.SaveStats = {}
+
+--- Declare which stats underbarrel swaps should read from the shadow weapon.
+---@param statNames string[]  e.g. { "MaxDamage", "MinDamage", "AmmoType", ... }
+function Underbarrel.RegisterSwapStats(statNames)
+    for _, name in ipairs(statNames) do
+        Underbarrel.SwapStats[#Underbarrel.SwapStats + 1] = name
+    end
+end
+
+--- Declare which stats to save/restore between underbarrel swaps.
+---@param statNames string[]  e.g. { "RoundChambered", "CurrentAmmoCount", ... }
+function Underbarrel.RegisterSaveStats(statNames)
+    for _, name in ipairs(statNames) do
+        Underbarrel.SaveStats[#Underbarrel.SaveStats + 1] = name
+    end
+end
+
+-------------------------------------------------
 -- Registration API
 -------------------------------------------------
 
@@ -38,12 +62,6 @@ end
 -------------------------------------------------
 -- Swap Utilities  (stat-swap approach, no item swap)
 -------------------------------------------------
-
--- Operational state to save between underbarrel swaps
-local UB_SAVE_STATS = {
-    "RoundChambered", "ContainsClip", "CurrentAmmoCount",
-    "SpentRoundChambered", "SpentRoundCount", "Jammed",
-}
 
 local function DisplayMessage(character, messageKey)
     character:Say(getText(messageKey), 0.55, 0.55, 0.55, UIFont.Dialogue, 0, "default")
@@ -76,19 +94,18 @@ function Underbarrel.SwapToUnderbarrel(weapon, player)
     local underbarrelType = Underbarrel.UnderbarrelAttachments[attachment:getFullType()]
     local md = weapon:getModData()
 
-    -- 1. Snapshot everything from the host weapon
-    md.GW_UB_OriginalSnapshot = StatsFactory.Snapshot(weapon)
+    -- 1. Snapshot only the registered swap stats from the host weapon
+    md.GW_UB_OriginalSnapshot = StatsFactory.Snapshot(weapon, Underbarrel.SwapStats)
 
-    -- 2. Create a shadow of the underbarrel weapon and apply all its stats
+    -- 2. Create a shadow of the underbarrel weapon and apply its swap stats
     local ubShadow = instanceItem(underbarrelType)
     if not ubShadow then return end
-    StatsFactory.Apply(weapon, StatsFactory.Snapshot(ubShadow))
+    StatsFactory.Apply(weapon, StatsFactory.Snapshot(ubShadow, Underbarrel.SwapStats))
 
-    -- 3. Restore cached underbarrel operational state if we were in UB mode before
+    -- 3. Restore cached underbarrel save state if we were in UB mode before
     if md.GW_UB_SavedState then
         StatsFactory.Apply(weapon, md.GW_UB_SavedState)
     else
-        -- First time: underbarrel starts empty
         weapon:setCurrentAmmoCount(0)
         weapon:setRoundChambered(false)
         weapon:setContainsClip(false)
@@ -109,10 +126,10 @@ function Underbarrel.RestoreOriginalWeapon(weapon, player)
 
     local md = weapon:getModData()
 
-    -- 1. Save the current underbarrel operational state for next swap
-    md.GW_UB_SavedState = StatsFactory.Snapshot(weapon, UB_SAVE_STATS)
+    -- 1. Save registered save stats for next swap
+    md.GW_UB_SavedState = StatsFactory.Snapshot(weapon, Underbarrel.SaveStats)
 
-    -- 2. Restore the original weapon snapshot (all stats + state)
+    -- 2. Restore the original weapon snapshot
     if md.GW_UB_OriginalSnapshot then
         StatsFactory.Apply(weapon, md.GW_UB_OriginalSnapshot)
     end
@@ -176,15 +193,15 @@ function Underbarrel.SwapToIntegratedUnderbarrel(weapon, player)
     local underbarrelType = Underbarrel.IntegratedUnderbarrels[weapon:getFullType()]
     local md = weapon:getModData()
 
-    -- 1. Snapshot everything from the host weapon
-    md.GW_UB_OriginalSnapshot = StatsFactory.Snapshot(weapon)
+    -- 1. Snapshot only the registered swap stats from the host weapon
+    md.GW_UB_OriginalSnapshot = StatsFactory.Snapshot(weapon, Underbarrel.SwapStats)
 
-    -- 2. Create a shadow of the underbarrel weapon and apply all its stats
+    -- 2. Create a shadow of the underbarrel weapon and apply its swap stats
     local ubShadow = instanceItem(underbarrelType)
     if not ubShadow then return end
-    StatsFactory.Apply(weapon, StatsFactory.Snapshot(ubShadow))
+    StatsFactory.Apply(weapon, StatsFactory.Snapshot(ubShadow, Underbarrel.SwapStats))
 
-    -- 3. Restore cached integrated underbarrel state if available
+    -- 3. Restore cached integrated underbarrel save state if available
     if md.GW_UB_IntegratedSavedState then
         StatsFactory.Apply(weapon, md.GW_UB_IntegratedSavedState)
     else
@@ -210,10 +227,10 @@ function Underbarrel.RestoreIntegratedUnderbarrel(weapon, player)
 
     local md = weapon:getModData()
 
-    -- 1. Save the current integrated underbarrel operational state
-    md.GW_UB_IntegratedSavedState = StatsFactory.Snapshot(weapon, UB_SAVE_STATS)
+    -- 1. Save registered save stats
+    md.GW_UB_IntegratedSavedState = StatsFactory.Snapshot(weapon, Underbarrel.SaveStats)
 
-    -- 2. Restore the original weapon snapshot (all stats + state)
+    -- 2. Restore the original weapon snapshot
     if md.GW_UB_OriginalSnapshot then
         StatsFactory.Apply(weapon, md.GW_UB_OriginalSnapshot)
     end
