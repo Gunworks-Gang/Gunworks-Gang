@@ -1,3 +1,8 @@
+-------------------------------------------------
+-- TODO: this is working so far, but we need to take into account when when the player removes the attachment we need to clear all states and return the ammo to the playuer.
+-- TODO: also make sure that when the player leaves the game with the underbarrelweapon equipt the weapon doesn't explode and restore a valid state on load.
+-- TODO: no clue with MP yet.
+-------------------------------------------------
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
 local Underbarrel = {}
