@@ -8,12 +8,18 @@ require("TimedActions/ISRackFirearm")
 local Magazine = require("WeaponSystems/Utils/MagazineUtils")
 local Ammo = require("WeaponSystems/Utils/AmmoUtils")
 local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
+local Underbarrel = require("WeaponSystems/Utils/UnderbarrelUtils")
 
 -------------------------------------------------
 -- BeginAutomaticReload (MagazineProfile support)
 -------------------------------------------------
 local ISReloadWeaponAction_BeginAutomaticReload_Original = ISReloadWeaponAction.BeginAutomaticReload
 ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
+    if gun and Underbarrel.IsWeaponInUnderbarrelMode(gun) then
+        ISReloadWeaponAction_BeginAutomaticReload_Original(playerObj, gun)
+        return
+    end
+
     if Magazine.GetProfileForGun(gun) then
         local magazine = Magazine.getBestMagazineForGun(playerObj, gun)
         local hasMagazine = gun:isContainsClip()
@@ -63,6 +69,10 @@ end
 -------------------------------------------------
 local ISInsertMagazine_loadAmmo_original = ISInsertMagazine.loadAmmo
 function ISInsertMagazine:loadAmmo()
+    if self.gun and Underbarrel.IsWeaponInUnderbarrelMode(self.gun) then
+        return ISInsertMagazine_loadAmmo_original(self)
+    end
+
     local magazineInstance = instanceItem(self.magazine:getFullType())
     if self.magazine then
         if self.gun.setMagazineType then
@@ -74,7 +84,19 @@ function ISInsertMagazine:loadAmmo()
         local magList = self.magazine:getModData().AmmoList
         if magList and #magList > 0 then
             local gunModData = self.gun:getModData()
-            gunModData.AmmoList = magList
+
+            -- Invariant: chambered round is always the last AmmoList entry.
+            -- If a chambered round already exists, keep it at tail and place
+            -- inserted magazine rounds before it so it fires first.
+            if self.gun:isRoundChambered() and gunModData.AmmoList and #gunModData.AmmoList > 0 then
+                local chamberedType = gunModData.AmmoList[#gunModData.AmmoList]
+                local merged = Ammo.CopyAmmoList(magList)
+                merged[#merged + 1] = chamberedType
+                gunModData.AmmoList = merged
+            else
+                gunModData.AmmoList = Ammo.CopyAmmoList(magList)
+            end
+
             self.magazine:getModData().AmmoList = nil
         end
     end
@@ -86,6 +108,10 @@ end
 -------------------------------------------------
 local ISEjectMagazine_unloadAmmo_original = ISEjectMagazine.unloadAmmo
 function ISEjectMagazine:unloadAmmo()
+    if self.gun and Underbarrel.IsWeaponInUnderbarrelMode(self.gun) then
+        return ISEjectMagazine_unloadAmmo_original(self)
+    end
+
     local savedMagType = Magazine.GetMagazineType(self.gun)
     local magazineInstance = instanceItem(savedMagType)
     local gunModData = self.gun:getModData()
@@ -95,13 +121,15 @@ function ISEjectMagazine:unloadAmmo()
 
     if gunList and #gunList > 0 then
         if self.gun:isRoundChambered() and #gunList > 1 then
+            -- Keep chambered round on gun as tail entry; magazine receives
+            -- every entry before tail.
             ammoListForMag = {}
-            for i = 2, #gunList do
+            for i = 1, #gunList - 1 do
                 ammoListForMag[#ammoListForMag + 1] = gunList[i]
             end
-            gunModData.AmmoList = { gunList[1] }
+            gunModData.AmmoList = { gunList[#gunList] }
         elseif self.gun:isRoundChambered() and #gunList == 1 then
-            gunModData.AmmoList = { gunList[1] }
+            gunModData.AmmoList = { gunList[#gunList] }
         else
             ammoListForMag = {}
             for i = 1, #gunList do

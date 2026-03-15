@@ -206,21 +206,23 @@ function StatsFactory.RegisterModifierLayer(id, getModifiersFn, restoreStats)
 end
 
 --- Restore base stats then apply every active modifier layer in order.
---- Only stats declared in active layers' restoreStats are restored.
+--- Stats declared in any registered layer's restoreStats are restored first,
+--- so toggled-off layers correctly roll back to base values.
 ---@param weapon userdata  the live weapon instance
 function StatsFactory.ReapplyAllModifiers(weapon)
     local baseStats = StatsFactory.GetBaseStatsWithAttachments(weapon)
 
-    -- Collect restore stats from all active layers
+    -- Collect restore stats from all layers (active or inactive)
     local toRestore = {}
     local activeLayers = {}
     for _, layer in ipairs(StatsFactory.ModifierLayers) do
+        for name in pairs(layer.restoreStats) do
+            toRestore[name] = true
+        end
+
         local modifiers = layer.getModifiers(weapon)
         if modifiers then
             activeLayers[#activeLayers + 1] = modifiers
-            for name in pairs(layer.restoreStats) do
-                toRestore[name] = true
-            end
         end
     end
 
