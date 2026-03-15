@@ -38,6 +38,13 @@ end
 -------------------------------------------------
 -- Swap Utilities  (stat-swap approach, no item swap)
 -------------------------------------------------
+
+-- Operational state to save between underbarrel swaps
+local UB_SAVE_STATS = {
+    "RoundChambered", "ContainsClip", "CurrentAmmoCount",
+    "SpentRoundChambered", "SpentRoundCount", "Jammed",
+}
+
 local function DisplayMessage(character, messageKey)
     character:Say(getText(messageKey), 0.55, 0.55, 0.55, UIFont.Dialogue, 0, "default")
 end
@@ -69,25 +76,17 @@ function Underbarrel.SwapToUnderbarrel(weapon, player)
     local underbarrelType = Underbarrel.UnderbarrelAttachments[attachment:getFullType()]
     local md = weapon:getModData()
 
-    -- 1. Snapshot the host weapon's current stats + operational state
-    md.GW_UB_OriginalStats = StatsFactory.SnapshotStats(weapon)
-    md.GW_UB_OriginalState = StatsFactory.SnapshotState(weapon)
+    -- 1. Snapshot everything from the host weapon
+    md.GW_UB_OriginalSnapshot = StatsFactory.Snapshot(weapon)
 
-    -- 2. Create a shadow of the underbarrel weapon to read its stats from
+    -- 2. Create a shadow of the underbarrel weapon and apply all its stats
     local ubShadow = instanceItem(underbarrelType)
     if not ubShadow then return end
+    StatsFactory.Apply(weapon, StatsFactory.Snapshot(ubShadow))
 
-    -- 3. Read the underbarrel weapon stats and apply them onto the host weapon
-    local ubStats = StatsFactory.SnapshotStats(ubShadow)
-    StatsFactory.ApplySnapshot(weapon, ubStats)
-
-    -- 4. Read the underbarrel weapon state and apply it
-    local ubState = StatsFactory.SnapshotState(ubShadow)
-    StatsFactory.ApplyState(weapon, ubState)
-
-    -- 5. Restore cached underbarrel operational state if we were in UB mode before
+    -- 3. Restore cached underbarrel operational state if we were in UB mode before
     if md.GW_UB_SavedState then
-        StatsFactory.ApplyState(weapon, md.GW_UB_SavedState)
+        StatsFactory.Apply(weapon, md.GW_UB_SavedState)
     else
         -- First time: underbarrel starts empty
         weapon:setCurrentAmmoCount(0)
@@ -95,7 +94,7 @@ function Underbarrel.SwapToUnderbarrel(weapon, player)
         weapon:setContainsClip(false)
     end
 
-    -- 6. Mark as active
+    -- 4. Mark as active
     md.GW_UB_Active = true
     md.GW_UB_Type = underbarrelType
 
@@ -111,22 +110,16 @@ function Underbarrel.RestoreOriginalWeapon(weapon, player)
     local md = weapon:getModData()
 
     -- 1. Save the current underbarrel operational state for next swap
-    md.GW_UB_SavedState = StatsFactory.SnapshotState(weapon)
+    md.GW_UB_SavedState = StatsFactory.Snapshot(weapon, UB_SAVE_STATS)
 
-    -- 2. Restore original weapon stats
-    if md.GW_UB_OriginalStats then
-        StatsFactory.ApplySnapshot(weapon, md.GW_UB_OriginalStats)
+    -- 2. Restore the original weapon snapshot (all stats + state)
+    if md.GW_UB_OriginalSnapshot then
+        StatsFactory.Apply(weapon, md.GW_UB_OriginalSnapshot)
     end
 
-    -- 3. Restore original weapon operational state
-    if md.GW_UB_OriginalState then
-        StatsFactory.ApplyState(weapon, md.GW_UB_OriginalState)
-    end
-
-    -- 4. Clear active flag (keep saved state for next swap)
+    -- 3. Clear active flag (keep saved state for next swap)
     md.GW_UB_Active = nil
-    md.GW_UB_OriginalStats = nil
-    md.GW_UB_OriginalState = nil
+    md.GW_UB_OriginalSnapshot = nil
 
     player:resetEquippedHandsModels()
     DisplayMessage(player, "Using main weapon")
@@ -139,8 +132,7 @@ function Underbarrel.ClearUnderbarrelData(weapon)
     local md = weapon:getModData()
     md.GW_UB_Active = nil
     md.GW_UB_Type = nil
-    md.GW_UB_OriginalStats = nil
-    md.GW_UB_OriginalState = nil
+    md.GW_UB_OriginalSnapshot = nil
     md.GW_UB_SavedState = nil
 end
 
@@ -184,32 +176,24 @@ function Underbarrel.SwapToIntegratedUnderbarrel(weapon, player)
     local underbarrelType = Underbarrel.IntegratedUnderbarrels[weapon:getFullType()]
     local md = weapon:getModData()
 
-    -- 1. Snapshot the host weapon's current stats + operational state
-    md.GW_UB_OriginalStats = StatsFactory.SnapshotStats(weapon)
-    md.GW_UB_OriginalState = StatsFactory.SnapshotState(weapon)
+    -- 1. Snapshot everything from the host weapon
+    md.GW_UB_OriginalSnapshot = StatsFactory.Snapshot(weapon)
 
-    -- 2. Create a shadow of the underbarrel weapon to read its stats from
+    -- 2. Create a shadow of the underbarrel weapon and apply all its stats
     local ubShadow = instanceItem(underbarrelType)
     if not ubShadow then return end
+    StatsFactory.Apply(weapon, StatsFactory.Snapshot(ubShadow))
 
-    -- 3. Apply underbarrel stats onto the host weapon
-    local ubStats = StatsFactory.SnapshotStats(ubShadow)
-    StatsFactory.ApplySnapshot(weapon, ubStats)
-
-    -- 4. Apply underbarrel state
-    local ubState = StatsFactory.SnapshotState(ubShadow)
-    StatsFactory.ApplyState(weapon, ubState)
-
-    -- 5. Restore cached integrated underbarrel state if available
+    -- 3. Restore cached integrated underbarrel state if available
     if md.GW_UB_IntegratedSavedState then
-        StatsFactory.ApplyState(weapon, md.GW_UB_IntegratedSavedState)
+        StatsFactory.Apply(weapon, md.GW_UB_IntegratedSavedState)
     else
         weapon:setCurrentAmmoCount(0)
         weapon:setRoundChambered(false)
         weapon:setContainsClip(false)
     end
 
-    -- 6. Mark as active
+    -- 4. Mark as active
     md.GW_UB_Active = true
     md.GW_UB_Type = underbarrelType
 
@@ -227,20 +211,16 @@ function Underbarrel.RestoreIntegratedUnderbarrel(weapon, player)
     local md = weapon:getModData()
 
     -- 1. Save the current integrated underbarrel operational state
-    md.GW_UB_IntegratedSavedState = StatsFactory.SnapshotState(weapon)
+    md.GW_UB_IntegratedSavedState = StatsFactory.Snapshot(weapon, UB_SAVE_STATS)
 
-    -- 2. Restore original stats and state
-    if md.GW_UB_OriginalStats then
-        StatsFactory.ApplySnapshot(weapon, md.GW_UB_OriginalStats)
-    end
-    if md.GW_UB_OriginalState then
-        StatsFactory.ApplyState(weapon, md.GW_UB_OriginalState)
+    -- 2. Restore the original weapon snapshot (all stats + state)
+    if md.GW_UB_OriginalSnapshot then
+        StatsFactory.Apply(weapon, md.GW_UB_OriginalSnapshot)
     end
 
     -- 3. Clear active flag
     md.GW_UB_Active = nil
-    md.GW_UB_OriginalStats = nil
-    md.GW_UB_OriginalState = nil
+    md.GW_UB_OriginalSnapshot = nil
 
     player:resetEquippedHandsModels()
     DisplayMessage(player, "Using main weapon")

@@ -12,6 +12,20 @@ local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 FoldingStock.WeaponsWithFoldableStock = {}
 
 -------------------------------------------------
+-- Restore Stats: set of stat names stock modifiers may modify.
+-- Content mods populate this via FoldingStock.RegisterRestoreStats.
+-------------------------------------------------
+FoldingStock.RestoreStats = {}
+
+--- Declare which stats stock profiles may modify.
+---@param statNames string[]  e.g. { "ReloadTime", ... }
+function FoldingStock.RegisterRestoreStats(statNames)
+    for _, name in ipairs(statNames) do
+        FoldingStock.RestoreStats[name] = true
+    end
+end
+
+-------------------------------------------------
 -- Registration API for modders
 -------------------------------------------------
 
@@ -108,6 +122,6 @@ StatsFactory.RegisterModifierLayer("FoldingStock", function(weapon)
     if not FoldingStock.IsStockFolded(weapon) then return nil end
     local entry = FoldingStock.WeaponsWithFoldableStock[weapon:getFullType()]
     return entry and entry.modifiers
-end)
+end, FoldingStock.RestoreStats)
 
 return FoldingStock

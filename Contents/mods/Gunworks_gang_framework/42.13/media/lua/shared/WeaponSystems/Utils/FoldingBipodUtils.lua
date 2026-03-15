@@ -12,6 +12,20 @@ local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 FoldingBipod.WeaponsWithFoldableBipod = {}
 
 -------------------------------------------------
+-- Restore Stats: set of stat names bipod modifiers may modify.
+-- Content mods populate this via FoldingBipod.RegisterRestoreStats.
+-------------------------------------------------
+FoldingBipod.RestoreStats = {}
+
+--- Declare which stats bipod profiles may modify.
+---@param statNames string[]  e.g. { "RecoilDelay", "SwingTime", ... }
+function FoldingBipod.RegisterRestoreStats(statNames)
+    for _, name in ipairs(statNames) do
+        FoldingBipod.RestoreStats[name] = true
+    end
+end
+
+-------------------------------------------------
 -- Registration API for modders
 -------------------------------------------------
 
@@ -108,6 +122,6 @@ StatsFactory.RegisterModifierLayer("FoldingBipod", function(weapon)
     if not FoldingBipod.IsBipodDeployed(weapon) then return nil end
     local entry = FoldingBipod.WeaponsWithFoldableBipod[weapon:getFullType()]
     return entry and entry.modifiers
-end)
+end, FoldingBipod.RestoreStats)
 
 return FoldingBipod
