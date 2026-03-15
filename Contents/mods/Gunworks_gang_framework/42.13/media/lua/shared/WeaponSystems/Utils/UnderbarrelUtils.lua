@@ -1,8 +1,9 @@
+local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
+
 local Underbarrel = {}
 
 Underbarrel.UnderbarrelAttachments = {}
-Underbarrel.PendingWeaponRestorations = {}
-Underbarrel.PendingHotbarRestorations = {}
+Underbarrel.ActiveWeaponSnapshots = {}
 
 -------------------------------------------------
 -- Integrated Underbarrel Registry
@@ -42,10 +43,164 @@ local function DisplayMessage(character, messageKey)
     character:Say(getText(messageKey), 0.55, 0.55, 0.55, UIFont.Dialogue, 0, "default")
 end
 
-function Underbarrel.CanSwapToUnderbarrel(weapon)
+local function IsWeaponValid(weapon)
     if not weapon then return false end
     if not instanceof(weapon, "HandWeapon") then return false end
-    if not weapon:isRanged() then return false end
+    return weapon:isRanged()
+end
+
+local function BuildRuntimeKeys(prefix)
+    return {
+        cacheWeapon = "GW_Cached" .. prefix,
+        ammo = "GW_" .. prefix .. "Ammo",
+        ammoList = "GW_" .. prefix .. "AmmoList",
+        chambered = "GW_" .. prefix .. "Chambered",
+        spentRound = "GW_" .. prefix .. "SpentRoundChambered",
+        spentRoundCount = "GW_" .. prefix .. "SpentRoundCount",
+        jammed = "GW_" .. prefix .. "Jammed",
+        containsClip = "GW_" .. prefix .. "ContainsClip",
+        magazineType = "GW_" .. prefix .. "MagazineType",
+    }
+end
+
+local ATTACHMENT_KEYS = BuildRuntimeKeys("Underbarrel")
+local INTEGRATED_KEYS = BuildRuntimeKeys("IntegratedUnderbarrel")
+
+local function CopyArray(source)
+    if not source then return nil end
+    local copy = {}
+    for i = 1, #source do
+        copy[i] = source[i]
+    end
+    return copy
+end
+
+local function SaveMainAmmoListForModeSwitch(weapon)
+    local modData = weapon:getModData()
+    modData.GW_MainWeaponAmmoListBeforeUnderbarrel = CopyArray(modData.AmmoList)
+    modData.AmmoList = nil
+end
+
+local function RestoreMainAmmoListAfterModeSwitch(weapon)
+    local modData = weapon:getModData()
+    modData.AmmoList = CopyArray(modData.GW_MainWeaponAmmoListBeforeUnderbarrel)
+    modData.GW_MainWeaponAmmoListBeforeUnderbarrel = nil
+end
+
+local function RestoreModeAmmoList(weapon, keys)
+    local modData = weapon:getModData()
+    modData.AmmoList = CopyArray(modData[keys.ammoList])
+end
+
+local function SaveCurrentModeAmmoList(weapon, keys)
+    local modData = weapon:getModData()
+    modData[keys.ammoList] = CopyArray(modData.AmmoList)
+end
+
+local function ApplySavedRuntimeToUnderbarrel(weapon, underbarrelWeapon, keys)
+    local modData = weapon:getModData()
+
+    if modData[keys.ammo] ~= nil then
+        underbarrelWeapon:setCurrentAmmoCount(modData[keys.ammo])
+    end
+    if modData[keys.chambered] ~= nil then
+        underbarrelWeapon:setRoundChambered(modData[keys.chambered])
+    end
+    if modData[keys.spentRound] ~= nil then
+        underbarrelWeapon:setSpentRoundChambered(modData[keys.spentRound])
+    end
+    if modData[keys.spentRoundCount] ~= nil then
+        underbarrelWeapon:setSpentRoundCount(modData[keys.spentRoundCount])
+    end
+    if modData[keys.jammed] ~= nil then
+        underbarrelWeapon:setJammed(modData[keys.jammed])
+    end
+    if modData[keys.containsClip] ~= nil then
+        underbarrelWeapon:setContainsClip(modData[keys.containsClip])
+    end
+    if modData[keys.magazineType] ~= nil then
+        underbarrelWeapon:setMagazineType(modData[keys.magazineType])
+    end
+end
+
+local function SaveRuntimeFromActiveUnderbarrel(weapon, keys)
+    local modData = weapon:getModData()
+    modData[keys.ammo] = weapon:getCurrentAmmoCount()
+    modData[keys.chambered] = weapon:isRoundChambered()
+    modData[keys.spentRound] = weapon:isSpentRoundChambered()
+    modData[keys.spentRoundCount] = weapon:getSpentRoundCount()
+    modData[keys.jammed] = weapon:isJammed()
+    modData[keys.containsClip] = weapon:isContainsClip()
+    modData[keys.magazineType] = weapon:getMagazineType()
+end
+
+local function GetOrCreateCachedUnderbarrelWeapon(weapon, underbarrelType, keys)
+    local modData = weapon:getModData()
+    local underbarrelWeapon = modData[keys.cacheWeapon]
+
+    if underbarrelWeapon and underbarrelWeapon:getFullType() ~= underbarrelType then
+        underbarrelWeapon = nil
+        modData[keys.cacheWeapon] = nil
+        modData[keys.ammo] = nil
+        modData[keys.ammoList] = nil
+        modData[keys.chambered] = nil
+        modData[keys.spentRound] = nil
+        modData[keys.spentRoundCount] = nil
+        modData[keys.jammed] = nil
+        modData[keys.containsClip] = nil
+        modData[keys.magazineType] = nil
+    end
+
+    if not underbarrelWeapon then
+        underbarrelWeapon = instanceItem(underbarrelType)
+        if not underbarrelWeapon then return nil end
+        modData[keys.cacheWeapon] = underbarrelWeapon
+    end
+
+    ApplySavedRuntimeToUnderbarrel(weapon, underbarrelWeapon, keys)
+    return underbarrelWeapon
+end
+
+local function SnapshotCurrentWeaponAsFallback(weapon)
+    local baseShadow = StatsFactory.GetBaseStatsWithAttachments(weapon)
+    return StatsFactory.Snapshot(baseShadow)
+end
+
+local function EnterUnderbarrelMode(weapon, player, underbarrelType, keys)
+    if not weapon or not player or not underbarrelType then return end
+    if Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return end
+
+    local originalSnapshot = StatsFactory.Snapshot(weapon)
+    local underbarrelWeapon = GetOrCreateCachedUnderbarrelWeapon(weapon, underbarrelType, keys)
+    if not underbarrelWeapon then return end
+
+    underbarrelWeapon:setWeaponSprite(weapon:getWeaponSprite())
+
+    local underbarrelSnapshot = StatsFactory.Snapshot(underbarrelWeapon)
+    StatsFactory.Apply(weapon, underbarrelSnapshot)
+
+    Underbarrel.ActiveWeaponSnapshots[weapon] = originalSnapshot
+
+    local modData = weapon:getModData()
+    SaveMainAmmoListForModeSwitch(weapon)
+    RestoreModeAmmoList(weapon, keys)
+
+    modData.GW_IsUnderbarrelMode = true
+    modData.GW_UnderbarrelModeWeaponType = underbarrelType
+
+    player:setPrimaryHandItem(weapon)
+    if weapon:isTwoHandWeapon() then
+        player:setSecondaryHandItem(weapon)
+    else
+        player:setSecondaryHandItem(nil)
+    end
+    player:resetEquippedHandsModels()
+
+    DisplayMessage(player, "Using underbarrel weapon")
+end
+
+function Underbarrel.CanSwapToUnderbarrel(weapon)
+    if not IsWeaponValid(weapon) then return false end
 
     local attachment = weapon:getWeaponPart("Underbarrel")
     if not attachment then return false end
@@ -57,7 +212,12 @@ function Underbarrel.IsUsingUnderbarrel(player)
     if not player then return false end
     local primaryHand = player:getPrimaryHandItem()
     if not primaryHand then return false end
-    return primaryHand:getModData().GW_UnderbarrelOriginalWeapon ~= nil
+    return Underbarrel.IsWeaponInUnderbarrelMode(primaryHand)
+end
+
+function Underbarrel.IsWeaponInUnderbarrelMode(weapon)
+    if not weapon then return false end
+    return weapon:getModData().GW_IsUnderbarrelMode == true
 end
 
 function Underbarrel.SwapToUnderbarrel(weapon, player)
@@ -67,124 +227,60 @@ function Underbarrel.SwapToUnderbarrel(weapon, player)
 
     local attachment = weapon:getWeaponPart("Underbarrel")
     local underbarrelType = Underbarrel.UnderbarrelAttachments[attachment:getFullType()]
-
-
-    local underbarrelWeapon = weapon:getModData().GW_CachedUnderbarrelWeapon
-    if underbarrelWeapon and underbarrelWeapon:getFullType() ~= underbarrelType then
-        underbarrelWeapon = nil
-        weapon:getModData().GW_CachedUnderbarrelWeapon = nil
-        weapon:getModData().GW_UnderbarrelAmmo = nil
-        weapon:getModData().GW_UnderbarrelAmmoType = nil
-        weapon:getModData().GW_UnderbarrelChambered = nil
-    end
-    if not underbarrelWeapon then
-        underbarrelWeapon = instanceItem(underbarrelType)
-        if not underbarrelWeapon then return end
-        weapon:getModData().GW_CachedUnderbarrelWeapon = underbarrelWeapon
-
-        local ammo = weapon:getModData().GW_UnderbarrelAmmo
-        if ammo then
-            underbarrelWeapon:setCurrentAmmoCount(ammo)
-        end
-
-        local chambered = weapon:getModData().GW_UnderbarrelChambered
-        if chambered then
-            underbarrelWeapon:setRoundChambered(chambered)
-        end
-    end
-
-    underbarrelWeapon:setWeaponSprite(weapon:getWeaponSprite())
-    underbarrelWeapon:setIcon(weapon:getIcon())
-    underbarrelWeapon:getModData().GW_UnderbarrelOriginalWeapon = weapon
-
-    local modelParts = weapon:getModelWeaponPart()
-    if modelParts then
-        underbarrelWeapon:setModelWeaponPart(modelParts)
-    end
-
-    local parts = weapon:getAllWeaponParts()
-    if parts then
-        for i = 0, parts:size() - 1 do
-            local part = parts:get(i)
-            if part then
-                local partCopy = instanceItem(part:getFullType())
-                if partCopy and instanceof(partCopy, "WeaponPart") then
-                    underbarrelWeapon:attachWeaponPart(partCopy, true)
-                end
-            end
-        end
-    end
-
-    local hotBar = getPlayerHotbar(player:getPlayerNum())
-    if hotBar and hotBar:isInHotbar(weapon) then
-        local itemSlot = weapon:getAttachedSlot()
-        local slotDef = hotBar.availableSlot[itemSlot].def
-        local attachmentSlot = slotDef.attachments[weapon:getAttachmentType()]
-
-        hotBar:removeItem(weapon, false)
-        hotBar.needsRefresh = true
-        hotBar:update()
-
-        Underbarrel.PendingHotbarRestorations[player] = {
-            slotIndex = itemSlot,
-            slotDef = slotDef,
-            attachment = attachmentSlot
-        }
-    end
-
-    player:setPrimaryHandItem(underbarrelWeapon)
-    if underbarrelWeapon:isTwoHandWeapon() then
-        player:setSecondaryHandItem(underbarrelWeapon)
-    end
-    player:resetEquippedHandsModels()
-
-    DisplayMessage(player, "Using underbarrel weapon")
-    Underbarrel.PendingWeaponRestorations[player] = weapon
+    EnterUnderbarrelMode(weapon, player, underbarrelType, ATTACHMENT_KEYS)
 end
 
 function Underbarrel.RestoreOriginalWeapon(player)
     if not player then return end
 
-
-
-    local weapon = Underbarrel.PendingWeaponRestorations[player]
-    if not weapon then
-        local primaryHand = player:getPrimaryHandItem()
-        if primaryHand then
-            weapon = primaryHand:getModData().GW_UnderbarrelOriginalWeapon
-        end
-    end
+    local weapon = player:getPrimaryHandItem()
     if not weapon then return end
+    if not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return end
 
-    local underbarrelWeapon = player:getPrimaryHandItem()
-    if underbarrelWeapon then
-        weapon:getModData().GW_UnderbarrelAmmo = underbarrelWeapon:getCurrentAmmoCount()
-        weapon:getModData().GW_UnderbarrelChambered = underbarrelWeapon:isRoundChambered()
-        local ammoType = underbarrelWeapon:getAmmoType()
-        if ammoType then
-            weapon:getModData().GW_UnderbarrelAmmoType = ammoType:getItemKey()
-        end
+    local modData = weapon:getModData()
+    local keys = ATTACHMENT_KEYS
+    if Underbarrel.HasIntegratedUnderbarrel(weapon)
+        and modData.GW_UnderbarrelModeWeaponType
+        and modData.GW_UnderbarrelModeWeaponType == Underbarrel.IntegratedUnderbarrels[weapon:getFullType()] then
+        keys = INTEGRATED_KEYS
     end
+
+    SaveRuntimeFromActiveUnderbarrel(weapon, keys)
+    SaveCurrentModeAmmoList(weapon, keys)
+
+    local originalSnapshot = Underbarrel.ActiveWeaponSnapshots[weapon]
+    if not originalSnapshot then
+        originalSnapshot = SnapshotCurrentWeaponAsFallback(weapon)
+    end
+
+    StatsFactory.Apply(weapon, originalSnapshot)
+    RestoreMainAmmoListAfterModeSwitch(weapon)
+
+    Underbarrel.ActiveWeaponSnapshots[weapon] = nil
+
+    modData.GW_IsUnderbarrelMode = nil
+    modData.GW_UnderbarrelModeWeaponType = nil
 
     player:setPrimaryHandItem(weapon)
     if weapon:isTwoHandWeapon() then
         player:setSecondaryHandItem(weapon)
+    else
+        player:setSecondaryHandItem(nil)
     end
     player:resetEquippedHandsModels()
 
-    local hotbarInfo = Underbarrel.PendingHotbarRestorations[player]
-    if hotbarInfo then
-        local hotBar = getPlayerHotbar(player:getPlayerNum())
-        if hotBar then
-            hotBar:attachItem(weapon, hotbarInfo.attachment, hotbarInfo.slotIndex, hotbarInfo.slotDef, false)
-            hotBar.needsRefresh = true
-            hotBar:update()
-        end
-        Underbarrel.PendingHotbarRestorations[player] = nil
-    end
-
     DisplayMessage(player, "Using main weapon")
-    Underbarrel.PendingWeaponRestorations[player] = nil
+end
+
+function Underbarrel.IsUnderbarrelModeWeaponType(weapon, underbarrelType)
+    if not weapon or not underbarrelType then return false end
+    if not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return false end
+    return weapon:getModData().GW_UnderbarrelModeWeaponType == underbarrelType
+end
+
+function Underbarrel.GetModeUnderbarrelType(weapon)
+    if not weapon then return end
+    return weapon:getModData().GW_UnderbarrelModeWeaponType
 end
 
 -------------------------------------------------
@@ -225,78 +321,7 @@ function Underbarrel.SwapToIntegratedUnderbarrel(weapon, player)
 
 
     local underbarrelType = Underbarrel.IntegratedUnderbarrels[weapon:getFullType()]
-
-
-    local underbarrelWeapon = weapon:getModData().GW_CachedIntegratedUnderbarrel
-    if underbarrelWeapon and underbarrelWeapon:getFullType() ~= underbarrelType then
-        underbarrelWeapon = nil
-        weapon:getModData().GW_CachedIntegratedUnderbarrel = nil
-        weapon:getModData().GW_IntegratedUnderbarrelAmmo = nil
-        weapon:getModData().GW_IntegratedUnderbarrelChambered = nil
-    end
-    if not underbarrelWeapon then
-        underbarrelWeapon = instanceItem(underbarrelType)
-        if not underbarrelWeapon then return end
-        weapon:getModData().GW_CachedIntegratedUnderbarrel = underbarrelWeapon
-
-        local ammo = weapon:getModData().GW_IntegratedUnderbarrelAmmo
-        if ammo then
-            underbarrelWeapon:setCurrentAmmoCount(ammo)
-        end
-
-        local chambered = weapon:getModData().GW_IntegratedUnderbarrelChambered
-        if chambered then
-            underbarrelWeapon:setRoundChambered(chambered)
-        end
-    end
-
-    underbarrelWeapon:setWeaponSprite(weapon:getWeaponSprite())
-    underbarrelWeapon:setIcon(weapon:getIcon())
-    underbarrelWeapon:getModData().GW_UnderbarrelOriginalWeapon = weapon
-
-    local modelParts = weapon:getModelWeaponPart()
-    if modelParts then
-        underbarrelWeapon:setModelWeaponPart(modelParts)
-    end
-
-    local parts = weapon:getAllWeaponParts()
-    if parts then
-        for i = 0, parts:size() - 1 do
-            local part = parts:get(i)
-            if part then
-                local partCopy = instanceItem(part:getFullType())
-                if partCopy and instanceof(partCopy, "WeaponPart") then
-                    underbarrelWeapon:attachWeaponPart(partCopy, true)
-                end
-            end
-        end
-    end
-
-    local hotBar = getPlayerHotbar(player:getPlayerNum())
-    if hotBar and hotBar:isInHotbar(weapon) then
-        local itemSlot = weapon:getAttachedSlot()
-        local slotDef = hotBar.availableSlot[itemSlot].def
-        local attachmentSlot = slotDef.attachments[weapon:getAttachmentType()]
-
-        hotBar:removeItem(weapon, false)
-        hotBar.needsRefresh = true
-        hotBar:update()
-
-        Underbarrel.PendingHotbarRestorations[player] = {
-            slotIndex = itemSlot,
-            slotDef = slotDef,
-            attachment = attachmentSlot
-        }
-    end
-
-    player:setPrimaryHandItem(underbarrelWeapon)
-    if underbarrelWeapon:isTwoHandWeapon() then
-        player:setSecondaryHandItem(underbarrelWeapon)
-    end
-    player:resetEquippedHandsModels()
-
-    DisplayMessage(player, "Using underbarrel weapon")
-    Underbarrel.PendingWeaponRestorations[player] = weapon
+    EnterUnderbarrelMode(weapon, player, underbarrelType, INTEGRATED_KEYS)
 end
 
 -------------------------------------------------

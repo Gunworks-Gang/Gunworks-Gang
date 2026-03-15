@@ -8,12 +8,18 @@ require("TimedActions/ISRackFirearm")
 local Magazine = require("WeaponSystems/Utils/MagazineUtils")
 local Ammo = require("WeaponSystems/Utils/AmmoUtils")
 local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
+local Underbarrel = require("WeaponSystems/Utils/UnderbarrelUtils")
 
 -------------------------------------------------
 -- BeginAutomaticReload (MagazineProfile support)
 -------------------------------------------------
 local ISReloadWeaponAction_BeginAutomaticReload_Original = ISReloadWeaponAction.BeginAutomaticReload
 ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
+    if gun and Underbarrel.IsWeaponInUnderbarrelMode(gun) then
+        ISReloadWeaponAction_BeginAutomaticReload_Original(playerObj, gun)
+        return
+    end
+
     if Magazine.GetProfileForGun(gun) then
         local magazine = Magazine.getBestMagazineForGun(playerObj, gun)
         local hasMagazine = gun:isContainsClip()
@@ -63,6 +69,10 @@ end
 -------------------------------------------------
 local ISInsertMagazine_loadAmmo_original = ISInsertMagazine.loadAmmo
 function ISInsertMagazine:loadAmmo()
+    if self.gun and Underbarrel.IsWeaponInUnderbarrelMode(self.gun) then
+        return ISInsertMagazine_loadAmmo_original(self)
+    end
+
     local magazineInstance = instanceItem(self.magazine:getFullType())
     if self.magazine then
         if self.gun.setMagazineType then
@@ -86,6 +96,10 @@ end
 -------------------------------------------------
 local ISEjectMagazine_unloadAmmo_original = ISEjectMagazine.unloadAmmo
 function ISEjectMagazine:unloadAmmo()
+    if self.gun and Underbarrel.IsWeaponInUnderbarrelMode(self.gun) then
+        return ISEjectMagazine_unloadAmmo_original(self)
+    end
+
     local savedMagType = Magazine.GetMagazineType(self.gun)
     local magazineInstance = instanceItem(savedMagType)
     local gunModData = self.gun:getModData()
