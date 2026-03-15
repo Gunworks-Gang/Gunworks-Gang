@@ -20,6 +20,21 @@ Ammo.AmmoFamilies = {}
 Ammo.AmmoStats = {}
 
 -------------------------------------------------
+-- Restore Stats: set of stat names ammo profiles may modify.
+-- Content mods populate this via Ammo.RegisterRestoreStats.
+-------------------------------------------------
+Ammo.RestoreStats = {}
+
+--- Declare which stats ammo profiles may modify.
+--- These stats will be restored to base before reapplying modifiers.
+---@param statNames string[]  e.g. { "MaxDamage", "MinDamage", ... }
+function Ammo.RegisterRestoreStats(statNames)
+    for _, name in ipairs(statNames) do
+        Ammo.RestoreStats[name] = true
+    end
+end
+
+-------------------------------------------------
 -- Helper functions (query AmmoFamilies directly)
 -------------------------------------------------
 
@@ -167,6 +182,6 @@ StatsFactory.RegisterModifierLayer("Ammo", function(weapon)
     local profileName = weapon:getModData().ActiveAmmoProfile
     if not profileName then return nil end
     return Ammo.AmmoStats[profileName]
-end)
+end, Ammo.RestoreStats)
 
 return Ammo
