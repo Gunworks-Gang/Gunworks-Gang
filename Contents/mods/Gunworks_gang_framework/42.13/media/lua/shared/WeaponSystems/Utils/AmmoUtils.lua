@@ -175,6 +175,15 @@ function Ammo.MagazineAmmoProfileSetter(magazine, bulletType)
     magazine:setAmmoType(ammoEnum)
 end
 
+function Ammo.CopyAmmoList(source)
+    if not source then return nil end
+    local copy = {}
+    for i = 1, #source do
+        copy[i] = source[i]
+    end
+    return copy
+end
+
 -------------------------------------------------
 -- Register modifier layer with StatsFactory
 -------------------------------------------------

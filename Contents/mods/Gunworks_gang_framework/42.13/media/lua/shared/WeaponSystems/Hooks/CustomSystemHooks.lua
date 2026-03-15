@@ -84,7 +84,19 @@ function ISInsertMagazine:loadAmmo()
         local magList = self.magazine:getModData().AmmoList
         if magList and #magList > 0 then
             local gunModData = self.gun:getModData()
-            gunModData.AmmoList = magList
+
+            -- Invariant: chambered round is always the last AmmoList entry.
+            -- If a chambered round already exists, keep it at tail and place
+            -- inserted magazine rounds before it so it fires first.
+            if self.gun:isRoundChambered() and gunModData.AmmoList and #gunModData.AmmoList > 0 then
+                local chamberedType = gunModData.AmmoList[#gunModData.AmmoList]
+                local merged = Ammo.CopyAmmoList(magList)
+                merged[#merged + 1] = chamberedType
+                gunModData.AmmoList = merged
+            else
+                gunModData.AmmoList = Ammo.CopyAmmoList(magList)
+            end
+
             self.magazine:getModData().AmmoList = nil
         end
     end
@@ -109,13 +121,15 @@ function ISEjectMagazine:unloadAmmo()
 
     if gunList and #gunList > 0 then
         if self.gun:isRoundChambered() and #gunList > 1 then
+            -- Keep chambered round on gun as tail entry; magazine receives
+            -- every entry before tail.
             ammoListForMag = {}
-            for i = 2, #gunList do
+            for i = 1, #gunList - 1 do
                 ammoListForMag[#ammoListForMag + 1] = gunList[i]
             end
-            gunModData.AmmoList = { gunList[1] }
+            gunModData.AmmoList = { gunList[#gunList] }
         elseif self.gun:isRoundChambered() and #gunList == 1 then
-            gunModData.AmmoList = { gunList[1] }
+            gunModData.AmmoList = { gunList[#gunList] }
         else
             ammoListForMag = {}
             for i = 1, #gunList do
