@@ -1,8 +1,5 @@
 local StatsFactory = {}
 
--- Sentinel for nil values in snapshots (survives modData serialization)
-StatsFactory.NIL = "__sf_nil__"
-
 -------------------------------------------------
 -- Unified Registry: getter/setter lookup for all weapon properties.
 -- Systems dynamically declare which stats they need via restore sets.
@@ -90,27 +87,29 @@ StatsFactory.Registry = {
 
 --- Capture stat values from a weapon.
 --- Pass an array of stat names to snapshot only those, or nil for all.
---- Nil Java values are stored as StatsFactory.NIL so they survive
---- modData serialization and are properly restored on Apply.
+--- The snapshot stores a _keys array so Apply knows which stats to set,
+--- even when some values are nil (Lua tables drop nil entries).
 ---@param weapon userdata
 ---@param statNames string[]|nil
 ---@return table snapshot
 function StatsFactory.Snapshot(weapon, statNames)
     local snap = {}
+    local keys = {}
     if statNames then
         for _, name in ipairs(statNames) do
             local reg = StatsFactory.Registry[name]
             if reg then
-                local val = weapon[reg.get](weapon)
-                snap[name] = (val == nil) and StatsFactory.NIL or val
+                keys[#keys + 1] = name
+                snap[name] = weapon[reg.get](weapon)
             end
         end
     else
         for name, reg in pairs(StatsFactory.Registry) do
-            local val = weapon[reg.get](weapon)
-            snap[name] = (val == nil) and StatsFactory.NIL or val
+            keys[#keys + 1] = name
+            snap[name] = weapon[reg.get](weapon)
         end
     end
+    snap._keys = keys
     return snap
 end
 
@@ -118,10 +117,20 @@ end
 ---@param weapon userdata
 ---@param snapshot table
 function StatsFactory.Apply(weapon, snapshot)
-    for name, value in pairs(snapshot) do
-        local reg = StatsFactory.Registry[name]
-        if reg then
-            weapon[reg.set](weapon, (value == StatsFactory.NIL) and nil or value)
+    local keys = snapshot._keys
+    if keys then
+        for _, name in ipairs(keys) do
+            local reg = StatsFactory.Registry[name]
+            if reg then
+                weapon[reg.set](weapon, snapshot[name])
+            end
+        end
+    else
+        for name, value in pairs(snapshot) do
+            local reg = StatsFactory.Registry[name]
+            if reg then
+                weapon[reg.set](weapon, value)
+            end
         end
     end
 end
