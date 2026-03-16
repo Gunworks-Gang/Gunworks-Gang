@@ -329,35 +329,4 @@ function Underbarrel.SwapToIntegratedUnderbarrel(weapon, player)
     EnterUnderbarrelMode(weapon, player, underbarrelType, INTEGRATED_KEYS)
 end
 
--------------------------------------------------
--- Key Bindings
--------------------------------------------------
-
-local function onKeyPressed(key)
-    local player = getSpecificPlayer(0)
-    if not player then return end
-
-
-
-
-    if key == Keyboard.KEY_U then
-        if not Underbarrel.IsUsingUnderbarrel(player) then
-            local primaryHand = player:getPrimaryHandItem()
-            if primaryHand then
-                if Underbarrel.CanSwapToUnderbarrel(primaryHand) then
-                    Underbarrel.SwapToUnderbarrel(primaryHand, player)
-                elseif Underbarrel.HasIntegratedUnderbarrel(primaryHand) and Underbarrel.IsIntegratedUnderbarrelDeployed(primaryHand) then
-                    Underbarrel.SwapToIntegratedUnderbarrel(primaryHand, player)
-                end
-            end
-        end
-    elseif key == Keyboard.KEY_Y then
-        if Underbarrel.IsUsingUnderbarrel(player) then
-            Underbarrel.RestoreOriginalWeapon(player)
-        end
-    end
-end
-
-Events.OnKeyPressed.Add(onKeyPressed)
-
 return Underbarrel

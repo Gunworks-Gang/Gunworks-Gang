@@ -5,6 +5,7 @@ require("ISUI/ISScrollingListBox")
 require("ISUI/ISItemDropBox")
 
 local Ammo = require("WeaponSystems/Utils/AmmoUtils")
+local GunworksKeybinds = require("WeaponSystems/ISUI/GunworksKeybinds")
 
 -----------------------------------------------------------
 -- AmmoLoaderUI
@@ -795,9 +796,13 @@ end
 -----------------------------------------------------------
 -- Keyboard handler – P key
 -----------------------------------------------------------
+
+local KEYBIND_OPEN_LOADER_UI = "Gunworks_OpenLoaderUI"
 local function onKeyPressed(key)
-    if key == Keyboard.KEY_P then
-        local player = getSpecificPlayer(0)
+    local player = getSpecificPlayer(0)
+    if not player then return end
+
+    if key == GunworksKeybinds.GetBoundKey(KEYBIND_OPEN_LOADER_UI, Keyboard.KEY_P) then
         if player and not player:isDead() then
             if UIManager.getSpeedControls() and UIManager.getSpeedControls():getCurrentGameSpeed() == 0 then
                 return
