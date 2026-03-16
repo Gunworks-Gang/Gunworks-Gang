@@ -1,5 +1,8 @@
+require("WeaponSystems/Utils/CustomStatsAttachmentsUtil")
+
 local FoldingStock = require("WeaponSystems/Utils/FoldingStockUtils")
 local FoldingBipod = require("WeaponSystems/Utils/FoldingBipodUtils")
+local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
 local function restoreContainer(container)
     if not container then return end
@@ -10,6 +13,7 @@ local function restoreContainer(container)
         if instanceof(item, "HandWeapon") and item:isRanged() then
             FoldingStock.RestoreFoldedStockState(item)
             FoldingBipod.RestoreDeployedBipodState(item)
+            StatsFactory.ReapplyAllModifiers(item)
         end
 
         if item.getInventory and item:getInventory() then

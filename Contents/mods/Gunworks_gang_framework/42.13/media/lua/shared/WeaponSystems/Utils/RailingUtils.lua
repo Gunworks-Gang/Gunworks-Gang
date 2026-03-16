@@ -1,4 +1,5 @@
 local Railing = {}
+local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
 -------------------------------------------------
 -- Registry: railingFullType -> { accessoryFullType, ... }
@@ -164,6 +165,7 @@ function Railing.MountAccessory(weapon, accessoryItem, player)
     local newPart = instanceItem(accessoryType)
     if newPart and instanceof(newPart, "WeaponPart") then
         weapon:attachWeaponPart(newPart, true)
+        StatsFactory.ReapplyAllModifiers(weapon)
         return true
     end
     return false
@@ -181,6 +183,7 @@ function Railing.UnmountAccessory(weapon, accessoryPart, player)
     if not Railing.KnownAccessories[accessoryType] then return false end
 
     weapon:detachWeaponPart(accessoryPart)
+    StatsFactory.ReapplyAllModifiers(weapon)
 
     local returnedItem = instanceItem(accessoryType)
     if returnedItem then
