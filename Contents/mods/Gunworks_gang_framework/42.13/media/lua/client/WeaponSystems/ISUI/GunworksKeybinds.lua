@@ -31,8 +31,8 @@ local function register()
 end
 
 function GunworksKeybinds.GetBoundKey(actionName, fallback)
-    local core = getCore and getCore()
-    if core and core.getKey then
+    local core = getCore()
+    if core then
         local bound = core:getKey(actionName)
         if bound and bound ~= 0 then
             return bound
@@ -41,8 +41,6 @@ function GunworksKeybinds.GetBoundKey(actionName, fallback)
     return fallback
 end
 
-if Events and Events.OnGameBoot then
-    Events.OnGameBoot.Add(register)
-end
+Events.OnGameBoot.Add(register)
 
 return GunworksKeybinds
