@@ -27,6 +27,15 @@ local function restorePlayer(playerObj)
     restoreContainer(playerObj:getInventory())
 end
 
+local function restoreEquippedWeapon(playerObj, weapon)
+    if not playerObj or not weapon then return end
+    if instanceof(weapon, "HandWeapon") and weapon:isRanged() then
+        FoldingStock.RestoreFoldedStockState(weapon)
+        FoldingBipod.RestoreDeployedBipodState(weapon)
+        StatsFactory.ReapplyAllModifiers(weapon)
+    end
+end
+
 Events.OnGameStart.Add(function()
     for i = 0, getNumActivePlayers() - 1 do
         restorePlayer(getSpecificPlayer(i))
@@ -36,3 +45,7 @@ end)
 Events.OnCreatePlayer.Add(function(_, playerObj)
     restorePlayer(playerObj)
 end)
+
+Events.OnEquipPrimary.Add(restoreEquippedWeapon)
+
+Events.OnEquipSecondary.Add(restoreEquippedWeapon)
