@@ -522,7 +522,7 @@ function AmmoLoaderUI:getAvailableAmmoTypes(targetItem)
             local count = inventory:getCountTypeRecurse(ammoTypeKey)
             local script = getScriptManager():FindItem(ammoTypeKey)
             local name = script and script:getDisplayName() or ammoTypeKey
-            local tex = script and script:getIcon() and getTexture("Item_" .. script:getIcon()) or nil
+            local tex = script and script:getNormalTexture() or nil
             table.insert(result, {
                 ammoTypeKey = ammoTypeKey,
                 name = name,
@@ -537,7 +537,7 @@ function AmmoLoaderUI:getAvailableAmmoTypes(targetItem)
             local count = inventory:getCountTypeRecurse(ammoTypeKey)
             local script = getScriptManager():FindItem(ammoTypeKey)
             local name = script and script:getDisplayName() or ammoTypeKey
-            local tex = script and script:getIcon() and getTexture("Item_" .. script:getIcon()) or nil
+            local tex = script and script:getNormalTexture() or nil
             table.insert(result, {
                 ammoTypeKey = ammoTypeKey,
                 name = name,
