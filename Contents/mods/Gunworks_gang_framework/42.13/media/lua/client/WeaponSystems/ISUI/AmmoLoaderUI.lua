@@ -565,6 +565,8 @@ function AmmoLoaderUI.doDrawAmmoItem(self, y, item, alt)
 
     local textY = y + (self.itemheight - FONT_HGT_SMALL) / 2
     local textX = 5
+    local rightPadding = 5
+    local scrollbarWidth = self.vscroll and self.vscroll:getWidth() or 0
 
     if ammoData.texture then
         local iconSize = self.itemheight - 4
@@ -572,14 +574,27 @@ function AmmoLoaderUI.doDrawAmmoItem(self, y, item, alt)
         textX = textX + iconSize + 4
     end
 
-    local nameColor = ammoData.count > 0 and { r = 1, g = 1, b = 1 } or { r = 1, g = 0.4, b = 0.4 }
-    self:drawText(ammoData.name, textX, textY, nameColor.r, nameColor.g, nameColor.b, 1, UIFont.Small)
-
     local countText = "x" .. ammoData.count
     local countWidth = getTextManager():MeasureStringX(UIFont.Small, countText)
+    local countX = self.width - scrollbarWidth - countWidth - rightPadding
     local countColor = ammoData.count > 0 and { r = 0.5, g = 1, b = 0.5 } or { r = 1, g = 0.4, b = 0.4 }
-    self:drawText(countText, self.width - countWidth - 5, textY, countColor.r, countColor.g, countColor.b, 1,
+    self:drawText(countText, countX, textY, countColor.r, countColor.g, countColor.b, 1,
         UIFont.Small)
+
+    local availableNameWidth = math.max(0, countX - textX - 6)
+    local displayName = ammoData.name
+    if getTextManager():MeasureStringX(UIFont.Small, displayName) > availableNameWidth then
+        while string.len(displayName) > 1 do
+            displayName = string.sub(displayName, 1, string.len(displayName) - 1)
+            if getTextManager():MeasureStringX(UIFont.Small, displayName .. "...") <= availableNameWidth then
+                displayName = displayName .. "..."
+                break
+            end
+        end
+    end
+
+    local nameColor = ammoData.count > 0 and { r = 1, g = 1, b = 1 } or { r = 1, g = 0.4, b = 0.4 }
+    self:drawText(displayName, textX, textY, nameColor.r, nameColor.g, nameColor.b, 1, UIFont.Small)
 
     return y + self.itemheight
 end
