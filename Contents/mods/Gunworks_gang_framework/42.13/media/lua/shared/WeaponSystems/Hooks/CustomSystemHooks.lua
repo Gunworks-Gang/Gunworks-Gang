@@ -359,17 +359,6 @@ ISReloadWeaponAction.attackHook = function(character, chargeDelta, weapon)
                 Ammo.AmmoProfileSetter(weapon, bulletType)
             end
 
-            if weapon:isManuallyRemoveSpentRounds() then
-                if ammoList and #ammoList > 0 then
-                    local bulletType = ammoList[#ammoList]
-                    if weapon:getModData().SpentAmmoList == nil then
-                        weapon:getModData().SpentAmmoList = { bulletType }
-                    else
-                        weapon:getModData().SpentAmmoList[#weapon:getModData().SpentAmmoList + 1] = bulletType
-                    end
-                end
-            end
-
             if ammoList and #ammoList > 0 then
                 ammoList[#ammoList] = nil
 

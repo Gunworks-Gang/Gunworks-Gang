@@ -6,17 +6,25 @@ local function debugAmmoList(item, label)
 
     print("[MWA DEBUG] " .. label .. " - " .. name)
 
-    -- if modData.AmmoList and #modData.AmmoList > 0 then
-    --     print("  AmmoList (" .. #modData.AmmoList .. " rounds):")
-    --     for i, ammo in ipairs(modData.AmmoList) do
-    --         local marker = (i == #modData.AmmoList) and " <- CHAMBERED" or ""
-    --         print("    [" .. i .. "] " .. tostring(ammo) .. marker)
-    --     end
-    -- else
-    --     print("  AmmoList: empty/nil")
-    -- end
+    if modData.AmmoList and #modData.AmmoList > 0 then
+        print("  AmmoList (" .. #modData.AmmoList .. " rounds):")
+        for i, ammo in ipairs(modData.AmmoList) do
+            local marker = (i == #modData.AmmoList) and " <- CHAMBERED" or ""
+            print("    [" .. i .. "] " .. tostring(ammo) .. marker)
+        end
+    else
+        print("  AmmoList: empty/nil")
+    end
 
-    print(item:getAllWeaponParts())
+    if modData.SpentAmmoList and #modData.SpentAmmoList > 0 then
+        print("  SpentAmmoList (" .. #modData.SpentAmmoList .. " rounds):")
+        for i, ammo in ipairs(modData.SpentAmmoList) do
+            local marker = (i == #modData.SpentAmmoList) and " <- Spent in CHAMBERED" or ""
+            print("    [" .. i .. "] " .. tostring(ammo) .. marker)
+        end
+    else
+        print("  SpentAmmoList: empty/nil")
+    end
 end
 
 MWA_DebugAmmoList = debugAmmoList
@@ -34,4 +42,4 @@ local function sillydebugger()
     end
 end
 
--- Events.OnPlayerUpdate.Add(sillydebugger)
+Events.OnPlayerUpdate.Add(sillydebugger)
