@@ -193,4 +193,28 @@ StatsFactory.RegisterModifierLayer("Ammo", function(weapon)
     return Ammo.AmmoStats[profileName]
 end, Ammo.RestoreStats)
 
+function Ammo.RestoreOnLoad(player)
+    local inv = player:getInventory()
+    if not inv then return end
+    local items = inv:getItems()
+    for i = 0, items:size() - 1 do
+        local item = items:get(i)
+        if item and instanceof(item, "HandWeapon") and item:isRanged() then
+            local md = item:getModData()
+            if md.ActiveAmmoProfile then
+                md.ActiveAmmoProfile = nil
+                local base = StatsFactory.GetBaseStatsWithAttachments(item)
+                StatsFactory.RestoreStats(item, base, Ammo.RestoreStats)
+            end
+        end
+    end
+end
+
+Events.OnGameStart.Add(function()
+    local player = getSpecificPlayer(0)
+    if player then
+        Ammo.RestoreOnLoad(player)
+    end
+end)
+
 return Ammo
