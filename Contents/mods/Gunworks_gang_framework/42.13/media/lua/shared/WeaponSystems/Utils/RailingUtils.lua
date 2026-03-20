@@ -16,6 +16,13 @@ Railing.AcceptedAccessories = {}
 Railing.KnownAccessories = {}
 
 -------------------------------------------------
+-- Exclusives: accessoryFullType -> { otherFullType = true, ... }
+-- Two items registered as exclusive cannot both be mounted
+-- on the same weapon, even if they use different PartTypes.
+-------------------------------------------------
+Railing.Exclusives = {}
+
+-------------------------------------------------
 -- Registration API
 -------------------------------------------------
 
@@ -27,6 +34,35 @@ function Railing.RegisterRailing(railingType, accessories)
     for _, acc in ipairs(accessories) do
         Railing.KnownAccessories[acc] = true
     end
+end
+
+--- Register two items as mutually exclusive.
+--- If one is mounted, the other cannot be mounted.
+--- @param itemA string  e.g. "MWA.BIPOD_DEPLOYED"
+--- @param itemB string  e.g. "MWA.INTEGRATED_BIPOD_DEPLOYED"
+function Railing.SetExclusives(itemA, itemB)
+    if not Railing.Exclusives[itemA] then Railing.Exclusives[itemA] = {} end
+    if not Railing.Exclusives[itemB] then Railing.Exclusives[itemB] = {} end
+    Railing.Exclusives[itemA][itemB] = true
+    Railing.Exclusives[itemB][itemA] = true
+end
+
+--- Check if an accessory is blocked by an exclusive item already on the weapon.
+--- @param weapon HandWeapon
+--- @param accessoryType string
+--- @return boolean  true if blocked
+function Railing.IsBlockedByExclusive(weapon, accessoryType)
+    local exclusives = Railing.Exclusives[accessoryType]
+    if not exclusives then return false end
+
+    local parts = weapon:getAllWeaponParts()
+    for i = 0, parts:size() - 1 do
+        local part = parts:get(i)
+        if part and exclusives[part:getFullType()] then
+            return true
+        end
+    end
+    return false
 end
 
 -------------------------------------------------
@@ -141,6 +177,9 @@ function Railing.CanMountAccessory(weapon, accessoryType)
 
     local existingPart = weapon:getWeaponPart(partType)
     if existingPart then return false end
+
+    -- Check exclusives
+    if Railing.IsBlockedByExclusive(weapon, accessoryType) then return false end
 
     return true
 end
