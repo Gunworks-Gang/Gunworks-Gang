@@ -17,9 +17,9 @@ Magazine.MagazineProfiles = {}
 -------------------------------------------------
 
 --- Register one or more weapons to a magazine profile.
----@param weaponTypes string|string[]  single fullType or array of fullTypes
 ---@param profileName string
-function Magazine.RegisterWeaponProfile(weaponTypes, profileName)
+---@param weaponTypes string|string[]  single fullType or array of fullTypes
+function Magazine.RegisterWeaponProfile(profileName, weaponTypes)
     if type(weaponTypes) == "string" then
         Magazine.WeaponMagazineProfile[weaponTypes] = profileName
     else
