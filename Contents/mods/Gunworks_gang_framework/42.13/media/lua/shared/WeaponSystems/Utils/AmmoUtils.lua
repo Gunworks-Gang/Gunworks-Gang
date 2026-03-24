@@ -217,18 +217,4 @@ Events.OnGameStart.Add(function()
     end
 end)
 
-Events.OnEquipPrimary.Add(function()
-    local player = getSpecificPlayer(0)
-    if player then
-        Ammo.RestoreOnLoad(player)
-    end
-end)
-
-Events.OnEquipSecondary.Add(function()
-    local player = getSpecificPlayer(0)
-    if player then
-        Ammo.RestoreOnLoad(player)
-    end
-end)
-
 return Ammo
