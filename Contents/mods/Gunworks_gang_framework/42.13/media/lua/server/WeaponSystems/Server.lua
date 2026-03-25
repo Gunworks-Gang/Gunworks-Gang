@@ -34,6 +34,21 @@ function Server.OnClientCommand(module, command, player, args)
             itemId = weapon:getID(),
             bulletType = bulletType
         })
+    elseif command == "consumeRound" then
+        local weapon = Server.getWeaponById(player, args.itemId)
+        if not weapon then return end
+
+        local ammoList = weapon:getModData().AmmoList
+        if ammoList and #ammoList > 0 then
+            ammoList[#ammoList] = nil
+            if #ammoList == 0 then
+                weapon:getModData().AmmoList = nil
+            end
+            sendServerCommand(player, "MWA", "syncAmmoList", {
+                itemId = weapon:getID(),
+                ammoList = weapon:getModData().AmmoList
+            })
+        end
     elseif command == "magazineAmmoProfile" then
         local item = Server.getItemById(player, args.itemId)
         if not item then return end

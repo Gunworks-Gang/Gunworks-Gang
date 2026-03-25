@@ -25,6 +25,11 @@ function Client.OnServerCommand(module, command, args)
                 item:setAmmoType(ammoEnum)
             end
         end
+    elseif command == "syncAmmoList" then
+        local item = playerObj:getInventory():getItemWithIDRecursiv(args.itemId)
+        if item then
+            item:getModData().AmmoList = args.ammoList
+        end
     end
 end
 
