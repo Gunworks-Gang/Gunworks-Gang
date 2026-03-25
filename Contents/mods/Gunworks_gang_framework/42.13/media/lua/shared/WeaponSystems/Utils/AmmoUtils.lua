@@ -141,12 +141,13 @@ function Ammo.AmmoProfileSetter(weapon, bulletType)
                 bulletType = bulletType
             })
         end
-        return
+    else
+        print('Ammo Profile Setting!')
+        print(weapon:getAmmoType(), "  -->   ", ammoEnum)
     end
 
-    print('Ammo Profile Setting!')
-    print(weapon:getAmmoType(), "  -->   ", ammoEnum)
-
+    -- Always apply locally for immediate effect; in MP the server
+    -- will also apply authoritatively when it processes the command.
     Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
 end
 
@@ -166,11 +167,10 @@ function Ammo.MagazineAmmoProfileSetter(magazine, bulletType)
                 bulletType = bulletType
             })
         end
-        return
+    else
+        print('Magazine Ammo Profile Setting!')
+        print(magazine:getAmmoType(), "  -->   ", ammoEnum)
     end
-
-    print('Magazine Ammo Profile Setting!')
-    print(magazine:getAmmoType(), "  -->   ", ammoEnum)
 
     magazine:setAmmoType(ammoEnum)
 end
