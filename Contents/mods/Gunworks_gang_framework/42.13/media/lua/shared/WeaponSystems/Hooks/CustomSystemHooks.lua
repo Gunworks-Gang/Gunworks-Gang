@@ -164,6 +164,13 @@ end
 local ISLoadBulletsInMagazine_animEvent_Original = ISLoadBulletsInMagazine.animEvent
 function ISLoadBulletsInMagazine:animEvent(event, parameter)
     if event == 'InsertBullet' then
+        if self:isLoadFinished() then
+            return ISLoadBulletsInMagazine_animEvent_Original(self, event, parameter)
+        end
+        if self:isLocal() and self.loadedThisLoop then
+            return ISLoadBulletsInMagazine_animEvent_Original(self, event, parameter)
+        end
+
         local modData = self.magazine:getModData()
         modData.AmmoList = modData.AmmoList or {}
 
