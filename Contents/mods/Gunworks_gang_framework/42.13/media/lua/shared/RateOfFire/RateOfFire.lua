@@ -141,6 +141,7 @@ Events.OnGameStart.Add(function()
             if not canFire then return end
 
             if weapon:getFireMode() == "RealBurst" then
+                if RateOfFire.burstState[character:getPlayerNum()] then return end
                 if not RateOfFire.canStartBurst(character) then return end
 
                 local result = Original_Attack_Hook(character, chargeDelta, weapon)
