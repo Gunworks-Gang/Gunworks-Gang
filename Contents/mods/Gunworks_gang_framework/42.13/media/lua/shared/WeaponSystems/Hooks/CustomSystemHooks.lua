@@ -53,14 +53,12 @@ end
 -------------------------------------------------
 local ISRackFirearm_removeBullet_original = ISRackFirearm.removeBullet
 function ISRackFirearm:removeBullet()
-    if isClient() then
-        return ISRackFirearm_removeBullet_original(self)
-    end
     local ammoList = self.gun:getModData().AmmoList
     if ammoList and #ammoList > 0 then
         local bulletType = ammoList[#ammoList]
         local newBullet = instanceItem(bulletType)
         self.character:getInventory():AddItem(newBullet)
+        sendAddItemToContainer(self.character:getInventory(), newBullet)
         ammoList[#ammoList] = nil
         if #ammoList == 0 then
             self.gun:getModData().AmmoList = nil
@@ -389,7 +387,7 @@ ISReloadWeaponAction.attackHook = function(character, chargeDelta, weapon)
 
                 -- Tell server to consume the round from its AmmoList
                 if isClient() then
-                    sendClientCommand(character, "MWA", "consumeRound", {
+                    sendClientCommand(character, "SWMG", "consumeRound", {
                         itemId = weapon:getID()
                     })
                 end

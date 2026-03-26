@@ -136,7 +136,7 @@ function Ammo.AmmoProfileSetter(weapon, bulletType)
     if isClient() then
         local playerObj = getSpecificPlayer(0)
         if playerObj then
-            sendClientCommand(playerObj, "MWA", "ammoProfile", {
+            sendClientCommand(playerObj, "SWMG", "ammoProfile", {
                 itemId = weapon:getID(),
                 bulletType = bulletType
             })
@@ -162,7 +162,7 @@ function Ammo.MagazineAmmoProfileSetter(magazine, bulletType)
     if isClient() then
         local playerObj = getSpecificPlayer(0)
         if playerObj then
-            sendClientCommand(playerObj, "MWA", "magazineAmmoProfile", {
+            sendClientCommand(playerObj, "SWMG", "magazineAmmoProfile", {
                 itemId = magazine:getID(),
                 bulletType = bulletType
             })
