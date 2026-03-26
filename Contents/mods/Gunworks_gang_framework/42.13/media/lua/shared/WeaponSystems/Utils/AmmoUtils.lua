@@ -185,6 +185,18 @@ function Ammo.CopyAmmoList(source)
 end
 
 -------------------------------------------------
+-- MP helper: sync an item's AmmoList from server
+-- to the owning client via an explicit command.
+-------------------------------------------------
+function Ammo.SyncAmmoListToClient(character, item)
+    if not isServer() then return end
+    sendServerCommand(character, "SWMG", "syncAmmoList", {
+        itemId = item:getID(),
+        ammoList = item:getModData().AmmoList
+    })
+end
+
+-------------------------------------------------
 -- Register modifier layer with StatsFactory
 -------------------------------------------------
 StatsFactory.RegisterModifierLayer("Ammo", function(weapon)

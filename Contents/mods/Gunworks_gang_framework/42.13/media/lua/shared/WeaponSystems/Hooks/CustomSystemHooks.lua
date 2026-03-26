@@ -11,18 +11,6 @@ local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
 local Underbarrel = require("WeaponSystems/Utils/UnderbarrelUtils")
 
 -------------------------------------------------
--- MP helper: sync an item's AmmoList from server
--- to the owning client via an explicit command.
--------------------------------------------------
-local function syncAmmoListToClient(character, item)
-    if not isServer() then return end
-    sendServerCommand(character, "MWA", "syncAmmoList", {
-        itemId = item:getID(),
-        ammoList = item:getModData().AmmoList
-    })
-end
-
--------------------------------------------------
 -- BeginAutomaticReload (MagazineProfile support)
 -------------------------------------------------
 local ISReloadWeaponAction_BeginAutomaticReload_Original = ISReloadWeaponAction.BeginAutomaticReload
@@ -77,7 +65,7 @@ function ISRackFirearm:removeBullet()
         if #ammoList == 0 then
             self.gun:getModData().AmmoList = nil
         end
-        syncAmmoListToClient(self.character, self.gun)
+        Ammo.SyncAmmoListToClient(self.character, self.gun)
     else
         ISRackFirearm_removeBullet_original(self)
     end
@@ -118,7 +106,7 @@ function ISInsertMagazine:loadAmmo()
 
             self.magazine:getModData().AmmoList = nil
         end
-        syncAmmoListToClient(self.character, self.gun)
+        Ammo.SyncAmmoListToClient(self.character, self.gun)
     end
     return ISInsertMagazine_loadAmmo_original(self)
 end
@@ -172,10 +160,10 @@ function ISEjectMagazine:unloadAmmo()
         local ejectedMag = self.character:getInventory():getFirstType(savedMagType)
         if ejectedMag then
             ejectedMag:getModData().AmmoList = ammoListForMag
-            syncAmmoListToClient(self.character, ejectedMag)
+            Ammo.SyncAmmoListToClient(self.character, ejectedMag)
         end
     end
-    syncAmmoListToClient(self.character, self.gun)
+    Ammo.SyncAmmoListToClient(self.character, self.gun)
 
     Magazine.ClearMagazineType(self.gun)
 end
@@ -202,7 +190,7 @@ function ISLoadBulletsInMagazine:animEvent(event, parameter)
                 or (self.magazine:getAmmoType() and self.magazine:getAmmoType():getItemKey())
 
             modData.AmmoList[#modData.AmmoList + 1] = bulletType
-            syncAmmoListToClient(self.character, self.magazine)
+            Ammo.SyncAmmoListToClient(self.character, self.magazine)
         end
     end
     ISLoadBulletsInMagazine_animEvent_Original(self, event, parameter)
@@ -230,7 +218,7 @@ function ISUnloadBulletsFromMagazine:animEvent(event, parameter)
                 if #ammoList == 0 then
                     mag:getModData().AmmoList = nil
                 end
-                syncAmmoListToClient(self.character, mag)
+                Ammo.SyncAmmoListToClient(self.character, mag)
                 return
             end
         end
@@ -311,7 +299,7 @@ function ISReloadWeaponAction:loadAmmo()
         self.gun:setCurrentAmmoCount(self.gun:getCurrentAmmoCount() + 1)
         sendRemoveItemFromContainer(self.character:getInventory(), bullet)
         syncHandWeaponFields(self.character, self.gun)
-        syncAmmoListToClient(self.character, self.gun)
+        Ammo.SyncAmmoListToClient(self.character, self.gun)
     end
 
     if self.bullets:isEmpty() or self.gun:getCurrentAmmoCount() >= self.gun:getMaxAmmo() then
@@ -371,7 +359,7 @@ function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
                     gunModData.AmmoList = nil
                 end
             end
-            syncAmmoListToClient(self.character, gun)
+            Ammo.SyncAmmoListToClient(self.character, gun)
         end
     end
 

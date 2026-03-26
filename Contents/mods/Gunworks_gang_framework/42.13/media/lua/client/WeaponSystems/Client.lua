@@ -2,7 +2,7 @@ local Ammo = require("WeaponSystems/Utils/AmmoUtils")
 local Client = {}
 
 function Client.OnServerCommand(module, command, args)
-    if module ~= "MWA" or not args then return end
+    if module ~= "SWMG" or not args then return end
 
     local playerObj = getSpecificPlayer(0)
     if not playerObj then return end
