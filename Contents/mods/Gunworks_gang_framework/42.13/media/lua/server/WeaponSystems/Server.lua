@@ -15,7 +15,7 @@ function Server.getItemById(player, itemId)
 end
 
 function Server.OnClientCommand(module, command, player, args)
-    if module ~= "MWA" then return end
+    if module ~= "SWMG" then return end
     if not player or not args then return end
 
     if command == "ammoProfile" then
@@ -30,10 +30,25 @@ function Server.OnClientCommand(module, command, player, args)
 
         Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
 
-        sendServerCommand(player, "MWA", "applyAmmoProfile", {
+        sendServerCommand(player, "SWMG", "applyAmmoProfile", {
             itemId = weapon:getID(),
             bulletType = bulletType
         })
+    elseif command == "consumeRound" then
+        local weapon = Server.getWeaponById(player, args.itemId)
+        if not weapon then return end
+
+        local ammoList = weapon:getModData().AmmoList
+        if ammoList and #ammoList > 0 then
+            ammoList[#ammoList] = nil
+            if #ammoList == 0 then
+                weapon:getModData().AmmoList = nil
+            end
+            sendServerCommand(player, "SWMG", "syncAmmoList", {
+                itemId = weapon:getID(),
+                ammoList = weapon:getModData().AmmoList
+            })
+        end
     elseif command == "magazineAmmoProfile" then
         local item = Server.getItemById(player, args.itemId)
         if not item then return end
@@ -46,7 +61,7 @@ function Server.OnClientCommand(module, command, player, args)
 
         item:setAmmoType(ammoEnum)
 
-        sendServerCommand(player, "MWA", "applyMagazineAmmoProfile", {
+        sendServerCommand(player, "SWMG", "applyMagazineAmmoProfile", {
             itemId = item:getID(),
             bulletType = bulletType
         })

@@ -136,7 +136,7 @@ function Ammo.AmmoProfileSetter(weapon, bulletType)
     if isClient() then
         local playerObj = getSpecificPlayer(0)
         if playerObj then
-            sendClientCommand(playerObj, "MWA", "ammoProfile", {
+            sendClientCommand(playerObj, "SWMG", "ammoProfile", {
                 itemId = weapon:getID(),
                 bulletType = bulletType
             })
@@ -162,7 +162,7 @@ function Ammo.MagazineAmmoProfileSetter(magazine, bulletType)
     if isClient() then
         local playerObj = getSpecificPlayer(0)
         if playerObj then
-            sendClientCommand(playerObj, "MWA", "magazineAmmoProfile", {
+            sendClientCommand(playerObj, "SWMG", "magazineAmmoProfile", {
                 itemId = magazine:getID(),
                 bulletType = bulletType
             })
@@ -182,6 +182,18 @@ function Ammo.CopyAmmoList(source)
         copy[i] = source[i]
     end
     return copy
+end
+
+-------------------------------------------------
+-- MP helper: sync an item's AmmoList from server
+-- to the owning client via an explicit command.
+-------------------------------------------------
+function Ammo.SyncAmmoListToClient(character, item)
+    if not isServer() then return end
+    sendServerCommand(character, "SWMG", "syncAmmoList", {
+        itemId = item:getID(),
+        ammoList = item:getModData().AmmoList
+    })
 end
 
 -------------------------------------------------

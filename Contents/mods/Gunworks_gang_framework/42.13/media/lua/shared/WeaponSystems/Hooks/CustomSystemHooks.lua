@@ -58,7 +58,12 @@ function ISRackFirearm:removeBullet()
         local bulletType = ammoList[#ammoList]
         local newBullet = instanceItem(bulletType)
         self.character:getInventory():AddItem(newBullet)
+        sendAddItemToContainer(self.character:getInventory(), newBullet)
         ammoList[#ammoList] = nil
+        if #ammoList == 0 then
+            self.gun:getModData().AmmoList = nil
+        end
+        Ammo.SyncAmmoListToClient(self.character, self.gun)
     else
         ISRackFirearm_removeBullet_original(self)
     end
@@ -99,6 +104,7 @@ function ISInsertMagazine:loadAmmo()
 
             self.magazine:getModData().AmmoList = nil
         end
+        Ammo.SyncAmmoListToClient(self.character, self.gun)
     end
     return ISInsertMagazine_loadAmmo_original(self)
 end
@@ -152,8 +158,10 @@ function ISEjectMagazine:unloadAmmo()
         local ejectedMag = self.character:getInventory():getFirstType(savedMagType)
         if ejectedMag then
             ejectedMag:getModData().AmmoList = ammoListForMag
+            Ammo.SyncAmmoListToClient(self.character, ejectedMag)
         end
     end
+    Ammo.SyncAmmoListToClient(self.character, self.gun)
 
     Magazine.ClearMagazineType(self.gun)
 end
@@ -171,14 +179,17 @@ function ISLoadBulletsInMagazine:animEvent(event, parameter)
             return ISLoadBulletsInMagazine_animEvent_Original(self, event, parameter)
         end
 
-        local modData = self.magazine:getModData()
-        modData.AmmoList = modData.AmmoList or {}
+        if not isClient() then
+            local modData = self.magazine:getModData()
+            modData.AmmoList = modData.AmmoList or {}
 
-        local bulletType =
-            (self.ammo and self.ammo.getFullType and self.ammo:getFullType())
-            or (self.magazine:getAmmoType() and self.magazine:getAmmoType():getItemKey())
+            local bulletType =
+                (self.ammo and self.ammo.getFullType and self.ammo:getFullType())
+                or (self.magazine:getAmmoType() and self.magazine:getAmmoType():getItemKey())
 
-        modData.AmmoList[#modData.AmmoList + 1] = bulletType
+            modData.AmmoList[#modData.AmmoList + 1] = bulletType
+            Ammo.SyncAmmoListToClient(self.character, self.magazine)
+        end
     end
     ISLoadBulletsInMagazine_animEvent_Original(self, event, parameter)
 end
@@ -187,7 +198,7 @@ local ISUnloadBulletsFromMagazine_animEvent_Original = ISUnloadBulletsFromMagazi
 function ISUnloadBulletsFromMagazine:animEvent(event, parameter)
     if event == "RemoveBullet" or event == "removeBullet" then
         local mag = self.magazine
-        if mag then
+        if mag and not isClient() then
             local ammoList = mag:getModData().AmmoList
             if ammoList and #ammoList > 0 and mag:getCurrentAmmoCount() > 0 then
                 local bulletType = ammoList[#ammoList]
@@ -197,18 +208,15 @@ function ISUnloadBulletsFromMagazine:animEvent(event, parameter)
                     bulletType = mag:getAmmoType() and mag:getAmmoType():getItemKey()
                 end
 
-                if not isClient() then
-                    local newBullet = instanceItem(bulletType)
-                    self.character:getInventory():AddItem(newBullet)
-                    mag:setCurrentAmmoCount(mag:getCurrentAmmoCount() - 1)
-                    sendAddItemToContainer(self.character:getInventory(), newBullet)
-                else
-                    mag:setCurrentAmmoCount(mag:getCurrentAmmoCount() - 1)
-                end
+                local newBullet = instanceItem(bulletType)
+                self.character:getInventory():AddItem(newBullet)
+                mag:setCurrentAmmoCount(mag:getCurrentAmmoCount() - 1)
+                sendAddItemToContainer(self.character:getInventory(), newBullet)
 
                 if #ammoList == 0 then
                     mag:getModData().AmmoList = nil
                 end
+                Ammo.SyncAmmoListToClient(self.character, mag)
                 return
             end
         end
@@ -289,6 +297,7 @@ function ISReloadWeaponAction:loadAmmo()
         self.gun:setCurrentAmmoCount(self.gun:getCurrentAmmoCount() + 1)
         sendRemoveItemFromContainer(self.character:getInventory(), bullet)
         syncHandWeaponFields(self.character, self.gun)
+        Ammo.SyncAmmoListToClient(self.character, self.gun)
     end
 
     if self.bullets:isEmpty() or self.gun:getCurrentAmmoCount() >= self.gun:getMaxAmmo() then
@@ -327,25 +336,28 @@ end
 local ISUnloadBulletsFromFirearm_animEvent_Original = ISUnloadBulletsFromFirearm.animEvent
 function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
     if event == 'playReloadSound' and parameter == 'ejectAmmoStart' then
-        local gun = self.gun
-        local gunModData = gun:getModData()
-        local ammoList = gunModData.AmmoList
+        if not isClient() then
+            local gun = self.gun
+            local gunModData = gun:getModData()
+            local ammoList = gunModData.AmmoList
 
-        if ammoList and #ammoList > 0 and gun:getCurrentAmmoCount() > 0 then
-            if gun:isInsertAllBulletsReload() then
-                local count = gun:getCurrentAmmoCount()
-                for i = 1, count do
-                    if #ammoList > 0 then
-                        table.remove(ammoList, 1)
+            if ammoList and #ammoList > 0 and gun:getCurrentAmmoCount() > 0 then
+                if gun:isInsertAllBulletsReload() then
+                    local count = gun:getCurrentAmmoCount()
+                    for i = 1, count do
+                        if #ammoList > 0 then
+                            table.remove(ammoList, 1)
+                        end
                     end
+                else
+                    table.remove(ammoList, 1)
                 end
-            else
-                table.remove(ammoList, 1)
-            end
 
-            if #ammoList == 0 then
-                gunModData.AmmoList = nil
+                if #ammoList == 0 then
+                    gunModData.AmmoList = nil
+                end
             end
+            Ammo.SyncAmmoListToClient(self.character, gun)
         end
     end
 
@@ -371,6 +383,13 @@ ISReloadWeaponAction.attackHook = function(character, chargeDelta, weapon)
 
                 if #ammoList == 0 then
                     weapon:getModData().AmmoList = nil
+                end
+
+                -- Tell server to consume the round from its AmmoList
+                if isClient() then
+                    sendClientCommand(character, "SWMG", "consumeRound", {
+                        itemId = weapon:getID()
+                    })
                 end
             end
         else

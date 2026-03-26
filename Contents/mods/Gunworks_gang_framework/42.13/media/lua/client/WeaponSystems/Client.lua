@@ -2,7 +2,7 @@ local Ammo = require("WeaponSystems/Utils/AmmoUtils")
 local Client = {}
 
 function Client.OnServerCommand(module, command, args)
-    if module ~= "MWA" or not args then return end
+    if module ~= "SWMG" or not args then return end
 
     local playerObj = getSpecificPlayer(0)
     if not playerObj then return end
@@ -24,6 +24,11 @@ function Client.OnServerCommand(module, command, args)
             if ammoEnum then
                 item:setAmmoType(ammoEnum)
             end
+        end
+    elseif command == "syncAmmoList" then
+        local item = playerObj:getInventory():getItemWithIDRecursiv(args.itemId)
+        if item then
+            item:getModData().AmmoList = args.ammoList
         end
     end
 end
