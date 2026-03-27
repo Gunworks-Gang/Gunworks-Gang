@@ -13,6 +13,12 @@ Magazine.WeaponMagazineProfile = {}
 Magazine.MagazineProfiles = {}
 
 -------------------------------------------------
+-- Table 3: Magazine Profile Sets (reverse lookup)
+-- Maps profile name to a set {[magFullType] = true} for O(1) membership checks
+-------------------------------------------------
+Magazine.ProfileMagazineSet = {}
+
+-------------------------------------------------
 -- Registration API
 -------------------------------------------------
 
@@ -34,6 +40,11 @@ end
 ---@param magazineTypes string[]  ordered list of magazine fullTypes
 function Magazine.RegisterMagazineProfile(profileName, magazineTypes)
     Magazine.MagazineProfiles[profileName] = magazineTypes
+    local set = {}
+    for i = 1, #magazineTypes do
+        set[magazineTypes[i]] = true
+    end
+    Magazine.ProfileMagazineSet[profileName] = set
 end
 
 -------------------------------------------------
@@ -60,14 +71,31 @@ end
 ---@param profileName string
 ---@return boolean
 function Magazine.IsMagazineInProfile(magType, profileName)
-    local typeList = Magazine.MagazineProfiles[profileName]
-    if not typeList then return false end
-    for _, allowedType in ipairs(typeList) do
-        if allowedType == magType then
-            return true
-        end
-    end
-    return false
+    local set = Magazine.ProfileMagazineSet[profileName]
+    return set and set[magType] or false
+end
+
+-------------------------------------------------
+-- Predicate & comparator for getBestEvalArgRecurse
+-------------------------------------------------
+
+--- Predicate: returns true if item belongs to the gun's magazine profile.
+---@param item InventoryItem
+---@param gun HandWeapon
+---@return boolean
+function Magazine.predicateInProfile(item, gun)
+    local profile = Magazine.WeaponMagazineProfile[gun:getFullType()]
+    if not profile then return false end
+    local set = Magazine.ProfileMagazineSet[profile]
+    return set and set[item:getFullType()] or false
+end
+
+--- Comparator: higher ammo count = better.
+---@param a InventoryItem
+---@param b InventoryItem
+---@return number
+function Magazine.compareAmmoCount(a, b)
+    return a:getCurrentAmmoCount() - b:getCurrentAmmoCount()
 end
 
 -------------------------------------------------
@@ -122,8 +150,11 @@ function Magazine.getBestMagazineFromList(playerObj, gun, typeList)
 end
 
 function Magazine.getBestMagazineForGun(playerObj, gun)
-    local typeList = Magazine.GetMagazineTypesForGun(gun)
-    return typeList and Magazine.getBestMagazineFromList(playerObj, gun, typeList)
+    local profile = Magazine.WeaponMagazineProfile[gun:getFullType()]
+    if not profile or not Magazine.ProfileMagazineSet[profile] then return nil end
+    return playerObj:getInventory():getBestEvalArgRecurse(
+        Magazine.predicateInProfile, Magazine.compareAmmoCount, gun
+    )
 end
 
 function Magazine.ReloadBestMagazineFromList(playerObj, gun)
