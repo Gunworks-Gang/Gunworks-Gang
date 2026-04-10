@@ -49,6 +49,14 @@ function Server.OnClientCommand(module, command, player, args)
                 ammoList = weapon:getModData().AmmoList
             })
         end
+    elseif command == "clearAmmoList" then
+        local weapon = Server.getWeaponById(player, args.itemId)
+        if not weapon then return end
+        weapon:getModData().AmmoList = nil
+        sendServerCommand(player, "SWMG", "syncAmmoList", {
+            itemId = weapon:getID(),
+            ammoList = nil
+        })
     elseif command == "magazineAmmoProfile" then
         local item = Server.getItemById(player, args.itemId)
         if not item then return end

@@ -335,22 +335,24 @@ end
 -------------------------------------------------
 local ISUnloadBulletsFromFirearm_animEvent_Original = ISUnloadBulletsFromFirearm.animEvent
 function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
-    if event == 'playReloadSound' and parameter == 'ejectAmmoStart' then
+    -- 'ejectAmmoStart' is a sound-only cue that returns early in vanilla.
+    -- Actual bullet removal fires when parameter ~= 'ejectAmmoStart' (nil on
+    -- the server via emulateAnimEvent). Mirror that condition here.
+    if event == 'playReloadSound' and parameter ~= 'ejectAmmoStart' then
         if not isClient() then
             local gun = self.gun
             local gunModData = gun:getModData()
             local ammoList = gunModData.AmmoList
 
             if ammoList and #ammoList > 0 and gun:getCurrentAmmoCount() > 0 then
+                local count = 1
                 if gun:isInsertAllBulletsReload() then
-                    local count = gun:getCurrentAmmoCount()
-                    for i = 1, count do
-                        if #ammoList > 0 then
-                            table.remove(ammoList, 1)
-                        end
+                    count = gun:getCurrentAmmoCount()
+                end
+                for _ = 1, count do
+                    if #ammoList > 0 then
+                        table.remove(ammoList, 1)
                     end
-                else
-                    table.remove(ammoList, 1)
                 end
 
                 if #ammoList == 0 then
@@ -395,6 +397,11 @@ ISReloadWeaponAction.attackHook = function(character, chargeDelta, weapon)
         else
             if weapon:getCurrentAmmoCount() <= 0 then
                 weapon:getModData().AmmoList = nil
+                if isClient() then
+                    sendClientCommand(character, "SWMG", "clearAmmoList", {
+                        itemId = weapon:getID()
+                    })
+                end
             end
         end
         Attack_Hook_Original(character, chargeDelta, weapon)
