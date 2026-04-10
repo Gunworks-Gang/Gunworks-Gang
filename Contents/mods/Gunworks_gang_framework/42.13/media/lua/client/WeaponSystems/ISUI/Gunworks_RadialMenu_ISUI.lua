@@ -347,6 +347,75 @@ function CInsertMagazineProfile:invoke()
 end
 
 -------------------------------------------------
+-- Direct-bullet ammo selection helpers
+-------------------------------------------------
+
+-- Returns {bulletType, name, count, tex} for each Gunworks ammo type
+-- the player can load directly into a non-magazine weapon.
+local function getAvailableAmmoTypesForWeapon(playerObj, weapon)
+    local family = Ammo.ItemAmmoFamily[weapon:getFullType()]
+    if not family then return {} end
+    local typeList = Ammo.GetBulletTypesForFamily(family)
+    if not typeList then return {} end
+    local freeSpace = weapon:getMaxAmmo() - weapon:getCurrentAmmoCount()
+    local results = {}
+    for _, bulletType in ipairs(typeList) do
+        local toLoad = math.min(playerObj:getInventory():getItemCountRecurse(bulletType), freeSpace)
+        if toLoad > 0 then
+            local script = ScriptManager.instance:getItem(bulletType)
+            local name = script and script:getDisplayName() or bulletType
+            local ammoItem = playerObj:getInventory():getFirstTypeRecurse(bulletType)
+            local tex = ammoItem and ammoItem:getTex()
+            table.insert(results, { bulletType = bulletType, name = name, count = toLoad, tex = tex })
+        end
+    end
+    return results
+end
+
+-- Called when player picks an ammo type from the direct-fire ammo sub-radial.
+-- Tops off the remaining free space with the chosen bullet type.
+local function onDirectAmmoTypeSelected(character, weapon, bulletType)
+    ISInventoryPaneContextMenu.transferBullets(character, bulletType, weapon:getCurrentAmmoCount(), weapon:getMaxAmmo())
+    ISInventoryPaneContextMenu.equipWeapon(weapon, true, false, character:getPlayerNum())
+    Ammo.AmmoProfileSetter(weapon, bulletType)
+    ISTimedActionQueue.add(ISReloadWeaponAction:new(character, weapon))
+end
+
+-------------------------------------------------
+-- CSelectAmmunition
+-- Shown on non-magazine weapons that have a
+-- Gunworks ammo family with 2+ available types.
+-------------------------------------------------
+local CSelectAmmunition = BaseCommand:derive("CSelectAmmunition")
+
+function CSelectAmmunition:new(frm)
+    return BaseCommand.new(self, frm)
+end
+
+function CSelectAmmunition:fillMenu(menu, weapon)
+    if weapon:getMagazineType() then return end
+    local available = getAvailableAmmoTypesForWeapon(self.character, weapon)
+    if #available == 0 then return end
+    local text = getText("IGUI_SelectAmmunition")
+    menu:addSlice(text, getTexture("media/ui/GunworksRadial_SelectAmmunition.png"), self.invoke, self)
+end
+
+function CSelectAmmunition:invoke()
+    local weapon = self:getWeapon()
+    if not weapon then return end
+    local available = getAvailableAmmoTypesForWeapon(self.character, weapon)
+    if #available == 0 then return end
+    local playerNum = self.character:getPlayerNum()
+    local menu = getPlayerRadialMenu(playerNum)
+    menu:clear()
+    for _, entry in ipairs(available) do
+        local text = entry.name .. "\n" .. entry.count
+        menu:addSlice(text, entry.tex, onDirectAmmoTypeSelected, self.character, weapon, entry.bulletType)
+    end
+    displaySubRadial(playerNum)
+end
+
+-------------------------------------------------
 -- Helper: does this weapon have any Gunworks feature?
 -------------------------------------------------
 local function hasGunworksFeature(weapon, playerObj)
@@ -368,6 +437,9 @@ local function hasGunworksFeature(weapon, playerObj)
         for _, magType in ipairs(magTypeList) do
             if inv:getFirstTypeRecurse(magType) then return true end
         end
+    end
+    if not weapon:getMagazineType() then
+        if #getAvailableAmmoTypesForWeapon(playerObj, weapon) > 0 then return true end
     end
     return false
 end
@@ -397,6 +469,7 @@ function ISFirearmRadialMenu:fillMenu()
         CToggleIntegratedUnderbarrel:new(self),
         CSwapDynamicAttachment:new(self),
         CInsertMagazineProfile:new(self),
+        CSelectAmmunition:new(self),
     }
 
     for _, command in ipairs(commands) do
