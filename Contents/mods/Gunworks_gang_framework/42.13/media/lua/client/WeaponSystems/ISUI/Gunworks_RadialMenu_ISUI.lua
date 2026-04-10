@@ -244,7 +244,9 @@ local function getAvailableAmmoTypesForMag(playerObj, magItem)
         if toLoad > 0 then
             local script = ScriptManager.instance:getItem(bulletType)
             local name = script and script:getDisplayName() or bulletType
-            table.insert(results, { bulletType = bulletType, name = name, count = toLoad })
+            local ammoItem = playerObj:getInventory():getFirstTypeRecurse(bulletType)
+            local tex = ammoItem and ammoItem:getTex()
+            table.insert(results, { bulletType = bulletType, name = name, count = toLoad, tex = tex })
         end
     end
     return results
@@ -282,8 +284,7 @@ local function onMagazineTypeSelected(character, weapon, magItem, playerNum)
         menu:clear()
         for _, entry in ipairs(ammoTypes) do
             local text = entry.name .. "\n" .. entry.count
-            menu:addSlice(text, getTexture("media/ui/FirearmRadial_BulletsIntoMagazine.png"),
-                onAmmoTypeSelected, character, weapon, magItem, entry.bulletType)
+            menu:addSlice(text, entry.tex, onAmmoTypeSelected, character, weapon, magItem, entry.bulletType)
         end
         displaySubRadial(playerNum)
     else
@@ -339,7 +340,7 @@ function CInsertMagazineProfile:invoke()
         local script = ScriptManager.instance:getItem(entry.magType)
         local name   = script and script:getDisplayName() or entry.magType
         local text   = name .. "\n" .. entry.item:getCurrentAmmoCount() .. "/" .. entry.item:getMaxAmmo()
-        menu:addSlice(text, getTexture("media/ui/FirearmRadial_InsertMagazine.png"),
+        menu:addSlice(text, entry.item:getTex(),
             onMagazineTypeSelected, self.character, weapon, entry.item, playerNum)
     end
     displaySubRadial(playerNum)
