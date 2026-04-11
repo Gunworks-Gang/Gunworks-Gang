@@ -51,11 +51,13 @@ end
 
 function Animations.releaseActionLock(player, weapon)
     if not weapon or not player then return end
-    if weapon:isRoundChambered() and not weapon:isJammed() and weapon:haveChamber() then
-        Animations.CallAnimationFunction(weapon, false)
-        player:resetEquippedHandsModels()
-        Animations.SyncSlideState(player, weapon, false)
-    end
+    if weapon:isJammed() or not weapon:haveChamber() then return end
+    -- Always re-apply the correct state: the engine's syncHandWeaponFields may have
+    -- reset the hand models between the open and this callback, stomping our visual.
+    local open = not weapon:isRoundChambered()
+    Animations.CallAnimationFunction(weapon, open)
+    player:resetEquippedHandsModels()
+    Animations.SyncSlideState(player, weapon, open)
 end
 
 function Animations.lockActionOpen(player, weapon)
