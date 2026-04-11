@@ -8,10 +8,16 @@ local FoldingStock = require("WeaponSystems/Utils/FoldingStockUtils")
 ISFoldStock = ISBaseTimedAction:derive("ISFoldStock")
 
 function ISFoldStock:isValid()
+    if isClient() and self.weapon then
+        return self.character:getInventory():containsID(self.weapon:getID())
+    end
     return self.character:getPrimaryHandItem() == self.weapon
 end
 
 function ISFoldStock:start()
+    if isClient() and self.weapon then
+        self.weapon = self.character:getInventory():getItemById(self.weapon:getID())
+    end
     self:setOverrideHandModels(self.weapon, nil)
     self:setActionAnim(self.animation)
 end
@@ -20,8 +26,27 @@ function ISFoldStock:update()
 end
 
 function ISFoldStock:perform()
-    FoldingStock.ToggleFoldStock(self.weapon)
     ISBaseTimedAction.perform(self)
+end
+
+function ISFoldStock:complete()
+    FoldingStock.ToggleFoldStock(self.weapon)
+    syncHandWeaponFields(self.character, self.weapon)
+    -- Broadcast sprite changes for models-mode (not covered by native sync packet)
+    local entry = FoldingStock.WeaponsWithFoldableStock[self.weapon:getFullType()]
+    if entry and entry.models then
+        local onlinePlayers = getOnlinePlayers()
+        if onlinePlayers then
+            for i = 0, onlinePlayers:size() - 1 do
+                sendServerCommand(onlinePlayers:get(i), "SWMG", "syncWeapon", {
+                    onlineID    = self.character:getOnlineID(),
+                    itemId      = self.weapon:getID(),
+                    StockFolded = self.weapon:getModData().StockFolded,
+                })
+            end
+        end
+    end
+    return true
 end
 
 function ISFoldStock:stop()

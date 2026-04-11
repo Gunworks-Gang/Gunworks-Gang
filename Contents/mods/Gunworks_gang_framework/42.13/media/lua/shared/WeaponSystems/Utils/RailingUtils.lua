@@ -228,7 +228,7 @@ function Railing.UnmountAccessory(weapon, accessoryPart, player)
     if returnedItem then
         player:getInventory():AddItem(returnedItem)
     end
-    return true
+    return true, returnedItem
 end
 
 return Railing

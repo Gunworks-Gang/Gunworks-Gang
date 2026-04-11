@@ -128,14 +128,15 @@ function Bayonet.RemoveBayonet(weapon, player)
 
     weapon:detachWeaponPart(bayonetPart)
 
+    local returnedKnife
     if bayonetKnifeType then
-        local bayonetKnife = instanceItem(bayonetKnifeType)
-        if bayonetKnife then
-            player:getInventory():AddItem(bayonetKnife)
+        returnedKnife = instanceItem(bayonetKnifeType)
+        if returnedKnife then
+            player:getInventory():AddItem(returnedKnife)
         end
     end
 
-    return true
+    return true, returnedKnife
 end
 
 -------------------------------------------------

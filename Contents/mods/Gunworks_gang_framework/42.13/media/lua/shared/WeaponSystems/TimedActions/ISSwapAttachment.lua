@@ -8,10 +8,16 @@ local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachmentUtils")
 ISSwapAttachment = ISBaseTimedAction:derive("ISSwapAttachment")
 
 function ISSwapAttachment:isValid()
+    if isClient() and self.weapon then
+        return self.character:getInventory():containsID(self.weapon:getID())
+    end
     return self.character:getPrimaryHandItem() == self.weapon
 end
 
 function ISSwapAttachment:start()
+    if isClient() and self.weapon then
+        self.weapon = self.character:getInventory():getItemById(self.weapon:getID())
+    end
     self:setOverrideHandModels(self.weapon, nil)
     self:setActionAnim(self.animation)
 end
@@ -20,8 +26,13 @@ function ISSwapAttachment:update()
 end
 
 function ISSwapAttachment:perform()
-    DynamicAttachment.SwapAttachment(self.weapon)
     ISBaseTimedAction.perform(self)
+end
+
+function ISSwapAttachment:complete()
+    DynamicAttachment.SwapAttachment(self.weapon)
+    syncHandWeaponFields(self.character, self.weapon)
+    return true
 end
 
 function ISSwapAttachment:stop()
