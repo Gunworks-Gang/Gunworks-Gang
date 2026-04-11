@@ -119,7 +119,13 @@ function ISEjectMagazine:unloadAmmo()
     end
 
     local savedMagType = Magazine.GetMagazineType(self.gun)
+    if not savedMagType then
+        return ISEjectMagazine_unloadAmmo_original(self)
+    end
     local magazineInstance = instanceItem(savedMagType)
+    if not magazineInstance then
+        return ISEjectMagazine_unloadAmmo_original(self)
+    end
     local gunModData = self.gun:getModData()
     local gunList = gunModData.AmmoList
 
