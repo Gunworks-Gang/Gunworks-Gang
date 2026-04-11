@@ -10,7 +10,7 @@ ISRailingMount = ISBaseTimedAction:derive("ISRailingMount")
 function ISRailingMount:isValid()
     if isClient() and self.weapon and self.accessoryItem then
         return self.character:getInventory():containsID(self.weapon:getID())
-           and self.character:getInventory():containsID(self.accessoryItem:getID())
+            and self.character:getInventory():containsID(self.accessoryItem:getID())
     end
     return self.character:getPrimaryHandItem() == self.weapon
         and self.character:getInventory():contains(self.accessoryItem)
@@ -40,6 +40,14 @@ function ISRailingMount:complete()
     Railing.MountAccessory(self.weapon, self.accessoryItem, self.character)
     syncHandWeaponFields(self.character, self.weapon)
     sendRemoveItemFromContainer(self.character:getInventory(), self.accessoryItem)
+    -- Cycle hand equipment to force visual refresh
+    self.character:setPrimaryHandItem(nil)
+    self.character:setSecondaryHandItem(nil)
+    self.character:setPrimaryHandItem(self.weapon)
+    if self.weapon:isTwoHandWeapon() then
+        self.character:setSecondaryHandItem(self.weapon)
+    end
+    self.character:resetEquippedHandsModels()
     return true
 end
 
@@ -91,6 +99,14 @@ function ISRailingUnmount:complete()
     if returnedItem then
         sendAddItemToContainer(self.character:getInventory(), returnedItem)
     end
+    -- Cycle hand equipment to force visual refresh
+    self.character:setPrimaryHandItem(nil)
+    self.character:setSecondaryHandItem(nil)
+    self.character:setPrimaryHandItem(self.weapon)
+    if self.weapon:isTwoHandWeapon() then
+        self.character:setSecondaryHandItem(self.weapon)
+    end
+    self.character:resetEquippedHandsModels()
     return true
 end
 
