@@ -49,6 +49,8 @@ function ISRackFirearm:animEvent(event, parameter)
         return ISRackFirearm_animEvent_old(self, event, parameter)
     end
     if event == 'rackingFinished' then
+        -- Racking is manual pull-and-release — bolt always goes forward.
+        -- Slide-lock-on-empty is handled by lockActionOpen/releaseActionLock on fire.
         Animations.CallAnimationFunction(self.gun, false)
         self.character:resetEquippedHandsModels()
         Animations.SyncSlideState(self.character, self.gun, false)

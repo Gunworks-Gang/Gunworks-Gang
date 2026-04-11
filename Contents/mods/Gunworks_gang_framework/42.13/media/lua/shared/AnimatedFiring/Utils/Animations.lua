@@ -61,26 +61,25 @@ end
 function Animations.lockActionOpen(player, weapon)
     if not weapon or not weapon:isRanged() or not player then return end
     if weapon:isRackAfterShoot() then return end
+    if weapon:isJammed() or not weapon:haveChamber() then return end
 
-    if weapon:isRoundChambered() and not weapon:isJammed() and weapon:haveChamber() then
-        Animations.CallAnimationFunction(weapon, true)
-        player:resetEquippedHandsModels()
-        local seconds = 10 / 60
-        Animations.SyncSlideState(player, weapon, true)
-        Animations.scheduleActionClose(seconds, Animations.releaseActionLock, player, weapon)
-    end
+    Animations.CallAnimationFunction(weapon, true)
+    player:resetEquippedHandsModels()
+    Animations.SyncSlideState(player, weapon, true)
+    local seconds = 10 / 60
+    Animations.scheduleActionClose(seconds, Animations.releaseActionLock, player, weapon)
 end
 
 function Animations.rackAction(player, weapon, starting)
     if not weapon or not player then return end
     if starting then
-        Animations.CallAnimationFunction(weapon, false)
-        player:resetEquippedHandsModels()
-        Animations.SyncSlideState(player, weapon, false)
-    else
         Animations.CallAnimationFunction(weapon, true)
         player:resetEquippedHandsModels()
         Animations.SyncSlideState(player, weapon, true)
+    else
+        Animations.CallAnimationFunction(weapon, false)
+        player:resetEquippedHandsModels()
+        Animations.SyncSlideState(player, weapon, false)
     end
 end
 
