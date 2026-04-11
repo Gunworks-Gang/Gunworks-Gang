@@ -16,16 +16,15 @@ function ISReloadWeaponAction:animEvent(event, parameter)
     if event == 'loadFinished' then
         Animations.CallAnimationFunction(self.gun, false)
         self.character:resetEquippedHandsModels()
+        Animations.SyncSlideState(self.character, self.gun, false)
         return ISReloadWeaponAction_animEvent_old(self, event, parameter)
     end
     if event == 'changeWeaponSprite' then
         if parameter and parameter ~= '' then
-            if parameter ~= 'original' then
-                Animations.CallAnimationFunction(self.gun, true)
-            else
-                Animations.CallAnimationFunction(self.gun, false)
-            end
+            local open = parameter ~= 'original'
+            Animations.CallAnimationFunction(self.gun, open)
             self.character:resetEquippedHandsModels()
+            Animations.SyncSlideState(self.character, self.gun, open)
         end
     else
         return ISReloadWeaponAction_animEvent_old(self, event, parameter)
@@ -58,12 +57,10 @@ function ISRackFirearm:animEvent(event, parameter)
     end
     if event == 'changeWeaponSprite' then
         if parameter and parameter ~= '' then
-            if parameter ~= 'original' then
-                Animations.CallAnimationFunction(self.gun, true)
-            else
-                Animations.CallAnimationFunction(self.gun, false)
-            end
+            local open = parameter ~= 'original'
+            Animations.CallAnimationFunction(self.gun, open)
             self.character:resetEquippedHandsModels()
+            Animations.SyncSlideState(self.character, self.gun, open)
         end
     else
         return ISRackFirearm_animEvent_old(self, event, parameter)
@@ -79,12 +76,10 @@ function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
     end
     if event == 'changeWeaponSprite' then
         if parameter and parameter ~= '' then
-            if parameter ~= 'original' then
-                Animations.CallAnimationFunction(self.gun, true)
-            else
-                Animations.CallAnimationFunction(self.gun, false)
-            end
+            local open = parameter ~= 'original'
+            Animations.CallAnimationFunction(self.gun, open)
             self.character:resetEquippedHandsModels()
+            Animations.SyncSlideState(self.character, self.gun, open)
         end
     else
         return ISUnloadBulletsFromFirearm_animEvent_old(self, event, parameter)

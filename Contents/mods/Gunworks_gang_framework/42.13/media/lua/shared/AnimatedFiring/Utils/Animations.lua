@@ -64,6 +64,7 @@ function Animations.lockActionOpen(player, weapon)
     if not weapon or not weapon:isRanged() or not player then return end
     if weapon:isRackAfterShoot() then return end
     if weapon:isJammed() or not weapon:haveChamber() then return end
+    if not weapon:isRoundChambered() then return end -- dry fire: no gas to cycle the action
 
     Animations.CallAnimationFunction(weapon, true)
     player:resetEquippedHandsModels()
