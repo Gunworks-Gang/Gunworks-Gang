@@ -7,6 +7,7 @@ local ISReloadWeaponAction_stop_old = ISReloadWeaponAction.stop
 function ISReloadWeaponAction:stop()
     Animations.CallAnimationFunction(self.gun, false)
     self.character:resetEquippedHandsModels()
+    Animations.SyncSlideState(self.character, self.gun, false)
     return ISReloadWeaponAction_stop_old(self)
 end
 
@@ -35,6 +36,7 @@ local ISRackFirearm_stop_old = ISRackFirearm.stop
 function ISRackFirearm:stop()
     Animations.CallAnimationFunction(self.gun, false)
     self.character:resetEquippedHandsModels()
+    Animations.SyncSlideState(self.character, self.gun, false)
     return ISRackFirearm_stop_old(self)
 end
 
@@ -43,11 +45,13 @@ function ISRackFirearm:animEvent(event, parameter)
     if event == 'unloadFinished' then
         Animations.CallAnimationFunction(self.gun, false)
         self.character:resetEquippedHandsModels()
+        Animations.SyncSlideState(self.character, self.gun, false)
         return ISRackFirearm_animEvent_old(self, event, parameter)
     end
     if event == 'rackingFinished' then
         Animations.CallAnimationFunction(self.gun, false)
         self.character:resetEquippedHandsModels()
+        Animations.SyncSlideState(self.character, self.gun, false)
         return ISRackFirearm_animEvent_old(self, event, parameter)
     end
     if event == 'changeWeaponSprite' then
@@ -89,5 +93,6 @@ local ISUnloadBulletsFromFirearm_stop_old = ISUnloadBulletsFromFirearm.stop
 function ISUnloadBulletsFromFirearm:stop()
     Animations.CallAnimationFunction(self.gun, false)
     self.character:resetEquippedHandsModels()
+    Animations.SyncSlideState(self.character, self.gun, false)
     return ISUnloadBulletsFromFirearm_stop_old(self)
 end

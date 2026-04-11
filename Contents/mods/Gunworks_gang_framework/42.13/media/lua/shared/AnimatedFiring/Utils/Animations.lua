@@ -39,11 +39,22 @@ function Animations.scheduleActionClose(seconds, callback, ...)
     end
 end
 
+-- Send slide state to the server so it can broadcast to all other clients.
+-- Only fires on the owning client; server and SP are no-ops.
+function Animations.SyncSlideState(player, weapon, open)
+    if not isClient() or not player or not weapon then return end
+    sendClientCommand(player, "SWMG", "slideState", {
+        weaponId = weapon:getID(),
+        open     = open,
+    })
+end
+
 function Animations.releaseActionLock(player, weapon)
     if not weapon or not player then return end
     if weapon:isRoundChambered() and not weapon:isJammed() and weapon:haveChamber() then
         Animations.CallAnimationFunction(weapon, false)
         player:resetEquippedHandsModels()
+        Animations.SyncSlideState(player, weapon, false)
     end
 end
 
@@ -55,6 +66,7 @@ function Animations.lockActionOpen(player, weapon)
         Animations.CallAnimationFunction(weapon, true)
         player:resetEquippedHandsModels()
         local seconds = 10 / 60
+        Animations.SyncSlideState(player, weapon, true)
         Animations.scheduleActionClose(seconds, Animations.releaseActionLock, player, weapon)
     end
 end
@@ -64,9 +76,11 @@ function Animations.rackAction(player, weapon, starting)
     if starting then
         Animations.CallAnimationFunction(weapon, false)
         player:resetEquippedHandsModels()
+        Animations.SyncSlideState(player, weapon, false)
     else
         Animations.CallAnimationFunction(weapon, true)
         player:resetEquippedHandsModels()
+        Animations.SyncSlideState(player, weapon, true)
     end
 end
 

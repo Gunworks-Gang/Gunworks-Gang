@@ -49,6 +49,14 @@ function Server.OnClientCommand(module, command, player, args)
                 ammoList = weapon:getModData().AmmoList
             })
         end
+    elseif command == "slideState" then
+        local onlinePlayers = getOnlinePlayers()
+        for i = 0, onlinePlayers:size() - 1 do
+            sendServerCommand(onlinePlayers:get(i), "SWMG", "slideState", {
+                onlineID = player:getOnlineID(),
+                open     = args.open,
+            })
+        end
     elseif command == "clearAmmoList" then
         local weapon = Server.getWeaponById(player, args.itemId)
         if not weapon then return end

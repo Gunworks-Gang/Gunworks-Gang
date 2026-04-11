@@ -1,4 +1,5 @@
 local Ammo = require("WeaponSystems/Utils/AmmoUtils")
+local Animations = require("AnimatedFiring/Utils/Animations")
 local Client = {}
 
 function Client.OnServerCommand(module, command, args)
@@ -30,6 +31,15 @@ function Client.OnServerCommand(module, command, args)
         if item then
             item:getModData().AmmoList = args.ammoList
         end
+    elseif command == "slideState" then
+        -- Apply slide animation on behalf of another player
+        if args.onlineID == playerObj:getOnlineID() then return end
+        local targetPlayer = getPlayerByOnlineID(args.onlineID)
+        if not targetPlayer then return end
+        local weapon = targetPlayer:getPrimaryHandItem()
+        if not weapon or not instanceof(weapon, "HandWeapon") then return end
+        Animations.CallAnimationFunction(weapon, args.open)
+        targetPlayer:resetEquippedHandsModels()
     end
 end
 
