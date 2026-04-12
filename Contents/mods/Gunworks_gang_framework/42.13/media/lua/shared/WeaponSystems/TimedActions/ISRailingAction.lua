@@ -1,6 +1,7 @@
 require("TimedActions/ISBaseTimedAction")
 
-local Railing = require("WeaponSystems/Utils/RailingUtils")
+local Railing    = require("WeaponSystems/Utils/RailingUtils")
+local Underbarrel = require("WeaponSystems/Utils/UnderbarrelUtils")
 
 -------------------------------------------------
 -- Mount Accessory via Railing – Timed Action
@@ -72,6 +73,12 @@ end
 ISRailingUnmount = ISBaseTimedAction:derive("ISRailingUnmount")
 
 function ISRailingUnmount:isValid()
+    -- Block removal of a registered underbarrel attachment while the weapon is in underbarrel mode.
+    if self.weapon and self.accessoryPart and Underbarrel.IsWeaponInUnderbarrelMode(self.weapon) then
+        if Underbarrel.UnderbarrelAttachments[self.accessoryPart:getFullType()] then
+            return false
+        end
+    end
     if isClient() and self.weapon then
         return self.character:getInventory():containsID(self.weapon:getID())
     end
@@ -94,6 +101,8 @@ function ISRailingUnmount:perform()
 end
 
 function ISRailingUnmount:complete()
+    -- Return any loaded underbarrel ammo and clean up modData before the part is detached.
+    Underbarrel.HandleAttachmentRemoval(self.weapon, self.accessoryPart, self.character)
     local success, returnedItem = Railing.UnmountAccessory(self.weapon, self.accessoryPart, self.character)
     syncHandWeaponFields(self.character, self.weapon)
     if returnedItem then
