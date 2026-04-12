@@ -448,10 +448,24 @@ local function filterPermanentParts(playerid, context, items)
     local subMenu = option.subOption and context:getSubMenu(option.subOption)
     if not subMenu then return end
 
+    -- Resolve the weapon from the first submenu entry's target
+    local weapon = nil
+    for i = 0, #subMenu.options do
+        local v = subMenu.options[i]
+        if v and v.target and instanceof(v.target, "HandWeapon") then
+            weapon = v.target
+            break
+        end
+    end
+    local isUnderbarrelMode = weapon and Underbarrel.IsWeaponInUnderbarrelMode(weapon)
+
     for i = #subMenu.options, 0, -1 do
         local v = subMenu.options[i]
         if v and v.param1 and instanceof(v.param1, "WeaponPart") then
-            if PreventRemoval.IsPermanent(v.param1:getFullType()) then
+            local partType = v.param1:getFullType()
+            if PreventRemoval.IsPermanent(partType) then
+                subMenu:removeOptionByName(v.name)
+            elseif isUnderbarrelMode and Underbarrel.UnderbarrelAttachments[partType] then
                 subMenu:removeOptionByName(v.name)
             end
         end
@@ -468,6 +482,10 @@ Events.OnFillInventoryObjectContextMenu.Add(filterPermanentParts)
 local _onRemoveUpgradeWeapon_Original = ISInventoryPaneContextMenu.onRemoveUpgradeWeapon
 ISInventoryPaneContextMenu.onRemoveUpgradeWeapon = function(weapon, part, player)
     if part and PreventRemoval.IsPermanent(part:getFullType()) then
+        return
+    end
+    if weapon and part and Underbarrel.IsWeaponInUnderbarrelMode(weapon)
+        and Underbarrel.UnderbarrelAttachments[part:getFullType()] then
         return
     end
     _onRemoveUpgradeWeapon_Original(weapon, part, player)
