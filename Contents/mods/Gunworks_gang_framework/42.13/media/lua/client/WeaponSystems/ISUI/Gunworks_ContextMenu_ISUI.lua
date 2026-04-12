@@ -215,6 +215,11 @@ IntegratedBayonetContext = {}
 IntegratedBayonetContext.callAction = function(player, weapon)
     if not player or not weapon then return end
     Bayonet.ToggleIntegratedBayonet(weapon)
+    sendClientCommand("SWMG", "syncWeapon", {
+        onlineID                     = player:getOnlineID(),
+        itemId                       = weapon:getID(),
+        GW_IntegratedBayonetDeployed = weapon:getModData().GW_IntegratedBayonetDeployed,
+    })
 end
 
 -------------------------------------------------
@@ -261,6 +266,11 @@ IntegratedUnderbarrelContext = {}
 IntegratedUnderbarrelContext.callAction = function(player, weapon)
     if not player or not weapon then return end
     Underbarrel.ToggleIntegratedUnderbarrel(weapon)
+    sendClientCommand("SWMG", "syncWeapon", {
+        onlineID                         = player:getOnlineID(),
+        itemId                           = weapon:getID(),
+        GW_IntegratedUnderbarrelDeployed = weapon:getModData().GW_IntegratedUnderbarrelDeployed,
+    })
 end
 
 -------------------------------------------------

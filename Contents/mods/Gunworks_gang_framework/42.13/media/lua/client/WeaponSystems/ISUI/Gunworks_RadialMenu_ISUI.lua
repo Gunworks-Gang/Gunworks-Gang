@@ -92,6 +92,11 @@ function CToggleIntegratedBayonet:invoke()
     local weapon = self:getWeapon()
     if not weapon then return end
     Bayonet.ToggleIntegratedBayonet(weapon)
+    sendClientCommand("SWMG", "syncWeapon", {
+        onlineID                     = self.character:getOnlineID(),
+        itemId                       = weapon:getID(),
+        GW_IntegratedBayonetDeployed = weapon:getModData().GW_IntegratedBayonetDeployed,
+    })
 end
 
 -------------------------------------------------
@@ -176,6 +181,11 @@ function CToggleIntegratedUnderbarrel:invoke()
     local weapon = self:getWeapon()
     if not weapon then return end
     Underbarrel.ToggleIntegratedUnderbarrel(weapon)
+    sendClientCommand("SWMG", "syncWeapon", {
+        onlineID                         = self.character:getOnlineID(),
+        itemId                           = weapon:getID(),
+        GW_IntegratedUnderbarrelDeployed = weapon:getModData().GW_IntegratedUnderbarrelDeployed,
+    })
 end
 
 -------------------------------------------------

@@ -8,10 +8,16 @@ local FoldingBipod = require("WeaponSystems/Utils/FoldingBipodUtils")
 ISFoldBipod = ISBaseTimedAction:derive("ISFoldBipod")
 
 function ISFoldBipod:isValid()
+    if isClient() and self.weapon then
+        return self.character:getInventory():containsID(self.weapon:getID())
+    end
     return self.character:getPrimaryHandItem() == self.weapon
 end
 
 function ISFoldBipod:start()
+    if isClient() and self.weapon then
+        self.weapon = self.character:getInventory():getItemById(self.weapon:getID())
+    end
     self:setOverrideHandModels(self.weapon, nil)
     self:setActionAnim(self.animation)
 end
@@ -20,8 +26,35 @@ function ISFoldBipod:update()
 end
 
 function ISFoldBipod:perform()
-    FoldingBipod.ToggleDeployBipod(self.weapon)
     ISBaseTimedAction.perform(self)
+end
+
+function ISFoldBipod:complete()
+    FoldingBipod.ToggleDeployBipod(self.weapon)
+    syncHandWeaponFields(self.character, self.weapon)
+    -- Cycle hand equipment to force visual refresh
+    self.character:setPrimaryHandItem(nil)
+    self.character:setSecondaryHandItem(nil)
+    self.character:setPrimaryHandItem(self.weapon)
+    if self.weapon:isTwoHandWeapon() then
+        self.character:setSecondaryHandItem(self.weapon)
+    end
+    self.character:resetEquippedHandsModels()
+    -- Broadcast sprite changes for models-mode (not covered by native sync packet)
+    local entry = FoldingBipod.WeaponsWithFoldableBipod[self.weapon:getFullType()]
+    if entry and entry.models then
+        local onlinePlayers = getOnlinePlayers()
+        if onlinePlayers then
+            for i = 0, onlinePlayers:size() - 1 do
+                sendServerCommand(onlinePlayers:get(i), "SWMG", "syncWeapon", {
+                    onlineID      = self.character:getOnlineID(),
+                    itemId        = self.weapon:getID(),
+                    BipodDeployed = self.weapon:getModData().BipodDeployed,
+                })
+            end
+        end
+    end
+    return true
 end
 
 function ISFoldBipod:stop()

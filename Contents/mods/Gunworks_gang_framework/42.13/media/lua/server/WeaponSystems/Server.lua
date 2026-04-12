@@ -65,6 +65,22 @@ function Server.OnClientCommand(module, command, player, args)
             itemId = weapon:getID(),
             ammoList = nil
         })
+    elseif command == "syncWeapon" then
+        local weapon = player:getInventory():getItemWithIDRecursiv(args.itemId)
+        if not weapon or not instanceof(weapon, "HandWeapon") then return end
+        -- Apply modData server-side so syncHandWeaponFields broadcasts the current state
+        local modData = weapon:getModData()
+        if args.StockFolded ~= nil then modData.StockFolded = args.StockFolded end
+        if args.BipodDeployed ~= nil then modData.BipodDeployed = args.BipodDeployed end
+        if args.GW_IntegratedBayonetDeployed ~= nil then modData.GW_IntegratedBayonetDeployed = args.GW_IntegratedBayonetDeployed end
+        if args.GW_IntegratedUnderbarrelDeployed ~= nil then modData.GW_IntegratedUnderbarrelDeployed = args.GW_IntegratedUnderbarrelDeployed end
+        -- Native packet: syncs all WeaponParts + stats + modData, triggers resetEquippedHandsModels on other clients
+        syncHandWeaponFields(player, weapon)
+        -- Lua broadcast: needed for models-mode sprite changes not covered by the native packet
+        local onlinePlayers = getOnlinePlayers()
+        for i = 0, onlinePlayers:size() - 1 do
+            sendServerCommand(onlinePlayers:get(i), "SWMG", "syncWeapon", args)
+        end
     elseif command == "magazineAmmoProfile" then
         local item = Server.getItemById(player, args.itemId)
         if not item then return end
