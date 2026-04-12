@@ -17,12 +17,12 @@
 --                   for the underbarrel side, and GW_MainWeapon* for the main side.
 --   AmmoList      — custom mixed-ammo array, saved/restored per mode separately.
 -------------------------------------------------
-local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
+local StatsFactory                   = require("WeaponSystems/Utils/StatsFactory")
 
-local Underbarrel = {}
+local Underbarrel                    = {}
 
-Underbarrel.UnderbarrelAttachments  = {}
-Underbarrel.IntegratedUnderbarrels  = {}
+Underbarrel.UnderbarrelAttachments   = {}
+Underbarrel.IntegratedUnderbarrels   = {}
 
 -------------------------------------------------
 -- Default stat set swapped between modes.
@@ -73,7 +73,7 @@ local UNDERBARREL_DEFAULT_SWAP_STATS = {
 -- explicitly in EnterUnderbarrelMode (always false/nil for direct-load underbarrels)
 -- rather than copied from the cached instance, and restored from MAIN_AMMO_KEYS on
 -- exit so the main weapon's magazine state is never lost.
-local RUNTIME_AMMO_STAT_NAMES = {
+local RUNTIME_AMMO_STAT_NAMES        = {
     "CurrentAmmoCount", "RoundChambered", "SpentRoundChambered",
     "SpentRoundCount", "Jammed",
 }
@@ -83,15 +83,15 @@ local RUNTIME_AMMO_STAT_NAMES = {
 -------------------------------------------------
 local function BuildRuntimeKeys(prefix)
     return {
-        cacheWeapon     = "GW_Cached"          .. prefix,
-        ammo            = "GW_"                .. prefix .. "Ammo",
-        ammoList        = "GW_"                .. prefix .. "AmmoList",
-        chambered       = "GW_"                .. prefix .. "Chambered",
-        spentRound      = "GW_"                .. prefix .. "SpentRoundChambered",
-        spentRoundCount = "GW_"                .. prefix .. "SpentRoundCount",
-        jammed          = "GW_"                .. prefix .. "Jammed",
-        containsClip    = "GW_"                .. prefix .. "ContainsClip",
-        magazineType    = "GW_"                .. prefix .. "MagazineType",
+        cacheWeapon     = "GW_Cached" .. prefix,
+        ammo            = "GW_" .. prefix .. "Ammo",
+        ammoList        = "GW_" .. prefix .. "AmmoList",
+        chambered       = "GW_" .. prefix .. "Chambered",
+        spentRound      = "GW_" .. prefix .. "SpentRoundChambered",
+        spentRoundCount = "GW_" .. prefix .. "SpentRoundCount",
+        jammed          = "GW_" .. prefix .. "Jammed",
+        containsClip    = "GW_" .. prefix .. "ContainsClip",
+        magazineType    = "GW_" .. prefix .. "MagazineType",
     }
 end
 
@@ -206,7 +206,7 @@ end
 -------------------------------------------------
 
 local function SaveRuntimeFromActiveUnderbarrel(weapon, keys)
-    local modData = weapon:getModData()
+    local modData                 = weapon:getModData()
     modData[keys.ammo]            = weapon:getCurrentAmmoCount()
     modData[keys.chambered]       = weapon:isRoundChambered()
     modData[keys.spentRound]      = weapon:isSpentRoundChambered()
@@ -218,13 +218,14 @@ end
 
 local function ApplySavedRuntimeToUnderbarrel(weapon, underbarrelWeapon, keys)
     local modData = weapon:getModData()
-    if modData[keys.ammo]            ~= nil then underbarrelWeapon:setCurrentAmmoCount(modData[keys.ammo]) end
-    if modData[keys.chambered]       ~= nil then underbarrelWeapon:setRoundChambered(modData[keys.chambered]) end
-    if modData[keys.spentRound]      ~= nil then underbarrelWeapon:setSpentRoundChambered(modData[keys.spentRound]) end
+    if modData[keys.ammo] ~= nil then underbarrelWeapon:setCurrentAmmoCount(modData[keys.ammo]) end
+    if modData[keys.chambered] ~= nil then underbarrelWeapon:setRoundChambered(modData[keys.chambered]) end
+    if modData[keys.spentRound] ~= nil then underbarrelWeapon:setSpentRoundChambered(modData[keys.spentRound]) end
     if modData[keys.spentRoundCount] ~= nil then underbarrelWeapon:setSpentRoundCount(modData[keys.spentRoundCount]) end
-    if modData[keys.jammed]          ~= nil then underbarrelWeapon:setJammed(modData[keys.jammed]) end
-    if modData[keys.containsClip]    ~= nil then underbarrelWeapon:setContainsClip(modData[keys.containsClip]) end
-    if modData[keys.magazineType]    ~= nil then underbarrelWeapon:setMagazineType(modData[keys.magazineType]) end
+    if modData[keys.jammed] ~= nil then underbarrelWeapon:setJammed(modData[keys.jammed]) end
+    -- MagazineType before ContainsClip (Java guard: usesExternalMagazine() && value)
+    if modData[keys.magazineType] ~= nil then underbarrelWeapon:setMagazineType(modData[keys.magazineType]) end
+    if modData[keys.containsClip] ~= nil then underbarrelWeapon:setContainsClip(modData[keys.containsClip]) end
 end
 
 -------------------------------------------------
@@ -233,7 +234,7 @@ end
 -------------------------------------------------
 
 local function SaveMainWeaponRuntimeState(weapon)
-    local modData = weapon:getModData()
+    local modData                           = weapon:getModData()
     modData[MAIN_AMMO_KEYS.ammo]            = weapon:getCurrentAmmoCount()
     modData[MAIN_AMMO_KEYS.chambered]       = weapon:isRoundChambered()
     modData[MAIN_AMMO_KEYS.spentRound]      = weapon:isSpentRoundChambered()
@@ -245,13 +246,16 @@ end
 
 local function RestoreMainWeaponRuntimeState(weapon)
     local modData = weapon:getModData()
-    if modData[MAIN_AMMO_KEYS.ammo]            ~= nil then weapon:setCurrentAmmoCount(modData[MAIN_AMMO_KEYS.ammo]) end
-    if modData[MAIN_AMMO_KEYS.chambered]       ~= nil then weapon:setRoundChambered(modData[MAIN_AMMO_KEYS.chambered]) end
-    if modData[MAIN_AMMO_KEYS.spentRound]      ~= nil then weapon:setSpentRoundChambered(modData[MAIN_AMMO_KEYS.spentRound]) end
+    if modData[MAIN_AMMO_KEYS.ammo] ~= nil then weapon:setCurrentAmmoCount(modData[MAIN_AMMO_KEYS.ammo]) end
+    if modData[MAIN_AMMO_KEYS.chambered] ~= nil then weapon:setRoundChambered(modData[MAIN_AMMO_KEYS.chambered]) end
+    if modData[MAIN_AMMO_KEYS.spentRound] ~= nil then weapon:setSpentRoundChambered(modData[MAIN_AMMO_KEYS.spentRound]) end
     if modData[MAIN_AMMO_KEYS.spentRoundCount] ~= nil then weapon:setSpentRoundCount(modData[MAIN_AMMO_KEYS.spentRoundCount]) end
-    if modData[MAIN_AMMO_KEYS.jammed]          ~= nil then weapon:setJammed(modData[MAIN_AMMO_KEYS.jammed]) end
-    if modData[MAIN_AMMO_KEYS.containsClip]    ~= nil then weapon:setContainsClip(modData[MAIN_AMMO_KEYS.containsClip]) end
-    if modData[MAIN_AMMO_KEYS.magazineType]    ~= nil then weapon:setMagazineType(modData[MAIN_AMMO_KEYS.magazineType]) end
+    if modData[MAIN_AMMO_KEYS.jammed] ~= nil then weapon:setJammed(modData[MAIN_AMMO_KEYS.jammed]) end
+    -- MagazineType must be restored BEFORE ContainsClip because Java's
+    -- setContainsClip guards: this.containsClip = usesExternalMagazine() && value
+    -- and usesExternalMagazine() returns getMagazineType() != null.
+    if modData[MAIN_AMMO_KEYS.magazineType] ~= nil then weapon:setMagazineType(modData[MAIN_AMMO_KEYS.magazineType]) end
+    if modData[MAIN_AMMO_KEYS.containsClip] ~= nil then weapon:setContainsClip(modData[MAIN_AMMO_KEYS.containsClip]) end
     modData[MAIN_AMMO_KEYS.ammo]            = nil
     modData[MAIN_AMMO_KEYS.chambered]       = nil
     modData[MAIN_AMMO_KEYS.spentRound]      = nil
@@ -290,8 +294,8 @@ local function RestoreScriptStatsFromModData(weapon)
         -- Fallback: fresh instance from script definition with current parts attached.
         -- instanceItem always returns original script stats so this is always correct
         -- regardless of what is currently applied to the live weapon object.
-        local baseShadow    = StatsFactory.GetBaseStatsWithAttachments(weapon)
-        local fallbackSnap  = StatsFactory.Snapshot(baseShadow, UNDERBARREL_DEFAULT_SWAP_STATS)
+        local baseShadow   = StatsFactory.GetBaseStatsWithAttachments(weapon)
+        local fallbackSnap = StatsFactory.Snapshot(baseShadow, UNDERBARREL_DEFAULT_SWAP_STATS)
         StatsFactory.Apply(weapon, fallbackSnap)
         return
     end
@@ -366,7 +370,7 @@ local function EnterUnderbarrelMode(weapon, player, underbarrelType, keys, swapS
     underbarrelWeapon:setWeaponSprite(weapon:getWeaponSprite())
 
     -- Apply underbarrel script stats (AmmoType, damage, range, sounds…).
-    local scriptSnap  = StatsFactory.Snapshot(underbarrelWeapon, swapStats)
+    local scriptSnap = StatsFactory.Snapshot(underbarrelWeapon, swapStats)
     StatsFactory.Apply(weapon, scriptSnap)
 
     -- Apply underbarrel runtime ammo state (count, chambered, jammed…).
@@ -385,7 +389,7 @@ local function EnterUnderbarrelMode(weapon, player, underbarrelType, keys, swapS
     -- Restore the underbarrel's custom AmmoList if one was saved.
     RestoreModeAmmoList(weapon, keys)
 
-    local modData = weapon:getModData()
+    local modData                        = weapon:getModData()
     modData.GW_IsUnderbarrelMode         = true
     modData.GW_UnderbarrelModeWeaponType = underbarrelType
 
@@ -469,7 +473,7 @@ function Underbarrel.RestoreOriginalWeapon(player)
     -- Restore main weapon custom AmmoList.
     RestoreMainAmmoListAfterModeSwitch(weapon)
 
-    local modData = weapon:getModData()
+    local modData                        = weapon:getModData()
     modData.GW_IsUnderbarrelMode         = nil
     modData.GW_UnderbarrelModeWeaponType = nil
 
@@ -503,7 +507,7 @@ function Underbarrel.RestoreOnLoad(weapon)
     -- Restore main weapon custom AmmoList.
     RestoreMainAmmoListAfterModeSwitch(weapon)
 
-    local modData = weapon:getModData()
+    local modData                        = weapon:getModData()
     modData.GW_IsUnderbarrelMode         = nil
     modData.GW_UnderbarrelModeWeaponType = nil
 end
@@ -525,7 +529,6 @@ function Underbarrel.HandleAttachmentRemoval(weapon, removedPart, player)
     -- If currently in underbarrel mode for this attachment, force back to main weapon.
     if Underbarrel.IsWeaponInUnderbarrelMode(weapon)
         and modData.GW_UnderbarrelModeWeaponType == entry.type then
-
         -- Save the live underbarrel ammo state so we can return it to the player below.
         SaveRuntimeFromActiveUnderbarrel(weapon, ATTACHMENT_KEYS)
         SaveCurrentModeAmmoList(weapon, ATTACHMENT_KEYS)
