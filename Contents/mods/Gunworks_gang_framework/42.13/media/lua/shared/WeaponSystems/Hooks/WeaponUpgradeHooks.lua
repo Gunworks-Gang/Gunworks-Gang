@@ -1,8 +1,8 @@
 require "TimedActions/ISUpgradeWeapon"
 require "TimedActions/ISRemoveWeaponUpgrade"
 
-local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
-local Underbarrel  = require("WeaponSystems/Utils/UnderbarrelUtils")
+local StatsFactory              = require("WeaponSystems/Utils/StatsFactory")
+local Underbarrel               = require("WeaponSystems/Utils/UnderbarrelUtils")
 
 -------------------------------------------------
 -- After a weapon part is attached or removed via the
@@ -16,20 +16,6 @@ function ISUpgradeWeapon:complete()
     if self.weapon and instanceof(self.weapon, "HandWeapon") then
         StatsFactory.ReapplyAllModifiers(self.weapon)
     end
-end
-
-local _ISRemoveWeaponUpgrade_isValid = ISRemoveWeaponUpgrade.isValid
-function ISRemoveWeaponUpgrade:isValid()
-    -- Block removal of a registered underbarrel attachment while the weapon is in underbarrel mode.
-    if self.weapon and instanceof(self.weapon, "HandWeapon") and self.partType then
-        local part = self.weapon:getWeaponPart(self.partType)
-        if part and Underbarrel.IsWeaponInUnderbarrelMode(self.weapon) then
-            if Underbarrel.UnderbarrelAttachments[part:getFullType()] then
-                return false
-            end
-        end
-    end
-    return _ISRemoveWeaponUpgrade_isValid(self)
 end
 
 local _ISRemoveWeaponUpgrade_complete = ISRemoveWeaponUpgrade.complete
