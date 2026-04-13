@@ -15,14 +15,36 @@ ExplosivesSystems.updateCounter           = 0
 ExplosivesSystems.GRAVITY                 = 0.020
 ExplosivesSystems.XY_STEP                 = 0.10
 ExplosivesSystems.Z_STEP                  = 0.05
-ExplosivesSystems.DRAG_XY                 = 0.97
-ExplosivesSystems.DRAG_Z                  = 0.995
+ExplosivesSystems.DRAG_XY                 = 0.995
+ExplosivesSystems.DRAG_Z                  = 0.998
 ExplosivesSystems.BOUNCE_RESTITUTION_WALL = 0.50
+ExplosivesSystems.BOUNCE_RESTITUTION_CEIL = 0.30
 ExplosivesSystems.BOUNCE_POSITION_CORRECT = 0.12
 ExplosivesSystems.BOUNCE_MIN_VELOCITY     = 0.004
+ExplosivesSystems.EDGE_TOL                = 0.15
+ExplosivesSystems.LOW_WALL_Z_THRESHOLD    = 0.25
+
+--------------------------------------------------------------------
+--- Utility: check if a wall sprite is a low wall (fence/railing)
+--- (from Hot Brass SpentCasingPhysics.isLowWall)
+--------------------------------------------------------------------
+function ExplosivesSystems.isLowWall(wall)
+    if not wall then return false end
+    local props = wall.getProperties and wall:getProperties() or nil
+    if not props then return false end
+    if props:has(IsoFlagType.transparentW)
+        or props:has(IsoFlagType.transparentN)
+        or props:has(IsoFlagType.HoppableW)
+        or props:has(IsoFlagType.HoppableN)
+    then
+        return true
+    end
+    return false
+end
 
 --------------------------------------------------------------------
 --- Utility: check if a wall/door/window blocks between two squares
+--- Low walls only block if ordnance is below LOW_WALL_Z_THRESHOLD.
 --- (from Hot Brass SpentCasingPhysics)
 --------------------------------------------------------------------
 function ExplosivesSystems.isBlockedBetweenSquares(fromSq, toSq, dir, ordZ)
@@ -43,6 +65,13 @@ function ExplosivesSystems.isBlockedBetweenSquares(fromSq, toSq, dir, ordZ)
     end
 
     if fromSq:isWallTo(toSq) then
+        local wall1 = fromSq:getWall()
+        local wall2 = toSq:getWall()
+        local isLow = (wall1 and ExplosivesSystems.isLowWall(wall1))
+            or (wall2 and ExplosivesSystems.isLowWall(wall2))
+        if isLow then
+            return (ordZ or 0) < ExplosivesSystems.LOW_WALL_Z_THRESHOLD
+        end
         return true
     end
 
@@ -186,7 +215,8 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         worldItem        = worldItem,
         active           = true,
         detonationTimer  = detonationTimer,
-        settled          = false,
+        hasHitFloor      = false,
+        atRest           = false,
         remainingBounces = ExplosivesSystems.randomizeBounces(throwParams.floorBounces or 0),
         -- Initial launch velocity (ballistic trajectory)
         velocityX        = dirX * hSpeed,
@@ -218,7 +248,7 @@ end
 
 --------------------------------------------------------------------
 --- Per-tick update of all active ordnance
---- (mirrors SpentCasingPhysics.update)
+--- Unified physics loop (Hot Brass pattern)
 --------------------------------------------------------------------
 function ExplosivesSystems.update()
     local dt           = ExplosivesSystems.GT():getTimeDelta()
@@ -244,12 +274,8 @@ function ExplosivesSystems.update()
         if not ord or not ord.active then
             table.remove(ExplosivesSystems.activeOrdnance, i)
             removed = true
-        elseif ord.settled then
-            -- Post-impact: bouncing or waiting on detonation timer
-            removed = ExplosivesSystems.updateSettling(ord, i, scale, shouldRender)
         else
-            -- In-flight: lobbed arc interpolation
-            removed = ExplosivesSystems.updateAirborne(ord, i, scale, shouldRender)
+            removed = ExplosivesSystems.updateOrdnance(ord, i, scale, shouldRender)
         end
 
         if not removed then
@@ -259,182 +285,215 @@ function ExplosivesSystems.update()
 end
 
 --------------------------------------------------------------------
---- Update ordnance that is still airborne (lobbed arc)
+--- Unified ordnance physics update (replaces separate airborne/settling)
+--- Handles: gravity, drag, wall bounce, floor/ceiling, Z-level transitions
 --------------------------------------------------------------------
-function ExplosivesSystems.updateAirborne(ord, index, scale, shouldRender)
+function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
     local dt = ExplosivesSystems.GT():getTimeDelta()
 
-    -- Tick fuse timer during flight (mid-air detonation, timer-fused only)
-    if ord.explosiveParams and not ord.explosiveParams.detonateOnImpact and ord.detonationTimer > 0 then
+    ----------------------------------------------------------------
+    -- 1. FUSE TIMER (ticks every frame regardless of flight phase)
+    ----------------------------------------------------------------
+    if ord.explosiveParams and ord.detonationTimer > 0 then
         ord.detonationTimer = ord.detonationTimer - dt
         if ord.detonationTimer <= 0 then
             return ExplosivesSystems.forceDetonate(ord, index)
         end
     end
 
-    -- Apply gravity (no drag during flight – grenade has minimal air resistance)
-    ord.velocityZ = ord.velocityZ - (ExplosivesSystems.GRAVITY * scale)
-
-    -- Compute new world position from current local coords + velocity
-    local worldX = ord.square:getX() + ord.x + (ord.velocityX * ExplosivesSystems.XY_STEP * scale)
-    local worldY = ord.square:getY() + ord.y + (ord.velocityY * ExplosivesSystems.XY_STEP * scale)
-    local floorZ = math.floor(ord.originZ)
-    local localZ = ord.z + (ord.velocityZ * ExplosivesSystems.Z_STEP * scale)
-
-    -- Find the grid square at this position
-    local nextSq = getCell():getGridSquare(math.floor(worldX), math.floor(worldY), floorZ)
-
-    -- Check for wall collision between current and new square
-    if nextSq and ord.square and nextSq ~= ord.square then
-        local sx = ord.square:getX()
-        local sy = ord.square:getY()
-        local tx = nextSq:getX()
-        local ty = nextSq:getY()
-
-        local blocked = false
-        if tx > sx then
-            blocked = ExplosivesSystems.isBlockedBetweenSquares(ord.square, nextSq, IsoDirections.E, localZ)
-        elseif tx < sx then
-            blocked = ExplosivesSystems.isBlockedBetweenSquares(ord.square, nextSq, IsoDirections.W, localZ)
-        end
-        if not blocked and ty > sy then
-            blocked = ExplosivesSystems.isBlockedBetweenSquares(ord.square, nextSq, IsoDirections.S, localZ)
-        elseif not blocked and ty < sy then
-            blocked = ExplosivesSystems.isBlockedBetweenSquares(ord.square, nextSq, IsoDirections.N, localZ)
-        end
-
-        if blocked then
-            -- Hit a wall → settle immediately at current square
-            ExplosivesSystems.beginSettling(ord, ord.square)
-            return ExplosivesSystems.resolveOnImpact(ord, index)
-        end
-    end
-
-    if not nextSq then
-        nextSq = ord.square
-    end
-
-    -- Update local position
-    local localX = worldX - nextSq:getX()
-    local localY = worldY - nextSq:getY()
-
-    -- Check ground collision (arc descending below floor)
-    if localZ <= 0 then
-        localZ = 0
-        ord.x = PZMath.clamp_01(localX)
-        ord.y = PZMath.clamp_01(localY)
-        ord.z = 0.01
-        ord.square = nextSq
-        ExplosivesSystems.beginSettling(ord, nextSq)
-        return ExplosivesSystems.resolveOnImpact(ord, index)
-    end
-
-    -- Update visual
-    if shouldRender then
-        ExplosivesSystems.removeWorldItem(ord)
-        ord.worldItem = nextSq:AddWorldInventoryItem(
-            ord.throwParams.worldModel or ord.sourceWeapon,
-            PZMath.clamp_01(localX),
-            PZMath.clamp_01(localY),
-            localZ
-        )
-    end
-
-    ord.square = nextSq
-    ord.x = localX
-    ord.y = localY
-    ord.z = localZ
-
-    return false
-end
-
---------------------------------------------------------------------
---- Transition ordnance to settled state – compute residual velocity
---- for bounces (mirrors casing floor-bounce setup)
---------------------------------------------------------------------
-function ExplosivesSystems.beginSettling(ord, square)
-    ord.settled = true
-    ord.square  = square
-    -- Velocity carries over from flight – settling physics handles bounces
-    ord.x       = PZMath.clamp_01(ord.x or 0.5)
-    ord.y       = PZMath.clamp_01(ord.y or 0.5)
-    ord.z       = math.max(0.01, ord.z or 0)
-end
-
---------------------------------------------------------------------
---- Resolve impact: decide whether to detonate now or enter settling.
---- Called once when ordnance first contacts ground / wall.
----
---- detonateOnImpact = true  → explode on ANY collision, ignore timer
---- detonateOnImpact = false → never explode on collision, timer only
---------------------------------------------------------------------
-function ExplosivesSystems.resolveOnImpact(ord, index)
-    local explosive = ord.explosiveParams
-
-    if explosive then
-        if explosive.detonateOnImpact then
-            -- Impact-fused: detonate immediately on any collision
-            return ExplosivesSystems.forceDetonate(ord, index)
-        end
-        -- Timer-fused: let it bounce/settle, timer handles detonation
-        return false
-    else
-        -- Non-explosive ordnance
-        if ord.remainingBounces > 0 then
-            return false -- let it bounce in settling phase
-        end
-        -- Just landed: fire hooks, leave world item on ground
-        Payloads.ResolveImpact(ord)
-        ord.active = false
-        table.remove(ExplosivesSystems.activeOrdnance, index)
-        return true
-    end
-end
-
---------------------------------------------------------------------
---- Update settled ordnance (bouncing / detonation countdown)
---- (mirrors SpentCasingPhysics bounce logic)
---------------------------------------------------------------------
-function ExplosivesSystems.updateSettling(ord, index, scale, shouldRender)
-    local explosive = ord.explosiveParams
-
-    -- Detonation timer countdown (explosive ordnance only)
-    local dt = ExplosivesSystems.GT():getTimeDelta()
-    if explosive and ord.detonationTimer > 0 then
-        ord.detonationTimer = ord.detonationTimer - dt
-        if ord.detonationTimer <= 0 then
-            return ExplosivesSystems.forceDetonate(ord, index)
-        end
-    end
-
-    -- At rest: bounces done, just waiting for timer — no physics or visual updates
+    -- At rest: bounces done, just waiting for timer — no physics
     if ord.atRest then
         return false
     end
 
-    -- Still bouncing: run physics
-    if ord.remainingBounces > 0 then
-        ord.velocityZ = ord.velocityZ - (ExplosivesSystems.GRAVITY * scale)
-        ord.x         = ord.x + (ord.velocityX * ExplosivesSystems.XY_STEP * scale)
-        ord.y         = ord.y + (ord.velocityY * ExplosivesSystems.XY_STEP * scale)
-        ord.z         = ord.z + (ord.velocityZ * ExplosivesSystems.Z_STEP * scale)
+    ----------------------------------------------------------------
+    -- 2. GRAVITY
+    ----------------------------------------------------------------
+    local prevZ    = ord.z
+    ord.velocityZ  = ord.velocityZ - (ExplosivesSystems.GRAVITY * scale)
 
-        local dragXY  = math.pow(ExplosivesSystems.DRAG_XY, scale)
-        local dragZ   = math.pow(ExplosivesSystems.DRAG_Z, scale)
-        ord.velocityX = ord.velocityX * dragXY
-        ord.velocityY = ord.velocityY * dragXY
-        ord.velocityZ = ord.velocityZ * dragZ
+    ----------------------------------------------------------------
+    -- 3. POSITION UPDATE (store old edge positions for wall checks)
+    ----------------------------------------------------------------
+    local oldEdgeX = ord.x
+    local oldEdgeY = ord.y
 
-        -- Floor bounce
-        if ord.z <= 0 then
-            ord.z = 0.01
+    ord.x          = ord.x + (ord.velocityX * ExplosivesSystems.XY_STEP * scale)
+    ord.y          = ord.y + (ord.velocityY * ExplosivesSystems.XY_STEP * scale)
+    ord.z          = ord.z + (ord.velocityZ * ExplosivesSystems.Z_STEP * scale)
+
+    ----------------------------------------------------------------
+    -- 4. AIR DRAG (applied every frame, flight and bounce alike)
+    ----------------------------------------------------------------
+    local dragXY   = math.pow(ExplosivesSystems.DRAG_XY, scale)
+    local dragZ    = math.pow(ExplosivesSystems.DRAG_Z, scale)
+    ord.velocityX  = ord.velocityX * dragXY
+    ord.velocityY  = ord.velocityY * dragXY
+    ord.velocityZ  = ord.velocityZ * dragZ
+
+    ----------------------------------------------------------------
+    -- 5. WALL COLLISION (edge-based, from Hot Brass)
+    --    X and Y checked independently so corner hits bounce both axes
+    ----------------------------------------------------------------
+    local sx       = ord.square:getX()
+    local sy       = ord.square:getY()
+    local sz       = ord.square:getZ()
+    local EDGE_TOL = ExplosivesSystems.EDGE_TOL
+
+    local blockX   = false
+    local blockY   = false
+
+    -- X-axis: crossing right edge
+    if ord.velocityX > 0 and oldEdgeX < (1.0 - EDGE_TOL) and ord.x >= (1.0 - EDGE_TOL) then
+        local neighbor = getCell():getGridSquare(sx + 1, sy, sz)
+        if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
+                ord.square, neighbor, IsoDirections.E, ord.z) then
+            blockX = true
+        end
+        -- X-axis: crossing left edge
+    elseif ord.velocityX < 0 and oldEdgeX > EDGE_TOL and ord.x <= EDGE_TOL then
+        local neighbor = getCell():getGridSquare(sx - 1, sy, sz)
+        if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
+                ord.square, neighbor, IsoDirections.W, ord.z) then
+            blockX = true
+        end
+    end
+
+    -- Y-axis: crossing south edge
+    if ord.velocityY > 0 and oldEdgeY < (1.0 - EDGE_TOL) and ord.y >= (1.0 - EDGE_TOL) then
+        local neighbor = getCell():getGridSquare(sx, sy + 1, sz)
+        if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
+                ord.square, neighbor, IsoDirections.S, ord.z) then
+            blockY = true
+        end
+        -- Y-axis: crossing north edge
+    elseif ord.velocityY < 0 and oldEdgeY > EDGE_TOL and ord.y <= EDGE_TOL then
+        local neighbor = getCell():getGridSquare(sx, sy - 1, sz)
+        if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
+                ord.square, neighbor, IsoDirections.N, ord.z) then
+            blockY = true
+        end
+    end
+
+    -- Wall bounce response
+    if blockX then
+        ord.velocityX = -ord.velocityX * ExplosivesSystems.BOUNCE_RESTITUTION_WALL
+        ord.x = ord.x + (ord.velocityX * ExplosivesSystems.BOUNCE_POSITION_CORRECT)
+        if math.abs(ord.velocityX) < ExplosivesSystems.BOUNCE_MIN_VELOCITY then
+            ord.velocityX = 0
+        end
+        -- Impact-fused ordnance detonates on wall hit
+        if ord.explosiveParams and ord.explosiveParams.detonateOnImpact then
+            return ExplosivesSystems.forceDetonate(ord, index)
+        end
+    end
+
+    if blockY then
+        ord.velocityY = -ord.velocityY * ExplosivesSystems.BOUNCE_RESTITUTION_WALL
+        ord.y = ord.y + (ord.velocityY * ExplosivesSystems.BOUNCE_POSITION_CORRECT)
+        if math.abs(ord.velocityY) < ExplosivesSystems.BOUNCE_MIN_VELOCITY then
+            ord.velocityY = 0
+        end
+        if ord.explosiveParams and ord.explosiveParams.detonateOnImpact then
+            return ExplosivesSystems.forceDetonate(ord, index)
+        end
+    end
+
+    ----------------------------------------------------------------
+    -- 6. WORLD POSITION & SQUARE TRANSITION
+    ----------------------------------------------------------------
+    local worldX = ord.square:getX() + ord.x
+    local worldY = ord.square:getY() + ord.y
+    local targetTileX = math.floor(worldX)
+    local targetTileY = math.floor(worldY)
+
+    ----------------------------------------------------------------
+    -- 7. Z-LEVEL: FLOOR SEARCH (search downward for a floor)
+    --    If the grenade is over open air (balcony edge, stairwell),
+    --    find the nearest floor below and drop to it.
+    ----------------------------------------------------------------
+    local currentZ = sz
+    local targetSquare = nil
+    local drops = 0
+
+    local checkZ = currentZ
+    while checkZ >= 0 do
+        local sq = getCell():getGridSquare(targetTileX, targetTileY, checkZ)
+        if not sq then break end
+        if sq:getFloor() then
+            targetSquare = sq
+            break
+        end
+        checkZ = checkZ - 1
+        drops = drops + 1
+    end
+
+    if not targetSquare then
+        targetSquare = ord.square
+        drops = 0
+    end
+
+    -- Dropped to a lower floor: adjust Z height to compensate
+    if drops > 0 then
+        ord.z = ord.z + drops
+    end
+
+    ----------------------------------------------------------------
+    -- 8. Z-LEVEL: CEILING DETECTION & FLOOR-UP TRANSITION
+    --    If Z >= 1.0 the grenade is at ceiling height.
+    --    Check if there's a solid floor above (ceiling).
+    ----------------------------------------------------------------
+    if ord.z >= 1.0 then
+        local aboveSq = getCell():getGridSquare(targetTileX, targetTileY, targetSquare:getZ() + 1)
+        if aboveSq and aboveSq:TreatAsSolidFloor() then
+            -- Ceiling exists: bounce off it
+            ord.velocityZ = -math.abs(ord.velocityZ) * ExplosivesSystems.BOUNCE_RESTITUTION_CEIL
+            ord.z = 0.95
+        elseif aboveSq and aboveSq:getFloor() then
+            -- Open stairwell / hole with a floor above: transition UP
+            targetSquare = aboveSq
+            ord.z = ord.z - 1.0
+        else
+            -- Open air (outdoors): let Z continue, gravity brings it back
+        end
+    end
+
+    ----------------------------------------------------------------
+    -- 9. UPDATE SQUARE REFERENCE
+    ----------------------------------------------------------------
+    if targetSquare ~= ord.square then
+        ord.square = targetSquare
+    end
+
+    -- Recalculate local coords within the (possibly new) square
+    ord.x = worldX - ord.square:getX()
+    ord.y = worldY - ord.square:getY()
+
+    ----------------------------------------------------------------
+    -- 10. FLOOR COLLISION & BOUNCE
+    ----------------------------------------------------------------
+    if ord.z <= 0 then
+        ord.z = 0
+
+        -- First floor contact
+        if not ord.hasHitFloor then
+            ord.hasHitFloor = true
+            -- Impact-fused: detonate on first ground contact
+            if ord.explosiveParams and ord.explosiveParams.detonateOnImpact then
+                return ExplosivesSystems.forceDetonate(ord, index)
+            end
+        end
+
+        if ord.remainingBounces > 0 then
+            -- Execute floor bounce
             ord.remainingBounces = ord.remainingBounces - 1
+            ord.z = 0.01
             local restitution = ord.throwParams.bounceEnergy or 0.45
             ord.velocityZ = math.abs(ord.velocityZ) * restitution
             ord.velocityX = ord.velocityX * 0.6
             ord.velocityY = ord.velocityY * 0.6
 
-            -- Play bounce sound (uses throwParams.soundBounce, NOT the detonation sound)
+            -- Play bounce sound
             local bounceSound = ord.throwParams.soundBounce
             if bounceSound and ord.player then
                 if isServer() then
@@ -445,63 +504,55 @@ function ExplosivesSystems.updateSettling(ord, index, scale, shouldRender)
                     ord.player:getEmitter():playSound(bounceSound)
                 end
             end
+        else
+            -- Bounces exhausted → final rest
+            ord.atRest    = true
+            ord.velocityX = 0
+            ord.velocityY = 0
+            ord.velocityZ = 0
+            ord.z         = 0
+
+            -- Place final resting visual once
+            if shouldRender then
+                ExplosivesSystems.removeWorldItem(ord)
+                ord.worldItem = ord.square:AddWorldInventoryItem(
+                    ord.throwParams.worldModel or ord.sourceWeapon,
+                    PZMath.clamp_01(ord.x), PZMath.clamp_01(ord.y), 0
+                )
+            end
+
+            -- Explosive with remaining timer: keep alive
+            if ord.explosiveParams then
+                if ord.detonationTimer <= 0 then
+                    return ExplosivesSystems.forceDetonate(ord, index)
+                end
+                return false
+            end
+
+            -- Non-explosive: fire hooks and remove
+            Payloads.ResolveImpact(ord)
+            ord.active = false
+            table.remove(ExplosivesSystems.activeOrdnance, index)
+            return true
         end
-
-        -- Square transitions
-        local worldX = ord.square:getX() + ord.x
-        local worldY = ord.square:getY() + ord.y
-        local targetTileX = math.floor(worldX)
-        local targetTileY = math.floor(worldY)
-        local newSq = getCell():getGridSquare(targetTileX, targetTileY, ord.square:getZ())
-        if newSq and newSq ~= ord.square then
-            ord.square = newSq
-        end
-
-        ord.x = PZMath.clamp_01(worldX - ord.square:getX())
-        ord.y = PZMath.clamp_01(worldY - ord.square:getY())
-        ord.z = math.max(0, ord.z)
-
-        -- Update visual while bouncing
-        if shouldRender then
-            ExplosivesSystems.removeWorldItem(ord)
-            ord.worldItem = ord.square:AddWorldInventoryItem(
-                ord.throwParams.worldModel or ord.sourceWeapon,
-                ord.x, ord.y, ord.z
-            )
-        end
-
-        return false
     end
 
-    -- Bounces exhausted — come to final rest
-    ord.atRest    = true
-    ord.velocityX = 0
-    ord.velocityY = 0
-    ord.velocityZ = 0
-    ord.z         = 0
+    ----------------------------------------------------------------
+    -- 11. CLAMP & VISUAL UPDATE
+    ----------------------------------------------------------------
+    ord.x = PZMath.clamp_01(ord.x)
+    ord.y = PZMath.clamp_01(ord.y)
+    ord.z = math.max(0, ord.z)
 
-    -- Place final resting visual once
     if shouldRender then
         ExplosivesSystems.removeWorldItem(ord)
         ord.worldItem = ord.square:AddWorldInventoryItem(
             ord.throwParams.worldModel or ord.sourceWeapon,
-            ord.x, ord.y, 0
+            ord.x, ord.y, ord.z
         )
     end
 
-    if explosive then
-        if ord.detonationTimer <= 0 then
-            return ExplosivesSystems.forceDetonate(ord, index)
-        end
-        -- Timer still ticking — world item stays put
-        return false
-    end
-
-    -- Non-explosive, done bouncing: fire hooks, leave world item on ground
-    Payloads.ResolveImpact(ord)
-    ord.active = false
-    table.remove(ExplosivesSystems.activeOrdnance, index)
-    return true
+    return false
 end
 
 --------------------------------------------------------------------
