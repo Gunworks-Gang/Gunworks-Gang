@@ -6,23 +6,43 @@ local ExplosivesSystems = require("ExplosivesSystems/Init")
 --------------------------------------------------------------------
 
 --------------------------------------------------------------------
---- OnWeaponSwingHitPoint: intercept registered throwables/launchers
+--- OnWeaponSwing: suppress vanilla throw EARLY (before hit point)
 --------------------------------------------------------------------
-function ExplosivesSystems.onWeaponSwing(player, weapon)
+function ExplosivesSystems.onWeaponSwingEarly(player, weapon)
     if not player or not weapon then return end
     if not player:isLocalPlayer() then return end
 
     local fullType = weapon:getFullType()
     if not ExplosivesSystems.IsRegistered(fullType) then return end
 
+    -- Kill vanilla throw physics and hit detection before they fire
+    weapon:setMaxHitCount(0)
+    if weapon.setPhysicsObject then
+        weapon:setPhysicsObject(nil)
+    end
+end
+
+--------------------------------------------------------------------
+--- OnWeaponSwingHitPoint: launch our projectile at the release frame
+--------------------------------------------------------------------
+function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
+    if not player or not weapon then return end
+    if not player:isLocalPlayer() then return end
+
+    local fullType = weapon:getFullType()
+    if not ExplosivesSystems.IsRegistered(fullType) then return end
+
+    -- Ensure vanilla is still suppressed
+    weapon:setMaxHitCount(0)
+    if weapon.setPhysicsObject then
+        weapon:setPhysicsObject(nil)
+    end
+
     -- Get cursor world position as target
     local playerIndex = player:getPlayerNum()
     local mouseX = screenToIsoX(playerIndex, getMouseX(), getMouseY(), player:getZ())
     local mouseY = screenToIsoY(playerIndex, getMouseX(), getMouseY(), player:getZ())
     local targetZ = player:getZ()
-
-    -- Prevent vanilla throw/hit behavior
-    weapon:setMaxHitCount(0)
 
     -- Play launch sound locally
     local config = ExplosivesSystems.GetConfig(fullType)
@@ -78,5 +98,6 @@ function ExplosivesSystems.onServerCommand(module, command, args)
     end
 end
 
-Events.OnWeaponSwingHitPoint.Add(ExplosivesSystems.onWeaponSwing)
+Events.OnWeaponSwing.Add(ExplosivesSystems.onWeaponSwingEarly)
+Events.OnWeaponSwingHitPoint.Add(ExplosivesSystems.onWeaponSwingHitPoint)
 Events.OnServerCommand.Add(ExplosivesSystems.onServerCommand)
