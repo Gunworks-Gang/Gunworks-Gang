@@ -49,8 +49,9 @@ function Payloads.ResolveImpact(ordnance)
     local square = ordnance.square
 
     -- Detonate if this ordnance carries an explosive component
-    if ordnance.explosiveParams and square then
-        Payloads.Detonate(square, ordnance.explosiveParams, ordnance.player, ordnance.sourceWeapon)
+    local params = ordnance.params
+    if params and (params.explosionPower or 0) > 0 and square then
+        Payloads.Detonate(square, params, ordnance.player, ordnance.sourceWeapon)
     end
 
     -- Fire all registered impact hooks

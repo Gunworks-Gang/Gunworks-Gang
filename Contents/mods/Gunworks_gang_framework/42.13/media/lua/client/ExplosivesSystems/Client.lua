@@ -46,9 +46,9 @@ function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
     local destZ       = player:getZ()
 
     -- Play throw sound locally
-    local throwParams = OrdnanceFactory.GetThrowParams(fullType)
-    if throwParams and throwParams.soundThrow then
-        -- player:getEmitter():playSound(throwParams.soundThrow)
+    local params      = OrdnanceFactory.GetParams(fullType)
+    if params and params.soundThrow then
+        -- player:getEmitter():playSound(params.soundThrow)
     end
 
     -- Send throw command
@@ -63,8 +63,8 @@ function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
         -- Solo / host: spawn ordnance directly
         local angleDeg = player:getDirectionAngle() or 0
         local angleRad = math.rad(angleDeg)
-        local fwd      = (throwParams and throwParams.forwardOffset) or 0.50
-        local hOff     = (throwParams and throwParams.heightOffset) or 0.55
+        local fwd      = (params and params.forwardOffset) or 0.50
+        local hOff     = (params and params.heightOffset) or 0.55
 
         local originX  = player:getX() + math.cos(angleRad) * fwd
         local originY  = player:getY() + math.sin(angleRad) * fwd
