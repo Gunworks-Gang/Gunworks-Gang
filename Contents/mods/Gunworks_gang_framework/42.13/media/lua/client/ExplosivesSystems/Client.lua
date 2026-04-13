@@ -16,7 +16,7 @@ function ExplosivesSystems.onWeaponSwingEarly(player, weapon)
     local fullType = weapon:getFullType()
     if not OrdnanceFactory.IsRegistered(fullType) then return end
 
-    -- Kill vanilla throw physics and hit detection before they fire
+    -- Kill vanilla throw physics and hit detection before they fire (works only on SP I need to find another way around for MP)
     weapon:setMaxHitCount(0)
     if weapon.setPhysicsObject then
         weapon:setPhysicsObject(nil)
@@ -33,7 +33,7 @@ function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
     local fullType = weapon:getFullType()
     if not OrdnanceFactory.IsRegistered(fullType) then return end
 
-    -- Ensure vanilla is still suppressed
+    -- Ensure vanilla is still suppressed (same here)
     weapon:setMaxHitCount(0)
     if weapon.setPhysicsObject then
         weapon:setPhysicsObject(nil)
@@ -44,6 +44,10 @@ function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
     local mouseX      = screenToIsoX(playerIndex, getMouseX(), getMouseY(), player:getZ())
     local mouseY      = screenToIsoY(playerIndex, getMouseX(), getMouseY(), player:getZ())
     local destZ       = player:getZ()
+
+    local aimOffset   = 1.5
+    mouseX            = mouseX + aimOffset
+    mouseY            = mouseY + aimOffset
 
     -- Play throw sound locally
     local params      = OrdnanceFactory.GetParams(fullType)
