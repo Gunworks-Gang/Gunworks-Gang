@@ -1,53 +1,32 @@
 local ExplosivesSystems = require("ExplosivesSystems/Init")
+local OrdnanceFactory   = require("ExplosivesSystems/OrdnanceFactory")
 
-local Payloads = {}
+local Payloads          = {}
 
 --------------------------------------------------------------------
---- Create a temporary HandWeapon configured with explosion params,
+--- Create a temporary HandWeapon configured with explosive params,
 --- build an IsoTrap from it, and detonate immediately.
 --------------------------------------------------------------------
-function Payloads.TriggerExplosion(square, config, shooter)
+function Payloads.Detonate(square, explosiveParams, shooter, sourceWeapon)
     if not square then return end
-    if not config then return end
+    if not explosiveParams then return end
 
     local weaponItem = nil
 
-    -- If the config references a real item type, create it so IsoTrap
-    -- inherits its script-defined sprite, sounds, etc.
-    local itemType = config.ProjectileItem or config._weaponFullType
-    if itemType then
-        weaponItem = instanceItem(itemType)
+    -- Try to instance the source weapon for IsoTrap sprite/sound inheritance
+    if sourceWeapon then
+        weaponItem = instanceItem(sourceWeapon)
     end
 
-    -- Fallback: create a pipe bomb as a generic explosive carrier
+    -- Fallback: generic explosive carrier
     if not weaponItem or not instanceof(weaponItem, "HandWeapon") then
         weaponItem = instanceItem("Base.PipeBomb")
     end
 
     if not weaponItem then return end
 
-    -- Override explosion properties from config
-    if config.ExplosionPower then
-        weaponItem:setExplosionPower(config.ExplosionPower)
-    end
-    if config.ExplosionRange then
-        weaponItem:setExplosionRange(config.ExplosionRange)
-    end
-    if config.FireRange then
-        weaponItem:setFireRange(config.FireRange)
-    end
-    if config.FirePower then
-        weaponItem:setFireStartingEnergy(config.FirePower)
-    end
-    if config.SmokeRange then
-        weaponItem:setSmokeRange(config.SmokeRange)
-    end
-    if config.NoiseRange then
-        weaponItem:setNoiseRange(config.NoiseRange)
-    end
-    if config.SoundImpact then
-        weaponItem:setExplosionSound(config.SoundImpact)
-    end
+    -- Apply explosion properties via OrdnanceFactory registry
+    OrdnanceFactory.ApplyExplosiveParams(weaponItem, explosiveParams)
 
     -- Timer = 0 so it triggers immediately when place() is called
     weaponItem:setExplosionTimer(0)
@@ -60,25 +39,25 @@ function Payloads.TriggerExplosion(square, config, shooter)
 end
 
 --------------------------------------------------------------------
---- Resolve a projectile landing: trigger explosion + callbacks
+--- Resolve ordnance impact: detonate if explosive, then fire hooks.
+--- By the time this is called, timing decisions (immediate vs delay)
+--- have already been made by the physics engine.
 --------------------------------------------------------------------
-function Payloads.ResolveLanding(projectile)
-    if not projectile then return end
+function Payloads.ResolveImpact(ordnance)
+    if not ordnance then return end
 
-    local square  = projectile.square
-    local config  = projectile.config
-    local shooter = projectile.player
+    local square = ordnance.square
 
-    -- Fire the explosion via vanilla IsoTrap
-    if config.IsExplosive and square then
-        Payloads.TriggerExplosion(square, config, shooter)
+    -- Detonate if this ordnance carries an explosive component
+    if ordnance.explosiveParams and square then
+        Payloads.Detonate(square, ordnance.explosiveParams, ordnance.player, ordnance.sourceWeapon)
     end
 
-    -- Fire all registered landing callbacks
-    for i = 1, #ExplosivesSystems.LandingCallbacks do
-        local cb = ExplosivesSystems.LandingCallbacks[i]
-        if cb then
-            cb(projectile, square, config)
+    -- Fire all registered impact hooks
+    for i = 1, #ExplosivesSystems.ImpactHooks do
+        local hook = ExplosivesSystems.ImpactHooks[i]
+        if hook then
+            hook(ordnance, square)
         end
     end
 end

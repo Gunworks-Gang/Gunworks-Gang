@@ -1,8 +1,9 @@
 local ExplosivesSystems = require("ExplosivesSystems/Init")
+local OrdnanceFactory   = require("ExplosivesSystems/OrdnanceFactory")
 
 --------------------------------------------------------------------
---- Client: hook weapon swing for registered throwables / launchers,
---- send launch command to server, handle remote sounds.
+--- Client: hook weapon swing for registered throwables,
+--- send throw command to server, handle remote sounds.
 --------------------------------------------------------------------
 
 --------------------------------------------------------------------
@@ -13,7 +14,7 @@ function ExplosivesSystems.onWeaponSwingEarly(player, weapon)
     if not player:isLocalPlayer() then return end
 
     local fullType = weapon:getFullType()
-    if not ExplosivesSystems.IsRegistered(fullType) then return end
+    if not OrdnanceFactory.IsRegistered(fullType) then return end
 
     -- Kill vanilla throw physics and hit detection before they fire
     weapon:setMaxHitCount(0)
@@ -23,14 +24,14 @@ function ExplosivesSystems.onWeaponSwingEarly(player, weapon)
 end
 
 --------------------------------------------------------------------
---- OnWeaponSwingHitPoint: launch our projectile at the release frame
+--- OnWeaponSwingHitPoint: throw ordnance at the release frame
 --------------------------------------------------------------------
 function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
     if not player or not weapon then return end
     if not player:isLocalPlayer() then return end
 
     local fullType = weapon:getFullType()
-    if not ExplosivesSystems.IsRegistered(fullType) then return end
+    if not OrdnanceFactory.IsRegistered(fullType) then return end
 
     -- Ensure vanilla is still suppressed
     weapon:setMaxHitCount(0)
@@ -38,54 +39,53 @@ function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
         weapon:setPhysicsObject(nil)
     end
 
-    -- Get cursor world position as target
+    -- Get cursor world position as destination
     local playerIndex = player:getPlayerNum()
-    local mouseX = screenToIsoX(playerIndex, getMouseX(), getMouseY(), player:getZ())
-    local mouseY = screenToIsoY(playerIndex, getMouseX(), getMouseY(), player:getZ())
-    local targetZ = player:getZ()
+    local mouseX      = screenToIsoX(playerIndex, getMouseX(), getMouseY(), player:getZ())
+    local mouseY      = screenToIsoY(playerIndex, getMouseX(), getMouseY(), player:getZ())
+    local destZ       = player:getZ()
 
-    -- Play launch sound locally
-    local config = ExplosivesSystems.GetConfig(fullType)
-    if config and config.SoundLaunch then
-        player:getEmitter():playSound(config.SoundLaunch)
+    -- Play throw sound locally
+    local throwParams = OrdnanceFactory.GetThrowParams(fullType)
+    if throwParams and throwParams.soundThrow then
+        player:getEmitter():playSound(throwParams.soundThrow)
     end
 
-    -- Send launch command
+    -- Send throw command
     if isClient() then
-        sendClientCommand(player, ExplosivesSystems.MODULE_NAME, "Launch", {
-            weaponFullType = fullType,
-            targetX        = mouseX,
-            targetY        = mouseY,
-            targetZ        = targetZ,
+        sendClientCommand(player, ExplosivesSystems.MODULE_NAME, "throwOrdnance", {
+            sourceWeapon = fullType,
+            destX        = mouseX,
+            destY        = mouseY,
+            destZ        = destZ,
         })
     else
-        -- Solo / host: launch directly
+        -- Solo / host: spawn ordnance directly
         local angleDeg = player:getDirectionAngle() or 0
         local angleRad = math.rad(angleDeg)
-        local fwd = (config and config.ForwardOffset) or 0.50
-        local hOff = (config and config.HeightOffset) or 0.55
+        local fwd      = (throwParams and throwParams.forwardOffset) or 0.50
+        local hOff     = (throwParams and throwParams.heightOffset) or 0.55
 
-        local startX = player:getX() + math.cos(angleRad) * fwd
-        local startY = player:getY() + math.sin(angleRad) * fwd
-        local startZ = player:getZ() + hOff
+        local originX  = player:getX() + math.cos(angleRad) * fwd
+        local originY  = player:getY() + math.sin(angleRad) * fwd
+        local originZ  = player:getZ() + hOff
 
-        ExplosivesSystems.Launch(player, fullType, startX, startY, startZ, mouseX, mouseY, targetZ)
+        ExplosivesSystems.doSpawnOrdnance(player, fullType, originX, originY, originZ, mouseX, mouseY, destZ)
     end
 end
 
 --------------------------------------------------------------------
---- OnServerCommand: handle remote launch visuals and sounds
+--- OnServerCommand: handle remote throw visuals and sounds
 --------------------------------------------------------------------
 function ExplosivesSystems.onServerCommand(module, command, args)
     if module ~= ExplosivesSystems.MODULE_NAME then return end
     if not args then return end
 
-    if command == "RemoteLaunch" then
-        -- Remote player launched a projectile — if we have the server
+    if command == "remoteThrow" then
+        -- Remote player threw ordnance — if we have the server
         -- physics running (SP/host), this is already handled.
-        -- On a dedicated server client, we need to spawn a local visual.
-        -- For now, the server's world item updates handle visuals via
-        -- the AddWorldInventoryItem broadcast. Nothing extra needed.
+        -- On a dedicated server client, world item updates handle
+        -- visuals via the AddWorldInventoryItem broadcast.
         return
     end
 
