@@ -128,17 +128,27 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         distance    = maxDist
     end
 
-    -- Travel duration in seconds
-    local force          = throwParams.throwForce or 12
-    local travelDuration = distance / force
-    if travelDuration < 0.1 then travelDuration = 0.1 end
+    -- Launch angle: low for close throws (direct), high for far throws (more arc)
+    local distRatio   = (maxDist > 0) and (distance / maxDist) or 0
+    local minAngleRad = math.rad(25)
+    local maxAngleRad = math.rad(50)
+    local launchAngle = minAngleRad + (maxAngleRad - minAngleRad) * distRatio
 
-    -- Lob peak height: how high the arc goes above the baseline
-    local lobFactor = throwParams.lobHeight or 0.3
-    local lobPeak   = math.max(1.5, distance * lobFactor)
+    -- Horizontal speed to reach target at this angle (flat-terrain ballistic formula)
+    local tanAngle    = math.tan(launchAngle)
+    local hSpeed      = 0
+    if distance > 0.5 and tanAngle > 0.01 then
+        hSpeed = math.sqrt(distance * ExplosivesSystems.GRAVITY / (2 * tanAngle * ExplosivesSystems.XY_STEP))
+    else
+        hSpeed = 0.15
+    end
+
+    -- Direction unit vector
+    local dirX = (distance > 0.01) and (dx / distance) or 0
+    local dirY = (distance > 0.01) and (dy / distance) or 0
 
     -- Determine the square at the origin position
-    local sq        = getCell():getGridSquare(math.floor(originX), math.floor(originY), math.floor(originZ))
+    local sq   = getCell():getGridSquare(math.floor(originX), math.floor(originY), math.floor(originZ))
     if not sq then return end
 
     -- Determine the world model to display in flight
@@ -172,18 +182,16 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         x                = localX,
         y                = localY,
         z                = localZ,
-        elapsed          = 0,
-        travelDuration   = travelDuration,
-        lobPeak          = lobPeak,
+
         worldItem        = worldItem,
         active           = true,
         detonationTimer  = detonationTimer,
         settled          = false,
         remainingBounces = ExplosivesSystems.randomizeBounces(throwParams.floorBounces or 0),
-        -- Velocity fields used during settling / bounce phase
-        velocityX        = 0,
-        velocityY        = 0,
-        velocityZ        = 0,
+        -- Initial launch velocity (ballistic trajectory)
+        velocityX        = dirX * hSpeed,
+        velocityY        = dirY * hSpeed,
+        velocityZ        = hSpeed * tanAngle,
     }
 
     table.insert(ExplosivesSystems.activeOrdnance, ordnanceData)
@@ -264,23 +272,16 @@ function ExplosivesSystems.updateAirborne(ord, index, scale, shouldRender)
         end
     end
 
-    ord.elapsed = ord.elapsed + dt
+    -- Apply gravity (no drag during flight – grenade has minimal air resistance)
+    ord.velocityZ = ord.velocityZ - (ExplosivesSystems.GRAVITY * scale)
 
-    -- Normalized progress [0, 1]
-    local progress = ord.elapsed / ord.travelDuration
-    if progress > 1.0 then progress = 1.0 end
-
-    -- Horizontal: linear interpolation along throw direction
-    local worldX = ord.originX + (ord.destX - ord.originX) * progress
-    local worldY = ord.originY + (ord.destY - ord.originY) * progress
-
-    -- Vertical: linear base + parabolic lob
-    local baseZ  = ord.originZ + (ord.destZ - ord.originZ) * progress
-    local lobZ   = ord.lobPeak * 4.0 * progress * (1.0 - progress)
-    local worldZ = baseZ + lobZ
+    -- Compute new world position from current local coords + velocity
+    local worldX = ord.square:getX() + ord.x + (ord.velocityX * ExplosivesSystems.XY_STEP * scale)
+    local worldY = ord.square:getY() + ord.y + (ord.velocityY * ExplosivesSystems.XY_STEP * scale)
+    local floorZ = math.floor(ord.originZ)
+    local localZ = ord.z + (ord.velocityZ * ExplosivesSystems.Z_STEP * scale)
 
     -- Find the grid square at this position
-    local floorZ = math.floor(ord.originZ)
     local nextSq = getCell():getGridSquare(math.floor(worldX), math.floor(worldY), floorZ)
 
     -- Check for wall collision between current and new square
@@ -292,14 +293,14 @@ function ExplosivesSystems.updateAirborne(ord, index, scale, shouldRender)
 
         local blocked = false
         if tx > sx then
-            blocked = ExplosivesSystems.isBlockedBetweenSquares(ord.square, nextSq, IsoDirections.E, worldZ - floorZ)
+            blocked = ExplosivesSystems.isBlockedBetweenSquares(ord.square, nextSq, IsoDirections.E, localZ)
         elseif tx < sx then
-            blocked = ExplosivesSystems.isBlockedBetweenSquares(ord.square, nextSq, IsoDirections.W, worldZ - floorZ)
+            blocked = ExplosivesSystems.isBlockedBetweenSquares(ord.square, nextSq, IsoDirections.W, localZ)
         end
         if not blocked and ty > sy then
-            blocked = ExplosivesSystems.isBlockedBetweenSquares(ord.square, nextSq, IsoDirections.S, worldZ - floorZ)
+            blocked = ExplosivesSystems.isBlockedBetweenSquares(ord.square, nextSq, IsoDirections.S, localZ)
         elseif not blocked and ty < sy then
-            blocked = ExplosivesSystems.isBlockedBetweenSquares(ord.square, nextSq, IsoDirections.N, worldZ - floorZ)
+            blocked = ExplosivesSystems.isBlockedBetweenSquares(ord.square, nextSq, IsoDirections.N, localZ)
         end
 
         if blocked then
@@ -313,14 +314,17 @@ function ExplosivesSystems.updateAirborne(ord, index, scale, shouldRender)
         nextSq = ord.square
     end
 
-    -- Update position
+    -- Update local position
     local localX = worldX - nextSq:getX()
     local localY = worldY - nextSq:getY()
-    local localZ = worldZ - floorZ
 
     -- Check ground collision (arc descending below floor)
-    if progress >= 1.0 or localZ <= 0 then
-        localZ = math.max(0, localZ)
+    if localZ <= 0 then
+        localZ = 0
+        ord.x = PZMath.clamp_01(localX)
+        ord.y = PZMath.clamp_01(localY)
+        ord.z = 0.01
+        ord.square = nextSq
         ExplosivesSystems.beginSettling(ord, nextSq)
         return ExplosivesSystems.resolveOnImpact(ord, index)
     end
@@ -349,27 +353,12 @@ end
 --- for bounces (mirrors casing floor-bounce setup)
 --------------------------------------------------------------------
 function ExplosivesSystems.beginSettling(ord, square)
-    ord.settled     = true
-    ord.square      = square
-
-    -- Calculate residual velocity from throw direction
-    local dx        = ord.destX - ord.originX
-    local dy        = ord.destY - ord.originY
-    local totalDist = math.sqrt(dx * dx + dy * dy)
-    if totalDist < 0.01 then totalDist = 0.01 end
-
-    local dirX = dx / totalDist
-    local dirY = dy / totalDist
-
-    -- Remaining speed factor (slower at end of arc)
-    local residualForce = (ord.throwParams.throwForce or 12) * 0.15
-    ord.velocityX = dirX * residualForce * 0.1
-    ord.velocityY = dirY * residualForce * 0.1
-    ord.velocityZ = 0.04 -- small upward bounce
-
-    ord.x = PZMath.clamp_01(ord.x or 0.5)
-    ord.y = PZMath.clamp_01(ord.y or 0.5)
-    ord.z = 0.05
+    ord.settled = true
+    ord.square  = square
+    -- Velocity carries over from flight – settling physics handles bounces
+    ord.x       = PZMath.clamp_01(ord.x or 0.5)
+    ord.y       = PZMath.clamp_01(ord.y or 0.5)
+    ord.z       = math.max(0.01, ord.z or 0)
 end
 
 --------------------------------------------------------------------
