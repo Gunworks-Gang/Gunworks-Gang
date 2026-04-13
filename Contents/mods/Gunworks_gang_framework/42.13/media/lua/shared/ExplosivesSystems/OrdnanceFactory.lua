@@ -8,7 +8,6 @@ OrdnanceFactory.DefaultThrowParams     = {
     lobHeight     = 0,    -- arc steepness multiplier (higher = taller lob)
     maxThrowDist  = 20,   -- max throw / launch distance in cells
     worldModel    = nil,  -- world item shown in flight (nil = use weapon fullType)
-    soundThrow    = "PipeBombThrow",
     forwardOffset = 0.50, -- spawn origin offset from player facing
     heightOffset  = 0.55, -- spawn height offset
     floorBounces  = 0,    -- bounces before settling (0 = no bounce)
@@ -26,7 +25,6 @@ OrdnanceFactory.DefaultExplosiveParams = {
     firePower        = 0,
     smokeRange       = 0,
     noiseRange       = 30,
-    soundDetonate    = "PipeBombExplode",
     detonateOnImpact = true, -- true = detonate on ground contact; false = wait for detonationDelay
     detonationDelay  = 0,    -- ticks after settling before detonation (used when detonateOnImpact = false)
 }
@@ -42,7 +40,6 @@ OrdnanceFactory.ExplosiveStats         = {
     firePower      = "setFireStartingEnergy",
     smokeRange     = "setSmokeRange",
     noiseRange     = "setNoiseRange",
-    soundDetonate  = "setExplosionSound",
 }
 
 --------------------------------------------------------------------
@@ -103,15 +100,6 @@ function OrdnanceFactory.Register(fullType, throwOverrides, explosiveOverrides)
     else
         OrdnanceFactory.ExplosiveRegistry[fullType] = nil
     end
-end
-
---------------------------------------------------------------------
---- Unregister an item from both registries
---------------------------------------------------------------------
-function OrdnanceFactory.Unregister(fullType)
-    if not fullType then return end
-    OrdnanceFactory.ThrowRegistry[fullType] = nil
-    OrdnanceFactory.ExplosiveRegistry[fullType] = nil
 end
 
 --------------------------------------------------------------------

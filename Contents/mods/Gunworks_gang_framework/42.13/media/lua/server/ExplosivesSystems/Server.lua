@@ -407,10 +407,13 @@ function ExplosivesSystems.updateSettling(ord, index, scale, shouldRender)
         end
     end
 
-    -- Bounce / drift physics
-    local stillActive = ord.remainingBounces > 0 or (explosive and ord.detonationTimer > 0)
+    -- At rest: bounces done, just waiting for timer — no physics or visual updates
+    if ord.atRest then
+        return false
+    end
 
-    if stillActive then
+    -- Still bouncing: run physics
+    if ord.remainingBounces > 0 then
         ord.velocityZ = ord.velocityZ - (ExplosivesSystems.GRAVITY * scale)
         ord.x         = ord.x + (ord.velocityX * ExplosivesSystems.XY_STEP * scale)
         ord.y         = ord.y + (ord.velocityY * ExplosivesSystems.XY_STEP * scale)
@@ -425,40 +428,21 @@ function ExplosivesSystems.updateSettling(ord, index, scale, shouldRender)
         -- Floor bounce
         if ord.z <= 0 then
             ord.z = 0.01
-            if ord.remainingBounces > 0 then
-                ord.remainingBounces = ord.remainingBounces - 1
-                local restitution = ord.throwParams.bounceEnergy or 0.45
-                ord.velocityZ = math.abs(ord.velocityZ) * restitution
-                ord.velocityX = ord.velocityX * 0.6
-                ord.velocityY = ord.velocityY * 0.6
+            ord.remainingBounces = ord.remainingBounces - 1
+            local restitution = ord.throwParams.bounceEnergy or 0.45
+            ord.velocityZ = math.abs(ord.velocityZ) * restitution
+            ord.velocityX = ord.velocityX * 0.6
+            ord.velocityY = ord.velocityY * 0.6
 
-                -- Play bounce sound (uses throwParams.soundBounce, NOT the detonation sound)
-                local bounceSound = ord.throwParams.soundBounce
-                if bounceSound and ord.player then
-                    if isServer() then
-                        sendServerCommand(ord.player, ExplosivesSystems.MODULE_NAME, "playSound", {
-                            sound = bounceSound
-                        })
-                    elseif ord.player.getEmitter then
-                        ord.player:getEmitter():playSound(bounceSound)
-                    end
-                end
-            end
-
-            -- Check if bouncing is done
-            if ord.remainingBounces <= 0 then
-                if explosive then
-                    if ord.detonationTimer <= 0 then
-                        -- No timer remaining: detonate now
-                        return ExplosivesSystems.forceDetonate(ord, index)
-                    end
-                    -- Still waiting for detonation timer (fuse-style)
-                else
-                    -- Non-explosive, done bouncing: stop and fire hooks
-                    Payloads.ResolveImpact(ord)
-                    ord.active = false
-                    table.remove(ExplosivesSystems.activeOrdnance, index)
-                    return true
+            -- Play bounce sound (uses throwParams.soundBounce, NOT the detonation sound)
+            local bounceSound = ord.throwParams.soundBounce
+            if bounceSound and ord.player then
+                if isServer() then
+                    sendServerCommand(ord.player, ExplosivesSystems.MODULE_NAME, "playSound", {
+                        sound = bounceSound
+                    })
+                elseif ord.player.getEmitter then
+                    ord.player:getEmitter():playSound(bounceSound)
                 end
             end
         end
@@ -477,7 +461,7 @@ function ExplosivesSystems.updateSettling(ord, index, scale, shouldRender)
         ord.y = PZMath.clamp_01(worldY - ord.square:getY())
         ord.z = math.max(0, ord.z)
 
-        -- Update visual
+        -- Update visual while bouncing
         if shouldRender then
             ExplosivesSystems.removeWorldItem(ord)
             ord.worldItem = ord.square:AddWorldInventoryItem(
@@ -485,9 +469,39 @@ function ExplosivesSystems.updateSettling(ord, index, scale, shouldRender)
                 ord.x, ord.y, ord.z
             )
         end
+
+        return false
     end
 
-    return false
+    -- Bounces exhausted — come to final rest
+    ord.atRest    = true
+    ord.velocityX = 0
+    ord.velocityY = 0
+    ord.velocityZ = 0
+    ord.z         = 0
+
+    -- Place final resting visual once
+    if shouldRender then
+        ExplosivesSystems.removeWorldItem(ord)
+        ord.worldItem = ord.square:AddWorldInventoryItem(
+            ord.throwParams.worldModel or ord.sourceWeapon,
+            ord.x, ord.y, 0
+        )
+    end
+
+    if explosive then
+        if ord.detonationTimer <= 0 then
+            return ExplosivesSystems.forceDetonate(ord, index)
+        end
+        -- Timer still ticking — world item stays put
+        return false
+    end
+
+    -- Non-explosive, done bouncing: fire hooks, leave world item on ground
+    Payloads.ResolveImpact(ord)
+    ord.active = false
+    table.remove(ExplosivesSystems.activeOrdnance, index)
+    return true
 end
 
 --------------------------------------------------------------------
