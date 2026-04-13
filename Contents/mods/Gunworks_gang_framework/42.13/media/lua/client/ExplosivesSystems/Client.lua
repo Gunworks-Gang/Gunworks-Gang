@@ -48,7 +48,7 @@ function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
     -- Play throw sound locally
     local throwParams = OrdnanceFactory.GetThrowParams(fullType)
     if throwParams and throwParams.soundThrow then
-        player:getEmitter():playSound(throwParams.soundThrow)
+        -- player:getEmitter():playSound(throwParams.soundThrow)
     end
 
     -- Send throw command
