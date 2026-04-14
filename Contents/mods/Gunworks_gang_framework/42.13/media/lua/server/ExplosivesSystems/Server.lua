@@ -137,9 +137,16 @@ end
 --------------------------------------------------------------------
 --- Spawn ordnance from origin toward destination.
 --- Called server-side (or solo).
+--- When isAmmoLaunch is true, sourceWeapon is a bullet fullType and
+--- params are looked up from the AmmoRegistry instead.
 --------------------------------------------------------------------
-function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, originY, originZ, destX, destY, destZ)
-    local params = OrdnanceFactory.GetParams(sourceWeapon)
+function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, originY, originZ, destX, destY, destZ, isAmmoLaunch)
+    local params
+    if isAmmoLaunch then
+        params = OrdnanceFactory.GetAmmoParams(sourceWeapon)
+    else
+        params = OrdnanceFactory.GetParams(sourceWeapon)
+    end
     if not params then return end
 
     local dx       = destX - originX
@@ -829,14 +836,20 @@ function ExplosivesSystems.onClientCommand(module, command, player, args)
     if command == "throwOrdnance" then
         local sourceWeapon = args.sourceWeapon
         if not sourceWeapon then return end
-        if not OrdnanceFactory.IsRegistered(sourceWeapon) then return end
 
-        local px = player:getX()
-        local py = player:getY()
-        local pz = player:getZ()
-
-        local params = OrdnanceFactory.GetParams(sourceWeapon)
+        local isAmmoLaunch = args.isAmmoLaunch or false
+        local params
+        if isAmmoLaunch then
+            params = OrdnanceFactory.GetAmmoParams(sourceWeapon)
+        else
+            if not OrdnanceFactory.IsRegistered(sourceWeapon) then return end
+            params = OrdnanceFactory.GetParams(sourceWeapon)
+        end
         if not params then return end
+
+        local px       = player:getX()
+        local py       = player:getY()
+        local pz       = player:getZ()
 
         -- Compute spawn position from player facing
         local angleDeg = player:getDirectionAngle() or 0
@@ -855,7 +868,7 @@ function ExplosivesSystems.onClientCommand(module, command, player, args)
         if not destX or not destY then return end
 
         -- Spawn the ordnance server-side
-        ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, originY, originZ, destX, destY, destZ)
+        ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, originY, originZ, destX, destY, destZ, isAmmoLaunch)
 
         -- Broadcast to other clients for visual sync
         if isServer() then

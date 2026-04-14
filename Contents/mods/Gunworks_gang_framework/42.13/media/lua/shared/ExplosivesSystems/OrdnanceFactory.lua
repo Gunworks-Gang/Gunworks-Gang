@@ -62,6 +62,14 @@ end
 OrdnanceFactory.Registry = {}
 
 --------------------------------------------------------------------
+--- Ammo registry: bulletFullType → merged params table
+--- Ammunition types registered here will be intercepted when fired
+--- from a ranged weapon and spawned as ordnance projectiles instead
+--- of vanilla bullets.
+--------------------------------------------------------------------
+OrdnanceFactory.AmmoRegistry = {}
+
+--------------------------------------------------------------------
 --- Internal: merge a defaults table with an overrides table
 --------------------------------------------------------------------
 local function mergeDefaults(defaults, overrides)
@@ -110,6 +118,42 @@ end
 
 function OrdnanceFactory.IsExplosive(fullType)
     local p = OrdnanceFactory.Registry[fullType]
+    return p ~= nil and (p.explosionPower or 0) > 0
+end
+
+--------------------------------------------------------------------
+--- Register an ammunition type as explosive ordnance.
+--- When this bullet type is chambered and fired from a ranged weapon,
+--- the framework intercepts the shot, suppresses the vanilla bullet,
+--- and spawns an ordnance projectile using the existing physics engine.
+---
+---   OrdnanceFactory.RegisterAmmo("MyMod.40mm_HE", {
+---       throwSpeed = 25, maxThrowDist = 40, arcFactor = 0.03,
+---       explosionPower = 180, explosionRange = 4,
+---       detonateOnImpact = true,
+---       worldModel = "MyMod.40mm_Projectile",
+---   })
+--------------------------------------------------------------------
+function OrdnanceFactory.RegisterAmmo(bulletFullType, overrides)
+    if not bulletFullType then return end
+    local params = mergeDefaults(OrdnanceFactory.Defaults, overrides)
+    params._sourceBullet = bulletFullType
+    OrdnanceFactory.AmmoRegistry[bulletFullType] = params
+end
+
+--------------------------------------------------------------------
+--- Ammo registry getters
+--------------------------------------------------------------------
+function OrdnanceFactory.GetAmmoParams(bulletFullType)
+    return OrdnanceFactory.AmmoRegistry[bulletFullType]
+end
+
+function OrdnanceFactory.IsAmmoRegistered(bulletFullType)
+    return OrdnanceFactory.AmmoRegistry[bulletFullType] ~= nil
+end
+
+function OrdnanceFactory.IsAmmoExplosive(bulletFullType)
+    local p = OrdnanceFactory.AmmoRegistry[bulletFullType]
     return p ~= nil and (p.explosionPower or 0) > 0
 end
 

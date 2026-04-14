@@ -8,36 +8,76 @@ local OrdnanceFactory   = require("ExplosivesSystems/OrdnanceFactory")
 
 --------------------------------------------------------------------
 --- OnWeaponSwing: suppress vanilla throw EARLY (before hit point)
+--- Also suppress vanilla bullet for ranged weapons firing explosive ammo.
 --------------------------------------------------------------------
 function ExplosivesSystems.onWeaponSwingEarly(player, weapon)
     if not player or not weapon then return end
     if not player:isLocalPlayer() then return end
 
+    -- Case 1: registered throwable ordnance (existing behavior)
     local fullType = weapon:getFullType()
-    if not OrdnanceFactory.IsRegistered(fullType) then return end
+    if OrdnanceFactory.IsRegistered(fullType) then
+        weapon:setMaxHitCount(0)
+        if weapon.setPhysicsObject then
+            weapon:setPhysicsObject(nil)
+        end
+        return
+    end
 
-    -- Kill vanilla throw physics and hit detection before they fire (works only on SP I need to find another way around for MP)
-    weapon:setMaxHitCount(0)
-    if weapon.setPhysicsObject then
-        weapon:setPhysicsObject(nil)
+    -- Case 2: ranged weapon firing explosive ammo
+    local explosiveAmmo = weapon:getModData().GWG_FiringExplosiveAmmo
+    if explosiveAmmo and weapon:isRanged() then
+        -- Save original maxHitCount so we can restore it after the shot
+        weapon:getModData().GWG_OriginalMaxHitCount = weapon:getMaxHitCount()
+        weapon:setMaxHitCount(0)
     end
 end
 
 --------------------------------------------------------------------
---- OnWeaponSwingHitPoint: throw ordnance at the release frame
+--- OnWeaponSwingHitPoint: throw ordnance at the release frame,
+--- or launch explosive ammo projectile for ranged weapons.
 --------------------------------------------------------------------
 function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
     if not player or not weapon then return end
     if not player:isLocalPlayer() then return end
 
-    local fullType = weapon:getFullType()
-    if not OrdnanceFactory.IsRegistered(fullType) then return end
+    local fullType      = weapon:getFullType()
+    local isThrowable   = OrdnanceFactory.IsRegistered(fullType)
+    local explosiveAmmo = weapon:getModData().GWG_FiringExplosiveAmmo
 
-    -- Ensure vanilla is still suppressed (same here)
-    weapon:setMaxHitCount(0)
-    if weapon.setPhysicsObject then
-        weapon:setPhysicsObject(nil)
+    -- If neither a registered throwable nor explosive ammo, bail out
+    if not isThrowable and not explosiveAmmo then return end
+
+    -- Determine which params to use
+    local params
+    local launchSource -- identifier sent to server for param lookup
+    local isAmmoLaunch = false
+
+    if isThrowable then
+        -- Existing throwable behavior
+        weapon:setMaxHitCount(0)
+        if weapon.setPhysicsObject then
+            weapon:setPhysicsObject(nil)
+        end
+        params       = OrdnanceFactory.GetParams(fullType)
+        launchSource = fullType
+    else
+        -- Ranged weapon firing explosive ammo
+        isAmmoLaunch       = true
+        params             = OrdnanceFactory.GetAmmoParams(explosiveAmmo)
+        launchSource       = explosiveAmmo
+
+        -- Restore the weapon's original maxHitCount
+        local origHitCount = weapon:getModData().GWG_OriginalMaxHitCount
+        if origHitCount then
+            weapon:setMaxHitCount(origHitCount)
+            weapon:getModData().GWG_OriginalMaxHitCount = nil
+        end
+        -- Clear the flag
+        weapon:getModData().GWG_FiringExplosiveAmmo = nil
     end
+
+    if not params then return end
 
     -- Get cursor world position as destination
     local playerIndex = player:getPlayerNum()
@@ -45,20 +85,22 @@ function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
     local mouseY      = screenToIsoY(playerIndex, getMouseX(), getMouseY(), player:getZ())
     local destZ       = player:getZ()
 
-    local aimOffset   = 1.5
-    mouseX            = mouseX + aimOffset
-    mouseY            = mouseY + aimOffset
+    if not isAmmoLaunch then
+        local aimOffset = 1.5
+        mouseX          = mouseX + aimOffset
+        mouseY          = mouseY + aimOffset
+    end
 
     -- Play throw sound locally
-    local params      = OrdnanceFactory.GetParams(fullType)
     if params and params.soundThrow then
         -- player:getEmitter():playSound(params.soundThrow)
     end
 
-    -- Send throw command
+    -- Send command to server
     if isClient() then
         sendClientCommand(player, ExplosivesSystems.MODULE_NAME, "throwOrdnance", {
-            sourceWeapon = fullType,
+            sourceWeapon = launchSource,
+            isAmmoLaunch = isAmmoLaunch,
             destX        = mouseX,
             destY        = mouseY,
             destZ        = destZ,
@@ -74,7 +116,7 @@ function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
         local originY  = player:getY() + math.sin(angleRad) * fwd
         local originZ  = player:getZ() + hOff
 
-        ExplosivesSystems.doSpawnOrdnance(player, fullType, originX, originY, originZ, mouseX, mouseY, destZ)
+        ExplosivesSystems.doSpawnOrdnance(player, launchSource, originX, originY, originZ, mouseX, mouseY, destZ, isAmmoLaunch)
     end
 end
 
