@@ -205,7 +205,7 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         detonationTimer  = detonationTimer,
         hasHitFloor      = false,
         atRest           = false,
-        remainingBounces = ExplosivesSystems.randomizeBounces(params.floorBounces or 0),
+        remainingBounces = ExplosivesSystems.randomizeBounces(params.floorBounces or 1),
         -- Guided flight state (parametric arc → physics bounce)
         flightMode       = "guided",
         elapsed          = 0,
@@ -231,8 +231,8 @@ end
 --- Randomize bounce count: returns a value between 0 and maxBounces
 --------------------------------------------------------------------
 function ExplosivesSystems.randomizeBounces(maxBounces)
-    if maxBounces <= 0 then return 0 end
-    return ExplosivesSystems.RANDOM:random(0, maxBounces)
+    if maxBounces <= 0 then return 1 end
+    return ExplosivesSystems.RANDOM:random(1, maxBounces)
 end
 
 --------------------------------------------------------------------
