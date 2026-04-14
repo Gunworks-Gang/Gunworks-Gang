@@ -23,14 +23,6 @@ function ExplosivesSystems.onWeaponSwingEarly(player, weapon)
         end
         return
     end
-
-    -- Case 2: ranged weapon firing explosive ammo
-    local explosiveAmmo = weapon:getModData().GWG_FiringExplosiveAmmo
-    if explosiveAmmo and weapon:isRanged() then
-        -- Save original maxHitCount so we can restore it after the shot
-        weapon:getModData().GWG_OriginalMaxHitCount = weapon:getMaxHitCount()
-        weapon:setMaxHitCount(0)
-    end
 end
 
 --------------------------------------------------------------------
@@ -63,17 +55,11 @@ function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
         launchSource = fullType
     else
         -- Ranged weapon firing explosive ammo
-        isAmmoLaunch       = true
-        params             = OrdnanceFactory.GetAmmoParams(explosiveAmmo)
-        launchSource       = explosiveAmmo
+        isAmmoLaunch                                = true
+        params                                      = OrdnanceFactory.GetAmmoParams(explosiveAmmo)
+        launchSource                                = explosiveAmmo
 
-        -- Restore the weapon's original maxHitCount
-        local origHitCount = weapon:getModData().GWG_OriginalMaxHitCount
-        if origHitCount then
-            weapon:setMaxHitCount(origHitCount)
-            weapon:getModData().GWG_OriginalMaxHitCount = nil
-        end
-        -- Clear the flag
+        -- Clear the flag (StatsFactory restores weapon stats on next ammo swap)
         weapon:getModData().GWG_FiringExplosiveAmmo = nil
     end
 
