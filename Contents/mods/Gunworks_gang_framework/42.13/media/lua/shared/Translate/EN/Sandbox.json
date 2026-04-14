@@ -1,0 +1,6 @@
+{
+  "Sandbox_GWG": "Gunworks Gang Framework",
+
+  "Sandbox_GWG_MultiplayerTick": "Explosives Refresh Rate Multiplayer Tick Buffer",
+  "Sandbox_GWG_MultiplayerTick_tooltip": "Adjust the buffer for multiplayer tick updates. Higher values may improve performance but decreases bullet visual travel."
+}

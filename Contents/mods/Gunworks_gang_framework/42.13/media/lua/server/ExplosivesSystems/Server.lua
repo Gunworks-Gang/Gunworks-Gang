@@ -531,9 +531,9 @@ function ExplosivesSystems.update()
     local scale        = dt * 60
 
     -- Multiplayer render buffer (reduce world item churn)
-    local buffer       = 2
+    local buffer       = SandboxVars.GWG.MultiplayerTick or 0
     local shouldRender = true
-    if isServer() and buffer > 0 then
+    if buffer > 0 then
         ExplosivesSystems.updateCounter = ExplosivesSystems.updateCounter + 1
         if ExplosivesSystems.updateCounter > buffer then
             ExplosivesSystems.updateCounter = 0
