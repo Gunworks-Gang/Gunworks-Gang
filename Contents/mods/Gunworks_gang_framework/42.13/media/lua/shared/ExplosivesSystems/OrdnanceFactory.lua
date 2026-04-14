@@ -17,8 +17,6 @@ OrdnanceFactory.Defaults       = {
     maxArc           = 1.5,  -- maximum arc height in cells
     soundThrow       = nil,  -- sound on throw
     soundBounce      = nil,  -- sound on bounce
-
-    -- Explosive (nil / 0 values = non-explosive throwable)
     explosionPower   = 0,
     explosionRange   = 0,
     fireRange        = 0,
@@ -98,7 +96,6 @@ end
 function OrdnanceFactory.Register(fullType, overrides)
     if not fullType then return end
     local params = mergeDefaults(OrdnanceFactory.Defaults, overrides)
-    params._sourceWeapon = fullType
     OrdnanceFactory.Registry[fullType] = params
 end
 
@@ -137,7 +134,6 @@ end
 function OrdnanceFactory.RegisterAmmo(bulletFullType, overrides)
     if not bulletFullType then return end
     local params = mergeDefaults(OrdnanceFactory.Defaults, overrides)
-    params._sourceBullet = bulletFullType
     OrdnanceFactory.AmmoRegistry[bulletFullType] = params
 end
 

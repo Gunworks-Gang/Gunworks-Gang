@@ -2,16 +2,9 @@ local ExplosivesSystems                   = require("ExplosivesSystems/Init")
 local Payloads                            = require("ExplosivesSystems/Payloads")
 local OrdnanceFactory                     = require("ExplosivesSystems/OrdnanceFactory")
 
---------------------------------------------------------------------
---- Active ordnance list (mirrors SpentCasingPhysics.activeCasings)
---------------------------------------------------------------------
 ExplosivesSystems.activeOrdnance          = {}
 ExplosivesSystems.RANDOM                  = newrandom()
 ExplosivesSystems.updateCounter           = 0
-
---------------------------------------------------------------------
---- Physics constants (shared with Hot Brass casing physics)
---------------------------------------------------------------------
 ExplosivesSystems.GRAVITY                 = 0.020
 ExplosivesSystems.XY_STEP                 = 0.10
 ExplosivesSystems.Z_STEP                  = 0.05
@@ -24,10 +17,6 @@ ExplosivesSystems.BOUNCE_MIN_VELOCITY     = 0.004
 ExplosivesSystems.EDGE_TOL                = 0.15
 ExplosivesSystems.LOW_WALL_Z_THRESHOLD    = 0.25
 
---------------------------------------------------------------------
---- Utility: check if a wall sprite is a low wall (fence/railing)
---- (from Hot Brass SpentCasingPhysics.isLowWall)
---------------------------------------------------------------------
 function ExplosivesSystems.isLowWall(wall)
     if not wall then return false end
     local props = wall.getProperties and wall:getProperties() or nil
@@ -42,11 +31,6 @@ function ExplosivesSystems.isLowWall(wall)
     return false
 end
 
---------------------------------------------------------------------
---- Utility: check if a wall/door/window blocks between two squares
---- Low walls only block if ordnance is below LOW_WALL_Z_THRESHOLD.
---- (from Hot Brass SpentCasingPhysics)
---------------------------------------------------------------------
 function ExplosivesSystems.isBlockedBetweenSquares(fromSq, toSq, dir, ordZ)
     if not fromSq or not toSq or not dir then return false end
 
@@ -78,10 +62,6 @@ function ExplosivesSystems.isBlockedBetweenSquares(fromSq, toSq, dir, ordZ)
     return false
 end
 
---------------------------------------------------------------------
---- Utility: remove a world item from its square
---- (from Hot Brass SpentCasingPhysics.removeWorldItem)
---------------------------------------------------------------------
 function ExplosivesSystems.removeWorldItem(ord)
     if not ord.worldItem then return end
     local wobj = ord.worldItem:getWorldItem()
@@ -97,10 +77,6 @@ function ExplosivesSystems.removeWorldItem(ord)
     ord.worldItem = nil
 end
 
---------------------------------------------------------------------
---- Utility: get the top surface Z offset on a square
---- (from Hot Brass SpentCasingPhysics.getTileTopZ)
---------------------------------------------------------------------
 function ExplosivesSystems.getTileTopZ(square)
     if not square then return nil end
     local objects = square:getObjects()
@@ -127,19 +103,10 @@ function ExplosivesSystems.getTileTopZ(square)
     return topZ
 end
 
---------------------------------------------------------------------
---- GameTime helper
---------------------------------------------------------------------
 function ExplosivesSystems.GT()
     return GameTime.getInstance()
 end
 
---------------------------------------------------------------------
---- Spawn ordnance from origin toward destination.
---- Called server-side (or solo).
---- When isAmmoLaunch is true, sourceWeapon is a bullet fullType and
---- params are looked up from the AmmoRegistry instead.
---------------------------------------------------------------------
 function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, originY, originZ, destX, destY, destZ, isAmmoLaunch)
     local params
     if isAmmoLaunch then
@@ -153,7 +120,6 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
     local dy       = destY - originY
     local distance = math.sqrt(dx * dx + dy * dy)
 
-    -- Clamp to max throw distance
     local maxDist  = params.maxThrowDist or 20
     if distance > maxDist then
         local ratio = maxDist / distance
@@ -162,9 +128,6 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         distance    = maxDist
     end
 
-    -- Guided-flight parameters: grenade follows parametric arc to cursor,
-    -- then transitions to physics for bouncing.  Guarantees landing at the
-    -- aimed position regardless of distance.
     local throwSpeed = math.max(1, params.throwSpeed or 12)
     local arcFactor  = params.arcFactor or 0.12
     local maxArc     = params.maxArc or 1.5
@@ -172,26 +135,20 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
     local flightTime = math.max(0.02, distance / throwSpeed)
     local arcHeight  = math.min(maxArc, distance * arcFactor)
 
-    -- Direction unit vector
     local dirX       = (distance > 0.01) and (dx / distance) or 0
     local dirY       = (distance > 0.01) and (dy / distance) or 0
 
-    -- Determine the square at the origin position
     local sq         = getCell():getGridSquare(math.floor(originX), math.floor(originY), math.floor(originZ))
     if not sq then return end
 
-    -- Determine the world model to display in flight
     local modelType = params.worldModel or sourceWeapon
 
     local localX = originX - sq:getX()
     local localY = originY - sq:getY()
     local localZ = originZ - sq:getZ()
 
-    -- Create the world item visual
     local worldItem = sq:AddWorldInventoryItem(modelType, localX, localY, localZ)
-
     local detonationTimer = params.detonationDelay or 0
-
     local ordnanceData = {
         player           = player,
         params           = params,
@@ -206,14 +163,12 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         x                = localX,
         y                = localY,
         z                = localZ,
-
         worldItem        = worldItem,
         active           = true,
         detonationTimer  = detonationTimer,
         hasHitFloor      = false,
         atRest           = false,
         remainingBounces = ExplosivesSystems.randomizeBounces(params.floorBounces or 1),
-        -- Guided flight state (parametric arc → physics bounce)
         flightMode       = "guided",
         elapsed          = 0,
         flightTime       = flightTime,
@@ -225,7 +180,6 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         destWorldY       = destY,
         guidedDirX       = dirX,
         guidedDirY       = dirY,
-        -- Velocities (zero during guided phase; computed on transition)
         velocityX        = 0,
         velocityY        = 0,
         velocityZ        = 0,
@@ -234,17 +188,11 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
     table.insert(ExplosivesSystems.activeOrdnance, ordnanceData)
 end
 
---------------------------------------------------------------------
---- Randomize bounce count: returns a value between 0 and maxBounces
---------------------------------------------------------------------
 function ExplosivesSystems.randomizeBounces(maxBounces)
     if maxBounces <= 0 then return 1 end
     return ExplosivesSystems.RANDOM:random(1, maxBounces)
 end
 
---------------------------------------------------------------------
---- Force-detonate ordnance (fuse expired, possibly mid-air)
---------------------------------------------------------------------
 function ExplosivesSystems.forceDetonate(ord, index)
     ExplosivesSystems.removeWorldItem(ord)
     Payloads.ResolveImpact(ord)
@@ -253,17 +201,10 @@ function ExplosivesSystems.forceDetonate(ord, index)
     return true
 end
 
---------------------------------------------------------------------
---- Transition from guided flight to physics-based motion.
---- Computes residual velocity from the parametric trajectory at the
---- current progress t so that wall bounces and floor bounces behave
---- naturally after the guided phase ends.
---------------------------------------------------------------------
 function ExplosivesSystems.guidedToPhysics(ord, t)
     if ord.flightMode ~= "guided" then return end
     ord.flightMode    = "physics"
 
-    -- Horizontal approach speed (world units/sec) → internal velocity
     local dist        = math.sqrt(
         (ord.destWorldX - ord.originWorldX) * (ord.destWorldX - ord.originWorldX) +
         (ord.destWorldY - ord.originWorldY) * (ord.destWorldY - ord.originWorldY)
@@ -272,60 +213,41 @@ function ExplosivesSystems.guidedToPhysics(ord, t)
     local XY_CONV     = ExplosivesSystems.XY_STEP * 60
     local Z_CONV      = ExplosivesSystems.Z_STEP * 60
 
-    -- Retain half of flight speed as residual horizontal velocity for bouncing
     local residual    = 0.5
     ord.velocityX     = ord.guidedDirX * hSpeedWorld * residual / XY_CONV
     ord.velocityY     = ord.guidedDirY * hSpeedWorld * residual / XY_CONV
 
-    -- Z velocity from derivative of arc: z(t) = originZ*(1-t) + arcH*4*t*(1-t)
-    --   dz/dt = -originZ + arcH * 4 * (1 - 2t)
-    -- Convert from per-normalised-time to per-second, then to internal units
     local dzdt        = -ord.originZLocal + ord.arcHeight * 4.0 * (1.0 - 2.0 * t)
     local zSpeedWorld = (ord.flightTime > 0) and (dzdt / ord.flightTime) or 0
     local zVel        = zSpeedWorld / Z_CONV
 
-    -- Clamp to prevent extreme velocity on very short throws
     zVel              = math.max(zVel, -1.5)
     zVel              = math.min(zVel, 1.5)
     ord.velocityZ     = zVel
 end
 
---------------------------------------------------------------------
---- Guided-flight update: parametric arc trajectory that guarantees
---- the grenade lands at the cursor position.  Handles wall/ceiling
---- collision (transitions to physics on impact) and arrival
---- (transitions to physics for bouncing).
---------------------------------------------------------------------
 function ExplosivesSystems.updateGuidedFlight(ord, index, scale, shouldRender)
     local dt = ExplosivesSystems.GT():getTimeDelta()
 
-    -- Advance elapsed time
     ord.elapsed = ord.elapsed + dt
     local t = ord.elapsed / ord.flightTime
     local arrived = t >= 1.0
     if arrived then t = 1.0 end
 
-    -- Save old local position for wall edge-crossing checks
     local oldEdgeX = ord.x
     local oldEdgeY = ord.y
 
-    -- Parametric world position (linear interpolation)
     local worldX   = ord.originWorldX + (ord.destWorldX - ord.originWorldX) * t
     local worldY   = ord.originWorldY + (ord.destWorldY - ord.originWorldY) * t
 
-    -- Parabolic arc: t=0 → originZLocal, t=0.5 → peak, t=1 → 0
     ord.z          = ord.originZLocal * (1.0 - t) + ord.arcHeight * 4.0 * t * (1.0 - t)
 
-    -- Update local coords in current square
     local sx       = ord.square:getX()
     local sy       = ord.square:getY()
     local sz       = ord.square:getZ()
     ord.x          = worldX - sx
     ord.y          = worldY - sy
 
-    ----------------------------------------------------------------
-    -- WALL COLLISION (edge-crossing, same logic as physics mode)
-    ----------------------------------------------------------------
     local EDGE_TOL = ExplosivesSystems.EDGE_TOL
     local blockX   = false
     local blockY   = false
@@ -387,17 +309,11 @@ function ExplosivesSystems.updateGuidedFlight(ord, index, scale, shouldRender)
         end
     end
 
-    ----------------------------------------------------------------
-    -- WORLD POSITION & SQUARE TRANSITION
-    ----------------------------------------------------------------
     worldX = ord.square:getX() + ord.x
     worldY = ord.square:getY() + ord.y
     local targetTileX = math.floor(worldX)
     local targetTileY = math.floor(worldY)
 
-    ----------------------------------------------------------------
-    -- CEILING CHECK
-    ----------------------------------------------------------------
     if ord.z >= 1.0 then
         local aboveSq = getCell():getGridSquare(targetTileX, targetTileY, sz + 1)
         if aboveSq and aboveSq:TreatAsSolidFloor() then
@@ -409,9 +325,6 @@ function ExplosivesSystems.updateGuidedFlight(ord, index, scale, shouldRender)
         end
     end
 
-    ----------------------------------------------------------------
-    -- FLOOR SEARCH (same as physics mode)
-    ----------------------------------------------------------------
     local worldZ = sz + ord.z
     local targetSquare = nil
     local checkZ = sz
@@ -438,9 +351,6 @@ function ExplosivesSystems.updateGuidedFlight(ord, index, scale, shouldRender)
     ord.x = worldX - ord.square:getX()
     ord.y = worldY - ord.square:getY()
 
-    ----------------------------------------------------------------
-    -- ARRIVAL: transition to physics for landing / bounce
-    ----------------------------------------------------------------
     if arrived and ord.flightMode == "guided" then
         ExplosivesSystems.guidedToPhysics(ord, 1.0)
 
@@ -473,7 +383,6 @@ function ExplosivesSystems.updateGuidedFlight(ord, index, scale, shouldRender)
                     end
                 end
             else
-                -- No bounces: settle immediately
                 ord.atRest    = true
                 ord.velocityX = 0
                 ord.velocityY = 0
@@ -501,12 +410,8 @@ function ExplosivesSystems.updateGuidedFlight(ord, index, scale, shouldRender)
                 return true
             end
         end
-        -- If z > 0.01 (thrown off a ledge), physics handles descent
     end
 
-    ----------------------------------------------------------------
-    -- CLAMP & VISUAL UPDATE
-    ----------------------------------------------------------------
     ord.x = PZMath.clamp_01(ord.x)
     ord.y = PZMath.clamp_01(ord.y)
     ord.z = math.max(0, ord.z)
@@ -522,15 +427,10 @@ function ExplosivesSystems.updateGuidedFlight(ord, index, scale, shouldRender)
     return false
 end
 
---------------------------------------------------------------------
---- Per-tick update of all active ordnance
---- Unified physics loop (Hot Brass pattern)
---------------------------------------------------------------------
 function ExplosivesSystems.update()
     local dt           = ExplosivesSystems.GT():getTimeDelta()
     local scale        = dt * 60
 
-    -- Multiplayer render buffer (reduce world item churn)
     local buffer       = SandboxVars.GWG.MultiplayerTick or 0
     local shouldRender = true
     if buffer > 0 then
@@ -560,16 +460,8 @@ function ExplosivesSystems.update()
     end
 end
 
---------------------------------------------------------------------
---- Unified ordnance physics update (replaces separate airborne/settling)
---- Handles: gravity, drag, wall bounce, floor/ceiling, Z-level transitions
---------------------------------------------------------------------
 function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
     local dt = ExplosivesSystems.GT():getTimeDelta()
-
-    ----------------------------------------------------------------
-    -- 1. FUSE TIMER (ticks every frame regardless of flight phase)
-    ----------------------------------------------------------------
     if ord.detonationTimer > 0 then
         ord.detonationTimer = ord.detonationTimer - dt
         if ord.detonationTimer <= 0 then
@@ -577,25 +469,17 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
         end
     end
 
-    -- At rest: bounces done, just waiting for timer — no physics
     if ord.atRest then
         return false
     end
 
-    -- Guided flight mode: parametric arc to cursor
     if ord.flightMode == "guided" then
         return ExplosivesSystems.updateGuidedFlight(ord, index, scale, shouldRender)
     end
 
-    ----------------------------------------------------------------
-    -- 2. GRAVITY
-    ----------------------------------------------------------------
     local prevZ    = ord.z
     ord.velocityZ  = ord.velocityZ - (ExplosivesSystems.GRAVITY * scale)
 
-    ----------------------------------------------------------------
-    -- 3. POSITION UPDATE (store old edge positions for wall checks)
-    ----------------------------------------------------------------
     local oldEdgeX = ord.x
     local oldEdgeY = ord.y
 
@@ -603,19 +487,12 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
     ord.y          = ord.y + (ord.velocityY * ExplosivesSystems.XY_STEP * scale)
     ord.z          = ord.z + (ord.velocityZ * ExplosivesSystems.Z_STEP * scale)
 
-    ----------------------------------------------------------------
-    -- 4. AIR DRAG (applied every frame, flight and bounce alike)
-    ----------------------------------------------------------------
     local dragXY   = math.pow(ExplosivesSystems.DRAG_XY, scale)
     local dragZ    = math.pow(ExplosivesSystems.DRAG_Z, scale)
     ord.velocityX  = ord.velocityX * dragXY
     ord.velocityY  = ord.velocityY * dragXY
     ord.velocityZ  = ord.velocityZ * dragZ
 
-    ----------------------------------------------------------------
-    -- 5. WALL COLLISION (edge-based, from Hot Brass)
-    --    X and Y checked independently so corner hits bounce both axes
-    ----------------------------------------------------------------
     local sx       = ord.square:getX()
     local sy       = ord.square:getY()
     local sz       = ord.square:getZ()
@@ -624,14 +501,12 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
     local blockX   = false
     local blockY   = false
 
-    -- X-axis: crossing right edge
     if ord.velocityX > 0 and oldEdgeX < (1.0 - EDGE_TOL) and ord.x >= (1.0 - EDGE_TOL) then
         local neighbor = getCell():getGridSquare(sx + 1, sy, sz)
         if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
                 ord.square, neighbor, IsoDirections.E, ord.z) then
             blockX = true
         end
-        -- X-axis: crossing left edge
     elseif ord.velocityX < 0 and oldEdgeX > EDGE_TOL and ord.x <= EDGE_TOL then
         local neighbor = getCell():getGridSquare(sx - 1, sy, sz)
         if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
@@ -640,14 +515,12 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
         end
     end
 
-    -- Y-axis: crossing south edge
     if ord.velocityY > 0 and oldEdgeY < (1.0 - EDGE_TOL) and ord.y >= (1.0 - EDGE_TOL) then
         local neighbor = getCell():getGridSquare(sx, sy + 1, sz)
         if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
                 ord.square, neighbor, IsoDirections.S, ord.z) then
             blockY = true
         end
-        -- Y-axis: crossing north edge
     elseif ord.velocityY < 0 and oldEdgeY > EDGE_TOL and ord.y <= EDGE_TOL then
         local neighbor = getCell():getGridSquare(sx, sy - 1, sz)
         if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
@@ -656,14 +529,12 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
         end
     end
 
-    -- Wall bounce response
     if blockX then
         ord.velocityX = -ord.velocityX * ExplosivesSystems.BOUNCE_RESTITUTION_WALL
         ord.x = ord.x + (ord.velocityX * ExplosivesSystems.BOUNCE_POSITION_CORRECT)
         if math.abs(ord.velocityX) < ExplosivesSystems.BOUNCE_MIN_VELOCITY then
             ord.velocityX = 0
         end
-        -- Impact-fused ordnance detonates on wall hit
         if ord.params.detonateOnImpact then
             return ExplosivesSystems.forceDetonate(ord, index)
         end
@@ -680,21 +551,11 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
         end
     end
 
-    ----------------------------------------------------------------
-    -- 6. WORLD POSITION & SQUARE TRANSITION
-    ----------------------------------------------------------------
     local worldX = ord.square:getX() + ord.x
     local worldY = ord.square:getY() + ord.y
     local targetTileX = math.floor(worldX)
     local targetTileY = math.floor(worldY)
 
-    ----------------------------------------------------------------
-    -- 7. CEILING CHECK (must happen BEFORE floor transition)
-    --    If the grenade reached ceiling height (Z >= 1.0), check
-    --    if there is a solid floor directly above on the CURRENT
-    --    square's level. A solid floor above = ceiling = bounce.
-    --    No floor above = open air, grenade continues upward.
-    ----------------------------------------------------------------
     if ord.z >= 1.0 then
         local aboveSq = getCell():getGridSquare(targetTileX, targetTileY, sz + 1)
         if aboveSq and aboveSq:TreatAsSolidFloor() then
@@ -703,12 +564,6 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
         end
     end
 
-    ----------------------------------------------------------------
-    -- 8. FLOOR SEARCH (downward only, like Hot Brass)
-    --    Start from the current square's level and search downward.
-    --    Grenade can fall to lower floors but never land on an
-    --    upper floor — ceiling check (step 7) bounces it back.
-    ----------------------------------------------------------------
     local worldZ = sz + ord.z
 
     local targetSquare = nil
@@ -729,34 +584,24 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
         targetSquare = ord.square
     end
 
-    ----------------------------------------------------------------
-    -- 9. UPDATE SQUARE REFERENCE
-    ----------------------------------------------------------------
     if targetSquare ~= ord.square then
         ord.square = targetSquare
     end
 
-    -- Recalculate local coords within the (possibly new) square
     ord.x = worldX - ord.square:getX()
     ord.y = worldY - ord.square:getY()
 
-    ----------------------------------------------------------------
-    -- 10. FLOOR COLLISION & BOUNCE
-    ----------------------------------------------------------------
     if ord.z <= 0 then
         ord.z = 0
 
-        -- First floor contact
         if not ord.hasHitFloor then
             ord.hasHitFloor = true
-            -- Impact-fused: detonate on first ground contact
             if ord.params.detonateOnImpact then
                 return ExplosivesSystems.forceDetonate(ord, index)
             end
         end
 
         if ord.remainingBounces > 0 then
-            -- Execute floor bounce
             ord.remainingBounces = ord.remainingBounces - 1
             ord.z = 0.01
             local restitution = ord.params.bounceEnergy or 0.45
@@ -764,7 +609,6 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
             ord.velocityX = ord.velocityX * 0.6
             ord.velocityY = ord.velocityY * 0.6
 
-            -- Play bounce sound
             local bounceSound = ord.params.soundBounce
             if bounceSound and ord.player then
                 if isServer() then
@@ -776,14 +620,12 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
                 end
             end
         else
-            -- Bounces exhausted → final rest
             ord.atRest    = true
             ord.velocityX = 0
             ord.velocityY = 0
             ord.velocityZ = 0
             ord.z         = 0
 
-            -- Place final resting visual once
             if shouldRender then
                 ExplosivesSystems.removeWorldItem(ord)
                 ord.worldItem = ord.square:AddWorldInventoryItem(
@@ -792,7 +634,6 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
                 )
             end
 
-            -- Explosive with remaining timer: keep alive
             if (ord.params.explosionPower or 0) > 0 then
                 if ord.detonationTimer <= 0 then
                     return ExplosivesSystems.forceDetonate(ord, index)
@@ -800,7 +641,6 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
                 return false
             end
 
-            -- Non-explosive: fire hooks and remove
             Payloads.ResolveImpact(ord)
             ord.active = false
             table.remove(ExplosivesSystems.activeOrdnance, index)
@@ -808,9 +648,6 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
         end
     end
 
-    ----------------------------------------------------------------
-    -- 11. CLAMP & VISUAL UPDATE
-    ----------------------------------------------------------------
     ord.x = PZMath.clamp_01(ord.x)
     ord.y = PZMath.clamp_01(ord.y)
     ord.z = math.max(0, ord.z)
@@ -826,9 +663,6 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
     return false
 end
 
---------------------------------------------------------------------
---- Server command handler: receive throw requests from clients
---------------------------------------------------------------------
 function ExplosivesSystems.onClientCommand(module, command, player, args)
     if module ~= ExplosivesSystems.MODULE_NAME then return end
     if not player or not args then return end
@@ -851,7 +685,6 @@ function ExplosivesSystems.onClientCommand(module, command, player, args)
         local py       = player:getY()
         local pz       = player:getZ()
 
-        -- Compute spawn position from player facing
         local angleDeg = player:getDirectionAngle() or 0
         local angleRad = math.rad(angleDeg)
         local fwd      = params.forwardOffset or 0.50
@@ -866,11 +699,8 @@ function ExplosivesSystems.onClientCommand(module, command, player, args)
         local destZ    = args.destZ or pz
 
         if not destX or not destY then return end
-
-        -- Spawn the ordnance server-side
         ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, originY, originZ, destX, destY, destZ, isAmmoLaunch)
 
-        -- Broadcast to other clients for visual sync
         if isServer() then
             local onlinePlayers = getOnlinePlayers()
             for i = 0, onlinePlayers:size() - 1 do
