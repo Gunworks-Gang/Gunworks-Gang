@@ -9,6 +9,7 @@ local Magazine = require("WeaponSystems/Utils/MagazineUtils")
 local Ammo = require("WeaponSystems/Utils/AmmoUtils")
 local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
 local Underbarrel = require("WeaponSystems/Utils/UnderbarrelUtils")
+local OrdnanceFactory = require("ExplosivesSystems/OrdnanceFactory")
 
 -------------------------------------------------
 -- BeginAutomaticReload (MagazineProfile support)
@@ -384,6 +385,13 @@ ISReloadWeaponAction.attackHook = function(character, chargeDelta, weapon)
             if ammoList and #ammoList > 0 then
                 local bulletType = ammoList[#ammoList]
                 Ammo.AmmoProfileSetter(weapon, bulletType)
+
+                -- Flag explosive ammo for interception by the ExplosivesSystems client hooks
+                if OrdnanceFactory.IsAmmoRegistered(bulletType) then
+                    weapon:getModData().GWG_FiringExplosiveAmmo = bulletType
+                else
+                    weapon:getModData().GWG_FiringExplosiveAmmo = nil
+                end
             end
 
             if ammoList and #ammoList > 0 then

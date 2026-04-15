@@ -1,0 +1,10 @@
+VERSION = 1,
+
+option GWG.MultiplayerTick {
+    type = integer,
+    default = 0,
+    min = 0,
+    max = 5,
+    page = GWG,
+    translation = GWG_MultiplayerTick,
+}
