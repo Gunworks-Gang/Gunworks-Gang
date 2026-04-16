@@ -1,12 +1,13 @@
 require("TimedActions/ISBaseTimedAction")
 
-local Railing    = require("WeaponSystems/Utils/RailingUtils")
+local Railing     = require("WeaponSystems/Utils/RailingUtils")
 local Underbarrel = require("WeaponSystems/Utils/UnderbarrelUtils")
+local Animations  = require("WeaponSystems/Utils/Animations")
 
 -------------------------------------------------
 -- Mount Accessory via Railing – Timed Action
 -------------------------------------------------
-ISRailingMount = ISBaseTimedAction:derive("ISRailingMount")
+ISRailingMount    = ISBaseTimedAction:derive("ISRailingMount")
 
 function ISRailingMount:isValid()
     if isClient() and self.weapon and self.accessoryItem then
@@ -39,16 +40,8 @@ end
 
 function ISRailingMount:complete()
     Railing.MountAccessory(self.weapon, self.accessoryItem, self.character)
-    syncHandWeaponFields(self.character, self.weapon)
+    Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     sendRemoveItemFromContainer(self.character:getInventory(), self.accessoryItem)
-    -- Cycle hand equipment to force visual refresh
-    self.character:setPrimaryHandItem(nil)
-    self.character:setSecondaryHandItem(nil)
-    self.character:setPrimaryHandItem(self.weapon)
-    if self.weapon:isTwoHandWeapon() then
-        self.character:setSecondaryHandItem(self.weapon)
-    end
-    self.character:resetEquippedHandsModels()
     return true
 end
 
@@ -104,18 +97,10 @@ function ISRailingUnmount:complete()
     -- Return any loaded underbarrel ammo and clean up modData before the part is detached.
     Underbarrel.HandleAttachmentRemoval(self.weapon, self.accessoryPart, self.character)
     local success, returnedItem = Railing.UnmountAccessory(self.weapon, self.accessoryPart, self.character)
-    syncHandWeaponFields(self.character, self.weapon)
+    Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     if returnedItem then
         sendAddItemToContainer(self.character:getInventory(), returnedItem)
     end
-    -- Cycle hand equipment to force visual refresh
-    self.character:setPrimaryHandItem(nil)
-    self.character:setSecondaryHandItem(nil)
-    self.character:setPrimaryHandItem(self.weapon)
-    if self.weapon:isTwoHandWeapon() then
-        self.character:setSecondaryHandItem(self.weapon)
-    end
-    self.character:resetEquippedHandsModels()
     return true
 end
 

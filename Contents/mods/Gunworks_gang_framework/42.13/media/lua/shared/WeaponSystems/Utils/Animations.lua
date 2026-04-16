@@ -1,15 +1,15 @@
 local Animations = {}
 
 -------------------------------------------------
--- Registry tables  (keyed by weapon fullType)
+-- Registry tables for weapons with custom moving parts
 -------------------------------------------------
-Animations.RegisterModels = {}
+Animations.WeaponsWithAnimatedParts = {}
 
 --- Register a single weapon with custom callback function to handle swaps.
 ---@param fullType string       fullType e.g. "Base.M16A3"
 ---@param modelFunction function  function to handle model swaps
-function Animations.RegisterModel(fullType, modelFunction)
-    Animations.RegisterModels[fullType] = modelFunction
+function Animations.RegisterWeaponWithAnimatedParts(fullType, modelFunction)
+    Animations.WeaponsWithAnimatedParts[fullType] = modelFunction
 end
 
 function Animations.CallSyncHandWeaponFields(player, weapon)
@@ -24,10 +24,15 @@ function Animations.CallSyncHandWeaponFields(player, weapon)
 end
 
 function Animations.CallAnimationFunction(weapon, open)
-    local modelFn = Animations.RegisterModels[weapon:getFullType()]
+    local modelFn = Animations.WeaponsWithAnimatedParts[weapon:getFullType()]
     if modelFn then
         modelFn(weapon, open)
     end
+end
+
+function Animations.CallAnimate(player, weapon, open)
+    Animations.CallAnimationFunction(weapon, open)
+    Animations.CallSyncHandWeaponFields(player, weapon)
 end
 
 function Animations.scheduleActionClose(seconds, callback, ...)
@@ -54,8 +59,7 @@ function Animations.releaseActionLock(player, weapon)
     if not weapon or not player then return end
     if weapon:isJammed() or not weapon:haveChamber() then return end
     local open = not weapon:isRoundChambered()
-    Animations.CallAnimationFunction(weapon, open)
-    Animations.CallSyncHandWeaponFields(player, weapon)
+    Animations.CallAnimate(player, weapon, open)
 end
 
 function Animations.lockActionOpen(player, weapon)
@@ -64,8 +68,7 @@ function Animations.lockActionOpen(player, weapon)
     if weapon:isJammed() or not weapon:haveChamber() then return end
     if not weapon:isRoundChambered() then return end
 
-    Animations.CallAnimationFunction(weapon, true)
-    Animations.CallSyncHandWeaponFields(player, weapon)
+    Animations.CallAnimate(player, weapon, true)
     local seconds = 10 / 60
     Animations.scheduleActionClose(seconds, Animations.releaseActionLock, player, weapon)
 end
@@ -73,39 +76,37 @@ end
 function Animations.rackAction(player, weapon, starting)
     if not weapon or not player then return end
     if starting then
-        Animations.CallAnimationFunction(weapon, true)
-        Animations.CallSyncHandWeaponFields(player, weapon)
+        Animations.CallAnimate(player, weapon, true)
     else
-        Animations.CallAnimationFunction(weapon, false)
-        Animations.CallSyncHandWeaponFields(player, weapon)
+        Animations.CallAnimate(player, weapon, false)
     end
 end
 
 -------------------------------------------------
--- Registry tables  (keyed by weapon fullType)
+-- Registry tables for weapons with custom states at certain ammoPlaces
 -------------------------------------------------
-Animations.RegisterTableStates = {}
+Animations.WeaponsWithCustomStates = {}
 
---- Register a single weapon with custom callback function to handle swaps.
+--- Register a single weapon with custom states.
 ---@param fullType string       fullType e.g. "Base.M60"
 ---@param paramsTable table      { threshold = 1, part = "MWA.Bullet_1", slot = "Animated1" }
-function Animations.RegisterTableState(fullType, paramsTable)
-    Animations.RegisterTableStates[fullType] = paramsTable
+function Animations.RegisterWeaponsWithCustomStates(fullType, paramsTable)
+    Animations.WeaponsWithCustomStates[fullType] = paramsTable
 end
 
-function Animations.GetTableStates(fullType)
-    return Animations.RegisterTableStates[fullType]
+function Animations.GetStatesTable(fullType)
+    return Animations.WeaponsWithCustomStates[fullType]
 end
 
-function Animations.IsWeaponRegistered(fullType)
-    return Animations.RegisterTableStates[fullType] ~= nil
+function Animations.IsWeaponWithCustomStates(fullType)
+    return Animations.WeaponsWithCustomStates[fullType] ~= nil
 end
 
-function Animations.AmmoCheck(weapon)
+function Animations.CheckStates(weapon)
     if not weapon then return false end
     local ammoCount = weapon:getCurrentAmmoCount()
 
-    local stages = Animations.GetTableStates(weapon:getFullType())
+    local stages = Animations.GetStatesTable(weapon:getFullType())
     if not stages then return end
 
     for _, stage in ipairs(stages) do

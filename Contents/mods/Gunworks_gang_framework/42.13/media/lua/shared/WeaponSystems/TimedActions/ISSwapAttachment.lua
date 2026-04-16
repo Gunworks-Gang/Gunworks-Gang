@@ -1,6 +1,7 @@
 require("TimedActions/ISBaseTimedAction")
 
 local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachmentUtils")
+local Animations = require("WeaponSystems/Utils/Animations")
 
 -------------------------------------------------
 -- Dynamic Attachment Swap Timed Action
@@ -31,15 +32,7 @@ end
 
 function ISSwapAttachment:complete()
     DynamicAttachment.SwapAttachment(self.weapon)
-    syncHandWeaponFields(self.character, self.weapon)
-    -- Cycle hand equipment to force visual refresh
-    self.character:setPrimaryHandItem(nil)
-    self.character:setSecondaryHandItem(nil)
-    self.character:setPrimaryHandItem(self.weapon)
-    if self.weapon:isTwoHandWeapon() then
-        self.character:setSecondaryHandItem(self.weapon)
-    end
-    self.character:resetEquippedHandsModels()
+    Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     return true
 end
 

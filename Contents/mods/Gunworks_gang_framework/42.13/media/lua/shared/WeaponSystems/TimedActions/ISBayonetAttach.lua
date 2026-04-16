@@ -1,6 +1,7 @@
 require("TimedActions/ISBaseTimedAction")
 
 local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
+local Animations = require("WeaponSystems/Utils/Animations")
 
 -------------------------------------------------
 -- Attach Bayonet Timed Action
@@ -39,16 +40,8 @@ end
 
 function ISBayonetAttach:complete()
     Bayonet.AttachBayonet(self.weapon, self.bayonetKnife, self.character)
-    syncHandWeaponFields(self.character, self.weapon)
+    Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     sendRemoveItemFromContainer(self.character:getInventory(), self.bayonetKnife)
-    -- Cycle hand equipment to force visual refresh
-    self.character:setPrimaryHandItem(nil)
-    self.character:setSecondaryHandItem(nil)
-    self.character:setPrimaryHandItem(self.weapon)
-    if self.weapon:isTwoHandWeapon() then
-        self.character:setSecondaryHandItem(self.weapon)
-    end
-    self.character:resetEquippedHandsModels()
     return true
 end
 
@@ -97,18 +90,10 @@ end
 
 function ISBayonetRemove:complete()
     local success, returnedKnife = Bayonet.RemoveBayonet(self.weapon, self.character)
-    syncHandWeaponFields(self.character, self.weapon)
+    Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     if returnedKnife then
         sendAddItemToContainer(self.character:getInventory(), returnedKnife)
     end
-    -- Cycle hand equipment to force visual refresh
-    self.character:setPrimaryHandItem(nil)
-    self.character:setSecondaryHandItem(nil)
-    self.character:setPrimaryHandItem(self.weapon)
-    if self.weapon:isTwoHandWeapon() then
-        self.character:setSecondaryHandItem(self.weapon)
-    end
-    self.character:resetEquippedHandsModels()
     return true
 end
 

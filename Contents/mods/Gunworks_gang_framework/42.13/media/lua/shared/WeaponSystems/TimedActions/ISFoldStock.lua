@@ -1,6 +1,7 @@
 require("TimedActions/ISBaseTimedAction")
 
 local FoldingStock = require("WeaponSystems/Utils/FoldingStockUtils")
+local Animations = require("WeaponSystems/Utils/Animations")
 
 -------------------------------------------------
 -- Foldable Stock Timed Action
@@ -31,29 +32,7 @@ end
 
 function ISFoldStock:complete()
     FoldingStock.ToggleFoldStock(self.weapon)
-    syncHandWeaponFields(self.character, self.weapon)
-    -- Cycle hand equipment to force visual refresh
-    self.character:setPrimaryHandItem(nil)
-    self.character:setSecondaryHandItem(nil)
-    self.character:setPrimaryHandItem(self.weapon)
-    if self.weapon:isTwoHandWeapon() then
-        self.character:setSecondaryHandItem(self.weapon)
-    end
-    self.character:resetEquippedHandsModels()
-    -- Broadcast sprite changes for models-mode (not covered by native sync packet)
-    local entry = FoldingStock.WeaponsWithFoldableStock[self.weapon:getFullType()]
-    if entry and entry.models then
-        local onlinePlayers = getOnlinePlayers()
-        if onlinePlayers then
-            for i = 0, onlinePlayers:size() - 1 do
-                sendServerCommand(onlinePlayers:get(i), "SWMG", "syncWeapon", {
-                    onlineID    = self.character:getOnlineID(),
-                    itemId      = self.weapon:getID(),
-                    StockFolded = self.weapon:getModData().StockFolded,
-                })
-            end
-        end
-    end
+    Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     return true
 end
 
