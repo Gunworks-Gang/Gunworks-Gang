@@ -1,6 +1,7 @@
 local Server = {}
 
 local Ammo = require("WeaponSystems/Utils/AmmoUtils")
+local RateOfFire = require('WeaponSystems/Utils/RateOfFire')
 
 function Server.getWeaponById(player, itemId)
     if not player or not itemId then return nil end
@@ -88,6 +89,18 @@ function Server.OnClientCommand(module, command, player, args)
         sendServerCommand(player, "SWMG", "applyMagazineAmmoProfile", {
             itemId = item:getID(),
             bulletType = bulletType
+        })
+    elseif command == "firemode" then
+        local weapon = RateOfFire.GetWeaponById(player, args.itemId)
+        if not weapon then return end
+
+        if args.firemode then weapon:setFireMode(args.firemode) end
+        RateOfFire.RecoilDelayAdjuster(player, weapon)
+
+        sendServerCommand(player, "SWMG", "applyWeapon", {
+            itemId = weapon:getID(),
+            firemode = weapon:getFireMode(),
+            recoilDelay = weapon:getRecoilDelay()
         })
     end
 end
