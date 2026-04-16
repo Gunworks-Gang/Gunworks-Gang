@@ -5,11 +5,12 @@ local Animations = {}
 -------------------------------------------------
 Animations.WeaponsWithAnimatedParts = {}
 
---- Register a single weapon with custom callback function to handle swaps.
----@param fullType string       fullType e.g. "Base.M16A3"
----@param modelFunction function  function to handle model swaps
-function Animations.RegisterWeaponWithAnimatedParts(fullType, modelFunction)
-    Animations.WeaponsWithAnimatedParts[fullType] = modelFunction
+--- Register a single weapon with animated moving parts.
+---@param fullType string  fullType e.g. "Base.M16A3"
+---@param entry table      { attachments = { open = "Part.Open", locked = "Part.Locked" } }
+---                     OR { models     = { open = "Sprite_Open", locked = "Sprite_Locked" } }
+function Animations.RegisterWeaponWithAnimatedParts(fullType, entry)
+    Animations.WeaponsWithAnimatedParts[fullType] = entry
 end
 
 function Animations.CallSyncHandWeaponFields(player, weapon)
@@ -24,9 +25,14 @@ function Animations.CallSyncHandWeaponFields(player, weapon)
 end
 
 function Animations.CallAnimationFunction(weapon, open)
-    local modelFn = Animations.WeaponsWithAnimatedParts[weapon:getFullType()]
-    if modelFn then
-        modelFn(weapon, open)
+    local entry = Animations.WeaponsWithAnimatedParts[weapon:getFullType()]
+    if not entry then return end
+    local key = open and "open" or "locked"
+    if entry.models then
+        weapon:setWeaponSprite(entry.models[key])
+    end
+    if entry.attachments then
+        weapon:attachWeaponPart(instanceItem(entry.attachments[key]), true)
     end
 end
 
