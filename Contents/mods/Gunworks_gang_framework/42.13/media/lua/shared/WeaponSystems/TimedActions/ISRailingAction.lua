@@ -27,7 +27,7 @@ function ISRailingMount:start()
             self.accessoryItem = self.character:getInventory():getItemById(self.accessoryItem:getID())
         end
     end
-    self:setOverrideHandModels(self.weapon, nil)
+    Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     self:setActionAnim(CharacterActionAnims.Craft)
 end
 
@@ -82,7 +82,7 @@ function ISRailingUnmount:start()
     if isClient() and self.weapon then
         self.weapon = self.character:getInventory():getItemById(self.weapon:getID())
     end
-    self:setOverrideHandModels(self.weapon, nil)
+    Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     self:setActionAnim(CharacterActionAnims.Craft)
 end
 

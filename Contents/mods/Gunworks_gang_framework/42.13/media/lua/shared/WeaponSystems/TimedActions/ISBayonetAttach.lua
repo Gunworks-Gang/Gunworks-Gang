@@ -27,7 +27,7 @@ function ISBayonetAttach:start()
             self.bayonetKnife = self.character:getInventory():getItemById(self.bayonetKnife:getID())
         end
     end
-    self:setOverrideHandModels(self.weapon, nil)
+    Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     self:setActionAnim(CharacterActionAnims.Craft)
 end
 
@@ -77,7 +77,7 @@ function ISBayonetRemove:start()
     if isClient() and self.weapon then
         self.weapon = self.character:getInventory():getItemById(self.weapon:getID())
     end
-    self:setOverrideHandModels(self.weapon, nil)
+    Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     self:setActionAnim(CharacterActionAnims.Craft)
 end
 

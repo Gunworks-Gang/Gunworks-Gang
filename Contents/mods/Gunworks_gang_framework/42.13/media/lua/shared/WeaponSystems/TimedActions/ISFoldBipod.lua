@@ -19,7 +19,7 @@ function ISFoldBipod:start()
     if isClient() and self.weapon then
         self.weapon = self.character:getInventory():getItemById(self.weapon:getID())
     end
-    self:setOverrideHandModels(self.weapon, nil)
+    Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     self:setActionAnim(self.animation)
 end
 
