@@ -1,9 +1,9 @@
-require("WeaponSystems/Utils/CustomStatsAttachmentsUtil")
+require("WeaponSystems/Utils/CustomStatsAttachments")
 
-local FoldingStock = require("WeaponSystems/Utils/FoldingStockUtils")
-local FoldingBipod = require("WeaponSystems/Utils/FoldingBipodUtils")
+local FoldingStock = require("WeaponSystems/Utils/FoldingStock")
+local FoldingBipod = require("WeaponSystems/Utils/FoldingBipod")
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
-local Underbarrel  = require("WeaponSystems/Utils/UnderbarrelUtils")
+local Underbarrel  = require("WeaponSystems/Utils/Underbarrel")
 
 local function restoreContainer(container)
     if not container then return end

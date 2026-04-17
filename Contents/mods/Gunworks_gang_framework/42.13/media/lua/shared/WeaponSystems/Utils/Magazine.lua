@@ -170,7 +170,7 @@ function Magazine.SaveMagazineType(gun, magType)
     if not gun or not magType then return end
     local modData = gun:getModData()
     modData.MagazineType = magType
-    -- Set the cycle index so the next reload starts after this mag type
+
     local typeList = Magazine.GetMagazineTypesForGun(gun)
     if typeList then
         for i, t in ipairs(typeList) do
@@ -192,6 +192,70 @@ function Magazine.ClearMagazineType(gun)
     if not gun then return end
     local modData = gun:getModData()
     modData.MagazineType = nil
+end
+
+---------------------------------------------------------------
+-- Visual Magazine System
+--
+-- Driven by a single anim event that modders place in AnimSet XMLs:
+--   InsertMag – hand is near the magazine well
+--
+-- On insert (reload):  attaches the visual Clip part to the weapon.
+-- On eject (unload):   detaches the visual Clip part from the weapon.
+-- On stop/complete the weapon's visual Clip part is synced to the
+-- actual clip state and the weapon is re-synced for MP.
+---------------------------------------------------------------
+
+-- Sync the weapon's visual magazine part to its logical clip state.
+function Magazine.manageMagazineAttachment(weapon, magTypeOverride)
+    if not weapon then return end
+    local magType = magTypeOverride or weapon:getMagazineType()
+    if not magType or magType == "" then return end
+
+    if weapon:isContainsClip() then
+        local currentClip = weapon:getWeaponPart("Clip")
+        if currentClip and currentClip:getFullType() ~= magType then
+            weapon:detachWeaponPart(currentClip)
+            currentClip = nil
+        end
+        if not currentClip then
+            local magPart = instanceItem(magType)
+            if magPart then
+                weapon:attachWeaponPart(magPart, true)
+            end
+        end
+    else
+        local clipPart = weapon:getWeaponPart("Clip")
+        if clipPart then
+            weapon:detachWeaponPart(clipPart)
+        end
+    end
+end
+
+-- Force-attach the visual Clip part on the weapon model (ignores clip state).
+function Magazine.attachMagazineVisual(weapon, magTypeOverride)
+    if not weapon then return end
+    local magType = magTypeOverride or weapon:getMagazineType()
+    if not magType or magType == "" then return end
+    local currentClip = weapon:getWeaponPart("Clip")
+    if currentClip and currentClip:getFullType() ~= magType then
+        weapon:detachWeaponPart(currentClip)
+        currentClip = nil
+    end
+    if currentClip then return end
+    local magPart = instanceItem(magType)
+    if magPart then
+        weapon:attachWeaponPart(magPart, true)
+    end
+end
+
+-- Force-detach the visual Clip part from the weapon model (ignores clip state).
+function Magazine.detachMagazineVisual(weapon)
+    if not weapon then return end
+    local clipPart = weapon:getWeaponPart("Clip")
+    if clipPart then
+        weapon:detachWeaponPart(clipPart)
+    end
 end
 
 return Magazine

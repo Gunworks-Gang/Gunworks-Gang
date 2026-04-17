@@ -1,12 +1,12 @@
 require "ISUI/ISFirearmRadialMenu"
 
-local FoldingStock      = require("WeaponSystems/Utils/FoldingStockUtils")
-local FoldingBipod      = require("WeaponSystems/Utils/FoldingBipodUtils")
-local Bayonet           = require("WeaponSystems/Utils/BayonetUtils")
-local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachmentUtils")
-local Underbarrel       = require("WeaponSystems/Utils/UnderbarrelUtils")
-local Magazine          = require("WeaponSystems/Utils/MagazineUtils")
-local Ammo              = require("WeaponSystems/Utils/AmmoUtils")
+local FoldingStock      = require("WeaponSystems/Utils/FoldingStock")
+local FoldingBipod      = require("WeaponSystems/Utils/FoldingBipod")
+local Bayonet           = require("WeaponSystems/Utils/Bayonet")
+local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachment")
+local Underbarrel       = require("WeaponSystems/Utils/Underbarrel")
+local Magazine          = require("WeaponSystems/Utils/Magazine")
+local Ammo              = require("WeaponSystems/Utils/Ammo")
 
 -------------------------------------------------
 -- BaseCommand  (mirrors ISFirearmRadialMenu pattern)
@@ -266,8 +266,8 @@ end
 local function displaySubRadial(playerNum)
     local menu = getPlayerRadialMenu(playerNum)
     local cx = getPlayerScreenLeft(playerNum) + getPlayerScreenWidth(playerNum) / 2
-    local cy = getPlayerScreenTop(playerNum)  + getPlayerScreenHeight(playerNum) / 2
-    menu:setX(cx - menu:getWidth()  / 2)
+    local cy = getPlayerScreenTop(playerNum) + getPlayerScreenHeight(playerNum) / 2
+    menu:setX(cx - menu:getWidth() / 2)
     menu:setY(cy - menu:getHeight() / 2)
     menu:addToUIManager()
 end

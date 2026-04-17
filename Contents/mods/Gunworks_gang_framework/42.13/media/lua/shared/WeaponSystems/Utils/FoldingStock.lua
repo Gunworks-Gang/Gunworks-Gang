@@ -2,12 +2,14 @@ local FoldingStock = {}
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
 -------------------------------------------------
--- Single source of truth: weaponType -> { modifiers, models?, attachments? }
--- modifiers:    array of StatsFactory modifier functions (applied when folded)
+-- Single source of truth: weaponType -> { modifiers, models?, attachments?, initialState? }
+-- modifiers:    { folded = { ... }, deployed = { ... } }  (each key is optional)
+--              StatsFactory modifier functions applied in the matching state.
+-- initialState: "folded" (default) | "deployed"  — state on first use (no saved ModData)
 --
 -- Visual mode (pick ONE):
---   models:      { unfolded = "SPRITE_NAME", folded = "SPRITE_NAME" }
---   attachments: { partType = "stock", unfolded = "MyMod.StockOpen", folded = "MyMod.StockClosed" }
+--   models:      { deployed = "SPRITE_NAME", folded = "SPRITE_NAME" }
+--   attachments: { partType = "stock", deployed = "MyMod.StockOpen", folded = "MyMod.StockClosed" }
 -------------------------------------------------
 FoldingStock.WeaponsWithFoldableStock = {}
 
@@ -31,7 +33,7 @@ end
 
 --- Register a weapon as having a foldable stock
 --- @param weaponType string   e.g. "MyMod.MyAK"
---- @param entry table  { modifiers = { ... }, models = { ... }?, attachments = { ... }? }
+--- @param entry table  { modifiers = { folded = { ... }?, deployed = { ... }? }, models = { ... }?, attachments = { ... }?, initialState = "folded"|"deployed"? }
 function FoldingStock.RegisterWeapon(weaponType, entry)
     FoldingStock.WeaponsWithFoldableStock[weaponType] = entry
 end
@@ -77,10 +79,10 @@ function FoldingStock.SwapStockVisual(weapon, folded)
 
     if entry.attachments then
         local att = entry.attachments
-        local itemType = folded and att.folded or att.unfolded
+        local itemType = folded and att.folded or att.deployed
         FoldingStock.SwapStockAttachment(weapon, att.partType, itemType)
     elseif entry.models then
-        local newSprite = folded and entry.models.folded or entry.models.unfolded
+        local newSprite = folded and entry.models.folded or entry.models.deployed
         weapon:setWeaponSprite(newSprite)
     end
 end
@@ -108,20 +110,24 @@ function FoldingStock.RestoreFoldedStockState(weapon)
     if not weapon then return end
     if not FoldingStock.HasFoldableStock(weapon) then return end
 
-    local isFolded = FoldingStock.IsStockFolded(weapon)
-    if isFolded then
-        FoldingStock.SwapStockVisual(weapon, true)
-        FoldingStock.FoldedStockAdjustStats(weapon)
+    local md = weapon:getModData()
+    if md.StockFolded == nil then
+        local entry = FoldingStock.WeaponsWithFoldableStock[weapon:getFullType()]
+        local initial = entry and entry.initialState or "folded"
+        md.StockFolded = (initial == "folded")
     end
+    FoldingStock.SwapStockVisual(weapon, md.StockFolded)
+    FoldingStock.FoldedStockAdjustStats(weapon)
 end
 
 -------------------------------------------------
 -- Register modifier layer with StatsFactory
 -------------------------------------------------
 StatsFactory.RegisterModifierLayer("FoldingStock", function(weapon)
-    if not FoldingStock.IsStockFolded(weapon) then return nil end
     local entry = FoldingStock.WeaponsWithFoldableStock[weapon:getFullType()]
-    return entry and entry.modifiers
+    if not entry or not entry.modifiers then return nil end
+    local state = FoldingStock.IsStockFolded(weapon) and "folded" or "deployed"
+    return entry.modifiers[state]
 end, FoldingStock.RestoreStats)
 
 return FoldingStock
