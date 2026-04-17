@@ -5,7 +5,7 @@ require("TimedActions/ISInsertMagazine")
 require("TimedActions/ISEjectMagazine")
 
 local Animations = require("WeaponSystems/Utils/Animations")
-local Magazine = require("WeaponSystems/Utils/MagazineUtils")
+local Magazine = require("WeaponSystems/Utils/Magazine")
 
 --------------------------------------------------------------------------
 --- ISReloadWeaponAction

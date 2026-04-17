@@ -1,4 +1,4 @@
-local Ammo = require("WeaponSystems/Utils/AmmoUtils")
+local Ammo = require("WeaponSystems/Utils/Ammo")
 local Animations = require("WeaponSystems/Utils/Animations")
 local RateOfFire = require('WeaponSystems/Utils/RateOfFire')
 local Client = {}

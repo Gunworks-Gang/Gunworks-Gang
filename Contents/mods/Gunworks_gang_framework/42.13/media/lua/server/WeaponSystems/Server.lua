@@ -1,6 +1,6 @@
 local Server = {}
 
-local Ammo = require("WeaponSystems/Utils/AmmoUtils")
+local Ammo = require("WeaponSystems/Utils/Ammo")
 local RateOfFire = require('WeaponSystems/Utils/RateOfFire')
 
 function Server.getWeaponById(player, itemId)

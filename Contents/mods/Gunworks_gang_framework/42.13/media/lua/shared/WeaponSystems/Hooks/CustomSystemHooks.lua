@@ -5,10 +5,10 @@ require("TimedActions/ISInsertMagazine")
 require("TimedActions/ISEjectMagazine")
 require("TimedActions/ISRackFirearm")
 
-local Magazine = require("WeaponSystems/Utils/MagazineUtils")
-local Ammo = require("WeaponSystems/Utils/AmmoUtils")
-local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
-local Underbarrel = require("WeaponSystems/Utils/UnderbarrelUtils")
+local Magazine = require("WeaponSystems/Utils/Magazine")
+local Ammo = require("WeaponSystems/Utils/Ammo")
+local Bayonet = require("WeaponSystems/Utils/Bayonet")
+local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local OrdnanceFactory = require("ExplosivesSystems/OrdnanceFactory")
 
 -------------------------------------------------

@@ -1,5 +1,5 @@
 local GunworksKeybinds = require("WeaponSystems/ISUI/GunworksKeybinds")
-local Underbarrel = require("WeaponSystems/Utils/UnderbarrelUtils")
+local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 
 -------------------------------------------------
 -- Key Bindings

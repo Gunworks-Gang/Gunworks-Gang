@@ -2,7 +2,7 @@ require "TimedActions/ISUpgradeWeapon"
 require "TimedActions/ISRemoveWeaponUpgrade"
 
 local StatsFactory              = require("WeaponSystems/Utils/StatsFactory")
-local Underbarrel               = require("WeaponSystems/Utils/UnderbarrelUtils")
+local Underbarrel               = require("WeaponSystems/Utils/Underbarrel")
 
 -------------------------------------------------
 -- After a weapon part is attached or removed via the

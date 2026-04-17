@@ -1,6 +1,6 @@
 require("TimedActions/ISBaseTimedAction")
 
-local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachmentUtils")
+local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachment")
 local Animations = require("WeaponSystems/Utils/Animations")
 
 -------------------------------------------------

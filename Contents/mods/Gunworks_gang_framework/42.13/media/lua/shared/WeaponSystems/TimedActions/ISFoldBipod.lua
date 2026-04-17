@@ -1,6 +1,6 @@
 require("TimedActions/ISBaseTimedAction")
 
-local FoldingBipod = require("WeaponSystems/Utils/FoldingBipodUtils")
+local FoldingBipod = require("WeaponSystems/Utils/FoldingBipod")
 local Animations = require("WeaponSystems/Utils/Animations")
 
 -------------------------------------------------

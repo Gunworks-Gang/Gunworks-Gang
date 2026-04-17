@@ -1,6 +1,6 @@
 require("TimedActions/ISBaseTimedAction")
 
-local FoldingStock = require("WeaponSystems/Utils/FoldingStockUtils")
+local FoldingStock = require("WeaponSystems/Utils/FoldingStock")
 local Animations = require("WeaponSystems/Utils/Animations")
 
 -------------------------------------------------

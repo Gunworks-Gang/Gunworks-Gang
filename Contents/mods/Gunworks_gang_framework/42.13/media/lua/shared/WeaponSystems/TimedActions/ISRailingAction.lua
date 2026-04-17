@@ -1,7 +1,7 @@
 require("TimedActions/ISBaseTimedAction")
 
-local Railing     = require("WeaponSystems/Utils/RailingUtils")
-local Underbarrel = require("WeaponSystems/Utils/UnderbarrelUtils")
+local Railing     = require("WeaponSystems/Utils/Railing")
+local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local Animations  = require("WeaponSystems/Utils/Animations")
 
 -------------------------------------------------

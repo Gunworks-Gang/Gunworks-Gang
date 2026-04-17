@@ -1,6 +1,6 @@
 require("TimedActions/ISBaseTimedAction")
 
-local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
+local Bayonet = require("WeaponSystems/Utils/Bayonet")
 local Animations = require("WeaponSystems/Utils/Animations")
 
 -------------------------------------------------

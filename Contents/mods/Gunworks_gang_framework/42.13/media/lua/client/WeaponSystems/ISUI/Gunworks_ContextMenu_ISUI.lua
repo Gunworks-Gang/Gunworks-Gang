@@ -1,15 +1,15 @@
 require("ISUI/ISInventoryPaneContextMenu")
 
-local FoldingStock = require("WeaponSystems/Utils/FoldingStockUtils")
-local FoldingBipod = require("WeaponSystems/Utils/FoldingBipodUtils")
-local Bayonet = require("WeaponSystems/Utils/BayonetUtils")
-local Magazine = require("WeaponSystems/Utils/MagazineUtils")
-local Ammo = require("WeaponSystems/Utils/AmmoUtils")
-local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachmentUtils")
-local Railing = require("WeaponSystems/Utils/RailingUtils")
+local FoldingStock = require("WeaponSystems/Utils/FoldingStock")
+local FoldingBipod = require("WeaponSystems/Utils/FoldingBipod")
+local Bayonet = require("WeaponSystems/Utils/Bayonet")
+local Magazine = require("WeaponSystems/Utils/Magazine")
+local Ammo = require("WeaponSystems/Utils/Ammo")
+local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachment")
+local Railing = require("WeaponSystems/Utils/Railing")
 local PreventRemoval = require("WeaponSystems/Utils/PreventRemovalsUtil")
-local Underbarrel = require("WeaponSystems/Utils/UnderbarrelUtils")
-local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusivesUtil")
+local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
+local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusives")
 
 -------------------------------------------------
 -- Foldable Stock Context Menu

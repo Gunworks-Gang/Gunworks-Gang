@@ -4,7 +4,7 @@ require("ISUI/ISLabel")
 require("ISUI/ISScrollingListBox")
 require("ISUI/ISItemDropBox")
 
-local Ammo = require("WeaponSystems/Utils/AmmoUtils")
+local Ammo = require("WeaponSystems/Utils/Ammo")
 local GunworksKeybinds = require("WeaponSystems/ISUI/GunworksKeybinds")
 
 -----------------------------------------------------------
