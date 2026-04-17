@@ -7,7 +7,7 @@ local Magazine = require("WeaponSystems/Utils/Magazine")
 local Ammo = require("WeaponSystems/Utils/Ammo")
 local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachment")
 local Railing = require("WeaponSystems/Utils/Railing")
-local PreventRemoval = require("WeaponSystems/Utils/PreventRemovalsUtil")
+local PreventRemoval = require("WeaponSystems/Utils/PreventRemovals")
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusives")
 
