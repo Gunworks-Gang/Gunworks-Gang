@@ -9,6 +9,7 @@ local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachmentUtils")
 local Railing = require("WeaponSystems/Utils/RailingUtils")
 local PreventRemoval = require("WeaponSystems/Utils/PreventRemovalsUtil")
 local Underbarrel = require("WeaponSystems/Utils/UnderbarrelUtils")
+local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusivesUtil")
 
 -------------------------------------------------
 -- Foldable Stock Context Menu
@@ -478,7 +479,33 @@ end
 
 Events.OnFillInventoryObjectContextMenu.Add(filterPermanentParts)
 
--- Safety net: block the action itself in case another mod re-adds the option
+-------------------------------------------------
+-- Upgrade Exclusives: hide vanilla "Upgrade" options
+-- for parts blocked by an exclusive already on the weapon
+-------------------------------------------------
+local function filterExclusiveUpgrades(playerid, context, items)
+    local optionName = getText("ContextMenu_Add_Weapon_Upgrade")
+    local option = context:getOptionFromName(optionName)
+    if not option then return end
+
+    local subMenu = option.subOption and context:getSubMenu(option.subOption)
+    if not subMenu then return end
+
+    for i = #subMenu.options, 0, -1 do
+        local v = subMenu.options[i]
+        if v and v.target and instanceof(v.target, "HandWeapon") and v.param1 then
+            if UpgradeExclusives.IsBlockedByExclusive(v.target, v.param1:getFullType()) then
+                subMenu:removeOptionByName(v.name)
+            end
+        end
+    end
+
+    if #subMenu.options <= 0 then
+        context:removeOptionByName(optionName)
+    end
+end
+
+Events.OnFillInventoryObjectContextMenu.Add(filterExclusiveUpgrades)
 local _onRemoveUpgradeWeapon_Original = ISInventoryPaneContextMenu.onRemoveUpgradeWeapon
 ISInventoryPaneContextMenu.onRemoveUpgradeWeapon = function(weapon, part, player)
     if part and PreventRemoval.IsPermanent(part:getFullType()) then

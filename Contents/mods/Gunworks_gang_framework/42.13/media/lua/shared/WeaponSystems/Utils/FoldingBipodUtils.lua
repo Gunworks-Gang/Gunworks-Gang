@@ -2,8 +2,10 @@ local FoldingBipod = {}
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
 -------------------------------------------------
--- Single source of truth: weaponType -> { modifiers, models?, attachments? }
--- modifiers:    array of StatsFactory modifier functions (applied when deployed)
+-- Single source of truth: weaponType -> { modifiers, models?, attachments?, initialState? }
+-- modifiers:    { folded = { ... }, deployed = { ... } }  (each key is optional)
+--              StatsFactory modifier functions applied in the matching state.
+-- initialState: "folded" (default) | "deployed"  — state on first use (no saved ModData)
 --
 -- Visual mode (pick ONE):
 --   models:      { folded = "SPRITE_NAME", deployed = "SPRITE_NAME" }
@@ -31,7 +33,7 @@ end
 
 --- Register a weapon as having a foldable bipod
 --- @param weaponType string   e.g. "MyMod.MyLMG"
---- @param entry table  { modifiers = { ... }, models = { ... }?, attachments = { ... }? }
+--- @param entry table  { modifiers = { folded = { ... }?, deployed = { ... }? }, models = { ... }?, attachments = { ... }?, initialState = "folded"|"deployed"? }
 function FoldingBipod.RegisterWeapon(weaponType, entry)
     FoldingBipod.WeaponsWithFoldableBipod[weaponType] = entry
 end
@@ -108,20 +110,24 @@ function FoldingBipod.RestoreDeployedBipodState(weapon)
     if not weapon then return end
     if not FoldingBipod.HasFoldableBipod(weapon) then return end
 
-    local isDeployed = FoldingBipod.IsBipodDeployed(weapon)
-    if isDeployed then
-        FoldingBipod.SwapBipodVisual(weapon, true)
-        FoldingBipod.DeployedBipodAdjustStats(weapon)
+    local md = weapon:getModData()
+    if md.BipodDeployed == nil then
+        local entry = FoldingBipod.WeaponsWithFoldableBipod[weapon:getFullType()]
+        local initial = entry and entry.initialState or "folded"
+        md.BipodDeployed = (initial == "deployed")
     end
+    FoldingBipod.SwapBipodVisual(weapon, md.BipodDeployed)
+    FoldingBipod.DeployedBipodAdjustStats(weapon)
 end
 
 -------------------------------------------------
 -- Register modifier layer with StatsFactory
 -------------------------------------------------
 StatsFactory.RegisterModifierLayer("FoldingBipod", function(weapon)
-    if not FoldingBipod.IsBipodDeployed(weapon) then return nil end
     local entry = FoldingBipod.WeaponsWithFoldableBipod[weapon:getFullType()]
-    return entry and entry.modifiers
+    if not entry or not entry.modifiers then return nil end
+    local state = FoldingBipod.IsBipodDeployed(weapon) and "deployed" or "folded"
+    return entry.modifiers[state]
 end, FoldingBipod.RestoreStats)
 
 return FoldingBipod
