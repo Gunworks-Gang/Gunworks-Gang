@@ -1,11 +1,6 @@
 local ExplosivesSystems = require("ExplosivesSystems/Init")
 local Payloads          = {}
 
---------------------------------------------------------------------
---- Create a HandWeapon from the source item, build an IsoTrap,
---- and detonate immediately. Explosion stats come directly from
---- the item's script definition.
---------------------------------------------------------------------
 function Payloads.Detonate(square, shooter, sourceWeapon, parentItem)
     if not square then return end
 
@@ -36,11 +31,6 @@ function Payloads.Detonate(square, shooter, sourceWeapon, parentItem)
     explosive:place()
 end
 
---------------------------------------------------------------------
---- Resolve ordnance impact: detonate if explosive, then fire hooks.
---- By the time this is called, timing decisions (immediate vs delay)
---- have already been made by the physics engine.
---------------------------------------------------------------------
 function Payloads.ResolveImpact(ordnance)
     if not ordnance then return end
 

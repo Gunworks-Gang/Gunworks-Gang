@@ -22,7 +22,7 @@ OrdnanceFactory.Defaults     = {
     soundDetonate       = nil,
     parentItem          = nil, -- ammo only: item whose script stats are used for detonation
     explosionFXObject   = nil, -- item type to spawn as 3D FX (e.g. "MWA.nade_explosion")
-    explosionFXDuration = 500, -- ms the FX object remains visible before being removed
+    explosionFXDuration = 5,   -- ms the FX object remains visible before being removed
 }
 
 --------------------------------------------------------------------
