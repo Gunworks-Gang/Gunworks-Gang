@@ -16,6 +16,7 @@ RateOfFire.spreadState              = {}
 RateOfFire.SPREAD_INITIAL_DEFAULT   = 0.1
 RateOfFire.SPREAD_SUSTAINED_DEFAULT = 0.1
 RateOfFire.SPREAD_MAX_DEFAULT       = 3
+RateOfFire.SpreadPartModifiers      = {}
 
 -------------------------------------------------
 -- Registry tables  (keyed by weapon fullType)
@@ -40,6 +41,22 @@ function RateOfFire.RegisterWeapons(weaponTypes, entry)
     end
 end
 
+--- Register a spread multiplier for a single weapon part fullType.
+--- When a weapon has this part attached, sustainedSpread and maxSpread are multiplied.
+---@param partType string         fullType of the part e.g. "MWA.ForegripVert"
+---@param entry table             { sustainedSpreadMult = number?, maxSpreadMult = number? }
+function RateOfFire.RegisterSpreadPartModifier(partType, entry)
+    RateOfFire.SpreadPartModifiers[partType] = entry
+end
+
+--- Convenience: register spread multipliers for multiple part types at once.
+---@param modifiers table         { [partType] = { sustainedSpreadMult = number?, maxSpreadMult = number? } }
+function RateOfFire.RegisterSpreadPartModifiers(modifiers)
+    for partType, entry in pairs(modifiers) do
+        RateOfFire.SpreadPartModifiers[partType] = entry
+    end
+end
+
 -------------------------------------------------
 -- Query helpers
 -------------------------------------------------
@@ -50,11 +67,29 @@ function RateOfFire.getSpreadProfile(weapon)
     if not weapon then return nil end
     local profile = RateOfFire.WeaponProfiles[weapon:getFullType()]
     if not profile or not profile.enableSpread then return nil end
-    return {
+
+    local sp = {
         initialSpread   = profile.initialSpread or RateOfFire.SPREAD_INITIAL_DEFAULT,
         sustainedSpread = profile.sustainedSpread or RateOfFire.SPREAD_SUSTAINED_DEFAULT,
         maxSpread       = profile.maxSpread or RateOfFire.SPREAD_MAX_DEFAULT,
     }
+
+    local parts = weapon:getAllWeaponParts()
+    if parts then
+        for i = 0, parts:size() - 1 do
+            local mod = RateOfFire.SpreadPartModifiers[parts:get(i):getFullType()]
+            if mod then
+                if mod.sustainedSpreadMult then
+                    sp.sustainedSpread = sp.sustainedSpread * mod.sustainedSpreadMult
+                end
+                if mod.maxSpreadMult then
+                    sp.maxSpread = sp.maxSpread * mod.maxSpreadMult
+                end
+            end
+        end
+    end
+
+    return sp
 end
 
 function RateOfFire.getWeaponRPM(weapon)
