@@ -1,6 +1,7 @@
 local ExplosivesSystems                   = require("ExplosivesSystems/Init")
 local Payloads                            = require("ExplosivesSystems/Payloads")
 local OrdnanceFactory                     = require("ExplosivesSystems/OrdnanceFactory")
+local ExplosionFX                         = require("ExplosivesSystems/ExplosionFX")
 
 ExplosivesSystems.activeOrdnance          = {}
 ExplosivesSystems.RANDOM                  = newrandom()
@@ -196,6 +197,14 @@ end
 function ExplosivesSystems.forceDetonate(ord, index)
     ExplosivesSystems.removeWorldItem(ord)
     Payloads.ResolveImpact(ord)
+    if ord.params and ord.params.explosionFXObject then
+        ExplosionFX.PlayEffect(
+            ord.square,
+            ord.params.explosionFXObject,
+            ord.x, ord.y, ord.z,
+            ord.params.explosionFXDuration
+        )
+    end
     ord.active = false
     table.remove(ExplosivesSystems.activeOrdnance, index)
     return true

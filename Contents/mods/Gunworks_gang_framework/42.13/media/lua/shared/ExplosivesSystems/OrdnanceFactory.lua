@@ -5,27 +5,29 @@ local OrdnanceFactory          = {}
 --------------------------------------------------------------------
 OrdnanceFactory.Defaults       = {
     -- Throw / flight
-    throwForce       = 8,    -- initial velocity multiplier (scales hSpeed)
-    maxThrowDist     = 20,   -- max throw / launch distance in cells
-    worldModel       = nil,  -- world item shown in flight (nil = use weapon fullType)
-    forwardOffset    = 0.50, -- spawn origin offset from player facing
-    heightOffset     = 0.55, -- spawn height offset
-    floorBounces     = 0,    -- bounces before settling (0 = no bounce)
-    bounceEnergy     = 0.45, -- energy retained per floor bounce
-    throwSpeed       = 12,   -- flight speed in cells/sec (guided phase)
-    arcFactor        = 0.12, -- arc height = distance * arcFactor
-    maxArc           = 1.5,  -- maximum arc height in cells
-    soundThrow       = nil,  -- sound on throw
-    soundBounce      = nil,  -- sound on bounce
-    explosionPower   = 0,
-    explosionRange   = 0,
-    fireRange        = 0,
-    firePower        = 0,
-    smokeRange       = 0,
-    noiseRange       = 0,
-    detonateOnImpact = false,
-    detonationDelay  = 0,
-    soundDetonate    = nil,
+    throwForce          = 8,         -- initial velocity multiplier (scales hSpeed)
+    maxThrowDist        = 20,        -- max throw / launch distance in cells
+    worldModel          = nil,       -- world item shown in flight (nil = use weapon fullType)
+    forwardOffset       = 0.50,      -- spawn origin offset from player facing
+    heightOffset        = 0.55,      -- spawn height offset
+    floorBounces        = 0,         -- bounces before settling (0 = no bounce)
+    bounceEnergy        = 0.45,      -- energy retained per floor bounce
+    throwSpeed          = 12,        -- flight speed in cells/sec (guided phase)
+    arcFactor           = 0.12,      -- arc height = distance * arcFactor
+    maxArc              = 1.5,       -- maximum arc height in cells
+    soundThrow          = nil,       -- sound on throw
+    soundBounce         = nil,       -- sound on bounce
+    explosionPower      = 0,
+    explosionRange      = 0,
+    fireRange           = 0,
+    firePower           = 0,
+    smokeRange          = 0,
+    noiseRange          = 0,
+    detonateOnImpact    = false,
+    detonationDelay     = 0,
+    soundDetonate       = nil,
+    explosionFXObject   = nil,      -- item type to spawn as 3D FX (e.g. "MWA.nade_explosion")
+    explosionFXDuration = 500,      -- ms the FX object remains visible before being removed
 }
 
 --------------------------------------------------------------------
