@@ -1,63 +1,34 @@
-local OrdnanceFactory          = {}
+local OrdnanceFactory        = {}
 
 --------------------------------------------------------------------
 --- Default ordnance parameters – merged throw + explosive config
 --------------------------------------------------------------------
-OrdnanceFactory.Defaults       = {
+OrdnanceFactory.Defaults     = {
     -- Throw / flight
-    throwForce       = 8,    -- initial velocity multiplier (scales hSpeed)
-    maxThrowDist     = 20,   -- max throw / launch distance in cells
-    worldModel       = nil,  -- world item shown in flight (nil = use weapon fullType)
-    forwardOffset    = 0.50, -- spawn origin offset from player facing
-    heightOffset     = 0.55, -- spawn height offset
-    floorBounces     = 0,    -- bounces before settling (0 = no bounce)
-    bounceEnergy     = 0.45, -- energy retained per floor bounce
-    throwSpeed       = 12,   -- flight speed in cells/sec (guided phase)
-    arcFactor        = 0.12, -- arc height = distance * arcFactor
-    maxArc           = 1.5,  -- maximum arc height in cells
-    soundThrow       = nil,  -- sound on throw
-    soundBounce      = nil,  -- sound on bounce
-    explosionPower   = 0,
-    explosionRange   = 0,
-    fireRange        = 0,
-    firePower        = 0,
-    smokeRange       = 0,
-    noiseRange       = 0,
-    detonateOnImpact = false,
-    detonationDelay  = 0,
-    soundDetonate    = nil,
+    throwForce          = 8,    -- initial velocity multiplier (scales hSpeed)
+    maxThrowDist        = 20,   -- max throw / launch distance in cells
+    worldModel          = nil,  -- world item shown in flight (nil = use weapon fullType)
+    forwardOffset       = 0.50, -- spawn origin offset from player facing
+    heightOffset        = 0.55, -- spawn height offset
+    floorBounces        = 0,    -- bounces before settling (0 = no bounce)
+    bounceEnergy        = 0.45, -- energy retained per floor bounce
+    throwSpeed          = 12,   -- flight speed in cells/sec (guided phase)
+    arcFactor           = 0.12, -- arc height = distance * arcFactor
+    maxArc              = 1.5,  -- maximum arc height in cells
+    soundThrow          = nil,  -- sound on throw
+    soundBounce         = nil,  -- sound on bounce
+    detonateOnImpact    = false,
+    detonationDelay     = 0,
+    soundDetonate       = nil,
+    parentItem          = nil, -- ammo only: item whose script stats are used for detonation
+    explosionFXObject   = nil, -- item type to spawn as 3D FX (e.g. "MWA.nade_explosion")
+    explosionFXDuration = 500, -- ms the FX object remains visible before being removed
 }
-
---------------------------------------------------------------------
---- Explosive stat mapping: param key → HandWeapon setter
---- (same pattern as WeaponSystems StatsFactory.Registry)
---------------------------------------------------------------------
-OrdnanceFactory.ExplosiveStats = {
-    explosionPower = "setExplosionPower",
-    explosionRange = "setExplosionRange",
-    fireRange      = "setFireRange",
-    firePower      = "setFireStartingEnergy",
-    smokeRange     = "setSmokeRange",
-    noiseRange     = "setNoiseRange",
-}
-
---------------------------------------------------------------------
---- Apply explosive params onto a HandWeapon item via the registry.
---------------------------------------------------------------------
-function OrdnanceFactory.ApplyExplosiveParams(weaponItem, params)
-    if not weaponItem or not params then return end
-    for key, setter in pairs(OrdnanceFactory.ExplosiveStats) do
-        local value = params[key]
-        if value ~= nil and weaponItem[setter] then
-            weaponItem[setter](weaponItem, value)
-        end
-    end
-end
 
 --------------------------------------------------------------------
 --- Single registry: weaponFullType → merged params table
 --------------------------------------------------------------------
-OrdnanceFactory.Registry = {}
+OrdnanceFactory.Registry     = {}
 
 --------------------------------------------------------------------
 --- Ammo registry: bulletFullType → merged params table
@@ -115,7 +86,7 @@ end
 
 function OrdnanceFactory.IsExplosive(fullType)
     local p = OrdnanceFactory.Registry[fullType]
-    return p ~= nil and (p.explosionPower or 0) > 0
+    return p ~= nil and (p.detonateOnImpact == true or (p.detonationDelay or 0) > 0)
 end
 
 --------------------------------------------------------------------
@@ -150,7 +121,7 @@ end
 
 function OrdnanceFactory.IsAmmoExplosive(bulletFullType)
     local p = OrdnanceFactory.AmmoRegistry[bulletFullType]
-    return p ~= nil and (p.explosionPower or 0) > 0
+    return p ~= nil and (p.detonateOnImpact == true or (p.detonationDelay or 0) > 0)
 end
 
 return OrdnanceFactory

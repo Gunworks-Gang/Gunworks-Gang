@@ -1,15 +1,13 @@
 local ExplosivesSystems = require("ExplosivesSystems/Init")
-local OrdnanceFactory   = require("ExplosivesSystems/OrdnanceFactory")
-
 local Payloads          = {}
 
 --------------------------------------------------------------------
---- Create a temporary HandWeapon configured with explosive params,
---- build an IsoTrap from it, and detonate immediately.
+--- Create a HandWeapon from the source item, build an IsoTrap,
+--- and detonate immediately. Explosion stats come directly from
+--- the item's script definition.
 --------------------------------------------------------------------
-function Payloads.Detonate(square, explosiveParams, shooter, sourceWeapon)
+function Payloads.Detonate(square, shooter, sourceWeapon, parentItem)
     if not square then return end
-    if not explosiveParams then return end
 
     local weaponItem = nil
 
@@ -18,11 +16,18 @@ function Payloads.Detonate(square, explosiveParams, shooter, sourceWeapon)
     end
 
     if not weaponItem or not instanceof(weaponItem, "HandWeapon") then
-        weaponItem = instanceItem("Base.PipeBomb")
+        weaponItem = instanceItem(parentItem or "Base.PipeBomb")
     end
 
     if not weaponItem then return end
-    OrdnanceFactory.ApplyExplosiveParams(weaponItem, explosiveParams)
+
+    if weaponItem:getExplosionPower() <= 0
+        and weaponItem:getSmokeRange() <= 0
+        and weaponItem:getFireRange() <= 0
+        and weaponItem:getNoiseRange() <= 0 then
+        return
+    end
+
     weaponItem:setExplosionTimer(0)
 
     local cell = square:getCell()
@@ -42,8 +47,8 @@ function Payloads.ResolveImpact(ordnance)
     local square = ordnance.square
 
     local params = ordnance.params
-    if params and (params.explosionPower or 0) > 0 and square then
-        Payloads.Detonate(square, params, ordnance.player, ordnance.sourceWeapon)
+    if params and square then
+        Payloads.Detonate(square, ordnance.player, ordnance.sourceWeapon, params.parentItem)
     end
 
     for i = 1, #ExplosivesSystems.ImpactHooks do
