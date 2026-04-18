@@ -22,6 +22,21 @@ function ISReloadWeaponAction:animEvent(event, parameter)
     end
 end
 
+local ISReloadWeaponAction_complete = ISReloadWeaponAction.complete
+function ISReloadWeaponAction:complete()
+    if Animations.IsWeaponWithCustomStates(self.gun:getFullType()) then
+        Animations.CheckStates(self.gun)
+    end
+    Animations.CallAnimate(self.character, self.gun, false)
+    return ISReloadWeaponAction_complete(self)
+end
+
+local ISReloadWeaponAction_stop = ISReloadWeaponAction.stop
+function ISReloadWeaponAction:stop()
+    Animations.CallAnimate(self.character, self.gun, false)
+    return ISReloadWeaponAction_stop(self)
+end
+
 local old_ISReloadWeaponAction_onShoot = ISReloadWeaponAction.onShoot
 Events.OnWeaponSwingHitPoint.Remove(ISReloadWeaponAction.onShoot)
 ISReloadWeaponAction.onShoot = function(player, weapon)
