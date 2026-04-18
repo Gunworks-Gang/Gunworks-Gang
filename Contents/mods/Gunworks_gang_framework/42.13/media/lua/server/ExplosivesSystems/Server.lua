@@ -406,7 +406,7 @@ function ExplosivesSystems.updateGuidedFlight(ord, index, scale, shouldRender)
                     )
                 end
 
-                if (ord.params.explosionPower or 0) > 0 then
+                if ord.params.detonateOnImpact or (ord.params.detonationDelay or 0) > 0 then
                     if ord.detonationTimer <= 0 then
                         return ExplosivesSystems.forceDetonate(ord, index)
                     end
@@ -643,7 +643,7 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
                 )
             end
 
-            if (ord.params.explosionPower or 0) > 0 then
+            if ord.params.detonateOnImpact or (ord.params.detonationDelay or 0) > 0 then
                 if ord.detonationTimer <= 0 then
                     return ExplosivesSystems.forceDetonate(ord, index)
                 end
