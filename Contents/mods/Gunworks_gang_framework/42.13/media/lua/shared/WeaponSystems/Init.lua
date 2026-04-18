@@ -12,8 +12,6 @@ local function restoreContainer(container)
         local item = items:get(i)
 
         if instanceof(item, "HandWeapon") and item:isRanged() then
-            -- Force back to main-weapon mode BEFORE other restores so that
-            -- ReapplyAllModifiers always starts from a clean original base.
             Underbarrel.RestoreOnLoad(item)
             FoldingStock.RestoreFoldedStockState(item)
             FoldingBipod.RestoreDeployedBipodState(item)

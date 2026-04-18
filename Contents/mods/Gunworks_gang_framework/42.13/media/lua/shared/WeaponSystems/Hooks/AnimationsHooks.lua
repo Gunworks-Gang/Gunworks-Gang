@@ -42,9 +42,9 @@ Events.OnWeaponSwingHitPoint.Remove(ISReloadWeaponAction.onShoot)
 ISReloadWeaponAction.onShoot = function(player, weapon)
     if Animations.IsWeaponWithCustomStates(weapon:getFullType()) then
         Animations.CheckStates(weapon)
-        Animations.CallSyncHandWeaponFields(player, weapon)
     end
     Animations.lockActionOpen(player, weapon)
+    Animations.CallSyncHandWeaponFields(player, weapon)
     old_ISReloadWeaponAction_onShoot(player, weapon)
 end
 Events.OnWeaponSwingHitPoint.Add(ISReloadWeaponAction.onShoot)
@@ -185,3 +185,16 @@ function ISEjectMagazine:complete()
     Animations.CallSyncHandWeaponFields(self.character, self.gun)
     return ISEjectMagazine_complete(self)
 end
+
+local function checkWeaponState(playerObj, weapon)
+    if not playerObj or not weapon then return end
+    if instanceof(weapon, "HandWeapon") and weapon:isRanged() then
+        if Animations.IsWeaponWithCustomStates(weapon:getFullType()) then
+            Animations.CheckStates(weapon)
+        end
+    end
+end
+
+Events.OnEquipPrimary.Add(checkWeaponState)
+
+Events.OnEquipSecondary.Add(checkWeaponState)
