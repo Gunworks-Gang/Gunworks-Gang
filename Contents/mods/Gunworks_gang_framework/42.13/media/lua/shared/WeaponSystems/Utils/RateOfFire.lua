@@ -35,9 +35,18 @@ end
 ---@param weaponTypes string[]    array of fullType strings
 ---@param entry table             { rpm = number?, burstCount = number?, enableSpread = boolean?,
 ---                                 initialSpread = number?, sustainedSpread = number?, maxSpread = number? }
-function RateOfFire.RegisterWeapons(weaponTypes, entry)
+function RateOfFire.RegisterMultipleWeaponsWithSameProfile(weaponTypes, entry)
     for i = 1, #weaponTypes do
         RateOfFire.WeaponProfiles[weaponTypes[i]] = entry
+    end
+end
+
+--- Convenience: register multiple weapon types with their entry.
+---@param entriesTable table    { [weaponType] = { rpm = number?, burstCount = number?, enableSpread = boolean?,
+---                                 initialSpread = number?, sustainedSpread = number?, maxSpread = number? } }
+function RateOfFire.RegisterMultipleWeapons(entriesTable)
+    for weaponType, entry in pairs(entriesTable) do
+        RateOfFire.WeaponProfiles[weaponType] = entry
     end
 end
 
@@ -50,10 +59,26 @@ function RateOfFire.RegisterSpreadPartModifier(partType, entry)
 end
 
 --- Convenience: register spread multipliers for multiple part types at once.
----@param modifiers table         { [partType] = { sustainedSpreadMult = number?, maxSpreadMult = number? } }
-function RateOfFire.RegisterSpreadPartModifiers(modifiers)
-    for partType, entry in pairs(modifiers) do
+---@param modifiersTable table         { [partType] = { sustainedSpreadMult = number?, maxSpreadMult = number? } }
+function RateOfFire.RegisterMultipleSpreadPartModifier(modifiersTable)
+    for partType, entry in pairs(modifiersTable) do
         RateOfFire.SpreadPartModifiers[partType] = entry
+    end
+end
+
+--- Register a spread multiplier for a single weapon ammo fullType.
+--- When a weapon uses this ammo, sustainedSpread and maxSpread are multiplied.
+---@param ammoType string         fullType of the ammo e.g. "MWA.556x45"
+---@param entry table             { sustainedSpreadMult = number?, maxSpreadMult = number? }
+function RateOfFire.RegisterSpreadAmmoModifier(ammoType, entry)
+    RateOfFire.SpreadPartModifiers[ammoType] = entry
+end
+
+--- Convenience: register spread multipliers for multiple ammo types at once.
+---@param modifiersTable table         { [ammoType] = { sustainedSpreadMult = number?, maxSpreadMult = number? } }
+function RateOfFire.RegisterMultipleSpreadAmmoModifier(modifiersTable)
+    for ammoType, entry in pairs(modifiersTable) do
+        RateOfFire.SpreadPartModifiers[ammoType] = entry
     end
 end
 
@@ -85,6 +110,19 @@ function RateOfFire.getSpreadProfile(weapon)
                 if mod.maxSpreadMult then
                     sp.maxSpread = sp.maxSpread * mod.maxSpreadMult
                 end
+            end
+        end
+    end
+
+    local ammo = weapon:getAmmoType():getItemKey()
+    if ammo then
+        local mod = RateOfFire.SpreadPartModifiers[ammo]
+        if mod then
+            if mod.sustainedSpreadMult then
+                sp.sustainedSpread = sp.sustainedSpread * mod.sustainedSpreadMult
+            end
+            if mod.maxSpreadMult then
+                sp.maxSpread = sp.maxSpread * mod.maxSpreadMult
             end
         end
     end
