@@ -1,5 +1,6 @@
 require("WeaponSystems/Utils/CustomStatsAttachments")
 
+local Bayonet      = require("WeaponSystems/Utils/Bayonet")
 local FoldingStock = require("WeaponSystems/Utils/FoldingStock")
 local FoldingBipod = require("WeaponSystems/Utils/FoldingBipod")
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
@@ -15,6 +16,7 @@ local function restoreContainer(container)
             Underbarrel.RestoreOnLoad(item)
             FoldingStock.RestoreFoldedStockState(item)
             FoldingBipod.RestoreDeployedBipodState(item)
+            Bayonet.RestoreIntegratedBayonetState(item)
             StatsFactory.ReapplyAllModifiers(item)
         end
 
@@ -35,6 +37,7 @@ local function restoreEquippedWeapon(playerObj, weapon)
         Underbarrel.RestoreOnLoad(weapon)
         FoldingStock.RestoreFoldedStockState(weapon)
         FoldingBipod.RestoreDeployedBipodState(weapon)
+        Bayonet.RestoreIntegratedBayonetState(weapon)
         StatsFactory.ReapplyAllModifiers(weapon)
     end
 end

@@ -215,12 +215,12 @@ IntegratedBayonetContext = {}
 
 IntegratedBayonetContext.callAction = function(player, weapon)
     if not player or not weapon then return end
-    Bayonet.ToggleIntegratedBayonet(weapon)
-    sendClientCommand("SWMG", "syncWeapon", {
-        onlineID                     = player:getOnlineID(),
-        itemId                       = weapon:getID(),
-        GW_IntegratedBayonetDeployed = weapon:getModData().GW_IntegratedBayonetDeployed,
-    })
+    if player:getPrimaryHandItem() ~= weapon then
+        ISTimedActionQueue.add(ISEquipWeaponAction:new(player, weapon, 50, true, true))
+    end
+    if weapon:getContainer() == player:getInventory() then
+        ISTimedActionQueue.add(ISToggleIntegratedBayonet:new(player, weapon, CharacterActionAnims.Craft))
+    end
 end
 
 -------------------------------------------------
