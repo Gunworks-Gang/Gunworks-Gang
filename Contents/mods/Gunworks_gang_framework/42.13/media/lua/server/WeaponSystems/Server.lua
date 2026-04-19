@@ -65,7 +65,7 @@ function Server.OnClientCommand(module, command, player, args)
         local modData = weapon:getModData()
         if args.StockFolded ~= nil then modData.StockFolded = args.StockFolded end
         if args.BipodDeployed ~= nil then modData.BipodDeployed = args.BipodDeployed end
-        if args.GW_IntegratedBayonetDeployed ~= nil then modData.GW_IntegratedBayonetDeployed = args.GW_IntegratedBayonetDeployed end
+        if args.GW_BayonetDeployed ~= nil then modData.GW_BayonetDeployed = args.GW_BayonetDeployed end
         if args.GW_IntegratedUnderbarrelDeployed ~= nil then modData.GW_IntegratedUnderbarrelDeployed = args.GW_IntegratedUnderbarrelDeployed end
         -- Native packet: syncs all WeaponParts + stats + modData, triggers resetEquippedHandsModels on other clients
         syncHandWeaponFields(player, weapon)
