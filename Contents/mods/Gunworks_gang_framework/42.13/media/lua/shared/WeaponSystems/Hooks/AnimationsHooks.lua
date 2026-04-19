@@ -42,9 +42,9 @@ Events.OnWeaponSwingHitPoint.Remove(ISReloadWeaponAction.onShoot)
 ISReloadWeaponAction.onShoot = function(player, weapon)
     if Animations.IsWeaponWithCustomStates(weapon:getFullType()) then
         Animations.CheckStates(weapon)
+        Animations.CallSyncHandWeaponFields(player, weapon)
     end
     Animations.lockActionOpen(player, weapon)
-    Animations.CallSyncHandWeaponFields(player, weapon)
     old_ISReloadWeaponAction_onShoot(player, weapon)
 end
 Events.OnWeaponSwingHitPoint.Add(ISReloadWeaponAction.onShoot)
