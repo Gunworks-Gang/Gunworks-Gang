@@ -13,7 +13,7 @@ RateOfFire.burstState               = {}
 RateOfFire.burstCooldown            = {}
 
 RateOfFire.spreadState              = {}
-RateOfFire.SPREAD_INITIAL_DEFAULT   = 0.1
+RateOfFire.SPREAD_INITIAL_DEFAULT   = 0.0
 RateOfFire.SPREAD_SUSTAINED_DEFAULT = 0.1
 RateOfFire.SPREAD_MAX_DEFAULT       = 3
 RateOfFire.SpreadPartModifiers      = {}
