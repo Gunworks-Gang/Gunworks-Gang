@@ -49,9 +49,36 @@ function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
 
     -- Get cursor world position as destination
     local playerIndex = player:getPlayerNum()
-    local mouseX      = screenToIsoX(playerIndex, getMouseX(), getMouseY(), player:getZ())
-    local mouseY      = screenToIsoY(playerIndex, getMouseX(), getMouseY(), player:getZ())
+    local mx          = getMouseX()
+    local my          = getMouseY()
+    local mouseX      = screenToIsoX(playerIndex, mx, my, player:getZ())
+    local mouseY      = screenToIsoY(playerIndex, mx, my, player:getZ())
     local destZ       = player:getZ()
+
+    -- Resolve the true floor Z at the target position.
+    -- The mouse gives no Z info; screenToIsoX/Y projects onto the player's current
+    -- floor plane. If the visual target is a floor below (e.g. a balcony), the
+    -- projected square has no floor and the ordnance desync-teleports downward.
+    -- Walk Z down from the player's level until we find a square with a floor,
+    -- then re-project X/Y at that Z so the isometric offset is also corrected.
+    do
+        local ix     = math.floor(mouseX)
+        local iy     = math.floor(mouseY)
+        local checkZ = destZ
+        local minZ   = math.max(0, destZ - 5)
+        while checkZ >= minZ do
+            local sq = getCell():getGridSquare(ix, iy, checkZ)
+            if sq and sq:getFloor() then
+                if checkZ ~= destZ then
+                    mouseX = screenToIsoX(playerIndex, mx, my, checkZ)
+                    mouseY = screenToIsoY(playerIndex, mx, my, checkZ)
+                    destZ  = checkZ
+                end
+                break
+            end
+            checkZ = checkZ - 1
+        end
+    end
 
     if not isAmmoLaunch then
         local aimOffset = 1.5
