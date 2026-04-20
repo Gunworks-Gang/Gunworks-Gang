@@ -71,11 +71,27 @@ end
 -- Bayonet Attachment/Removal Utilities
 -------------------------------------------------
 
+--- Returns the first weapon part that is registered as a bayonet attachment, or nil.
+--- @param weapon HandWeapon
+--- @return WeaponPart|nil
+function Bayonet.GetAttachedBayonetPart(weapon)
+    if not weapon then return nil end
+    local allParts = weapon:getAllWeaponParts()
+    if not allParts then return nil end
+    for i = 0, allParts:size() - 1 do
+        local part = allParts:get(i)
+        if part and Bayonet.GetSpearTypeFromAttachment(part:getFullType()) then
+            return part
+        end
+    end
+    return nil
+end
+
 function Bayonet.CanAttachBayonet(weapon, bayonetKnife)
     if not weapon or not bayonetKnife then return false end
     if not instanceof(weapon, "HandWeapon") then return false end
     if not weapon:isRanged() then return false end
-    if weapon:getWeaponPart("Bayonet") then return false end
+    if Bayonet.GetAttachedBayonetPart(weapon) then return false end
 
     local acceptedBayonets = Bayonet.BayonetMountableWeapons[weapon:getFullType()]
     if not acceptedBayonets then return false end
@@ -93,7 +109,7 @@ function Bayonet.CanRemoveBayonet(weapon)
     if not instanceof(weapon, "HandWeapon") then return false end
     if not weapon:isRanged() then return false end
 
-    return weapon:getWeaponPart("Bayonet") ~= nil
+    return Bayonet.GetAttachedBayonetPart(weapon) ~= nil
 end
 
 function Bayonet.AttachBayonet(weapon, bayonetKnife, player)
@@ -133,7 +149,7 @@ end
 function Bayonet.RemoveBayonet(weapon, player)
     if not Bayonet.CanRemoveBayonet(weapon) then return false end
 
-    local bayonetPart = weapon:getWeaponPart("Bayonet")
+    local bayonetPart = Bayonet.GetAttachedBayonetPart(weapon)
     if not bayonetPart then return false end
 
     local bayonetKnifeType = Bayonet.GetKnifeTypeFromAttachment(bayonetPart:getFullType())
@@ -186,7 +202,7 @@ function Bayonet.BayonetAttack(character, chargeDelta, weapon, callback)
     if integratedEntry then
         spearType = integratedEntry.weaponRef
     else
-        local bayonetPart = weapon:getWeaponPart("Bayonet")
+        local bayonetPart = Bayonet.GetAttachedBayonetPart(weapon)
         if bayonetPart then
             spearType = Bayonet.GetSpearTypeFromAttachment(bayonetPart:getFullType())
         end
