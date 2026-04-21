@@ -148,7 +148,7 @@ function RateOfFire.canFire(player, weapon)
     local rpm = RateOfFire.getWeaponRPM(weapon)
     if not rpm or rpm <= 0 then rpm = RateOfFire.DEFAULT_RPM end
 
-    local intervalMs = math.floor((60000 / rpm) + 0.5)
+    local intervalMs = 60000 / rpm
 
     local nextAllowed = RateOfFire.lastFireTime[playerId] or 0
 
