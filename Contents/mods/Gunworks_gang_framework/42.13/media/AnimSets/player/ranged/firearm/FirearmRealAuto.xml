@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <animNode>
 	<m_Name>FirearmRealAuto</m_Name>
 	<m_AnimName>Bob_AttackRifle</m_AnimName>
@@ -90,7 +90,7 @@
 	</m_Events>
 	<m_Events x_name="751593c2-b714-49cb-8995-aaf4941135a2">
 		<m_EventName>AttackAnim</m_EventName>
-		<m_Time>End</m_Time>
+		<m_TimePc>0</m_TimePc>
 		<m_ParameterValue>FALSE</m_ParameterValue>
 	</m_Events>
 	<m_2DBlendTri>
