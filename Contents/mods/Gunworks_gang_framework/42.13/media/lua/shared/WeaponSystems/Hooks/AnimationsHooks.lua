@@ -13,13 +13,12 @@ local Magazine = require("WeaponSystems/Utils/Magazine")
 local ISReloadWeaponAction_animEvent = ISReloadWeaponAction.animEvent
 function ISReloadWeaponAction:animEvent(event, parameter)
     if event == 'changeWeaponSprite' then
-        if parameter and parameter ~= '' then
+        if parameter and parameter ~= '' and self.gun:getFullType() ~= 'Base.DoubleBarrelShotgun' then
             local open = parameter ~= 'original'
-            Animations.CallAnimate(self.character, self.gun, open)
+            return Animations.CallAnimate(self.character, self.gun, open)
         end
-    else
-        return ISReloadWeaponAction_animEvent(self, event, parameter)
     end
+    ISReloadWeaponAction_animEvent(self, event, parameter)
 end
 
 local ISReloadWeaponAction_complete = ISReloadWeaponAction.complete
@@ -62,13 +61,12 @@ function ISRackFirearm:animEvent(event, parameter)
         Animations.rackAction(self.character, self.gun, false)
     end
     if event == 'changeWeaponSprite' then
-        if parameter and parameter ~= '' then
+        if parameter and parameter ~= '' and self.gun:getFullType() ~= 'Base.DoubleBarrelShotgun' then
             local open = parameter ~= 'original'
-            Animations.CallAnimate(self.character, self.gun, open)
+            return Animations.CallAnimate(self.character, self.gun, open)
         end
-    else
-        return ISRackFirearm_animEvent(self, event, parameter)
     end
+    ISRackFirearm_animEvent(self, event, parameter)
 end
 
 local ISRackFirearm_complete = ISRackFirearm.complete
@@ -92,13 +90,12 @@ end
 local ISUnloadBulletsFromFirearm_animEvent = ISUnloadBulletsFromFirearm.animEvent
 function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
     if event == 'changeWeaponSprite' then
-        if parameter and parameter ~= '' then
+        if parameter and parameter ~= '' and self.gun:getFullType() ~= 'Base.DoubleBarrelShotgun' then
             local open = parameter ~= 'original'
             Animations.CallAnimate(self.character, self.gun, open)
         end
-    else
-        return ISUnloadBulletsFromFirearm_animEvent(self, event, parameter)
     end
+    ISUnloadBulletsFromFirearm_animEvent(self, event, parameter)
 end
 
 local ISUnloadBulletsFromFirearm_complete = ISUnloadBulletsFromFirearm.complete
@@ -129,7 +126,7 @@ function ISInsertMagazine:animEvent(event, parameter)
         Magazine.attachMagazineVisual(self.gun, self._actualMagType)
         Animations.CallSyncHandWeaponFields(self.character, self.gun)
     end
-    return ISInsertMagazine_animEvent(self, event, parameter)
+    ISInsertMagazine_animEvent(self, event, parameter)
 end
 
 local ISInsertMagazine_stop = ISInsertMagazine.stop
@@ -164,9 +161,9 @@ local ISEjectMagazine_animEvent = ISEjectMagazine.animEvent
 function ISEjectMagazine:animEvent(event, parameter)
     if event == "InsertMag" then
         Magazine.detachMagazineVisual(self.gun)
-        Animations.CallSyncHandWeaponFields(self.character, self.gun)
+        return Animations.CallSyncHandWeaponFields(self.character, self.gun)
     end
-    return ISEjectMagazine_animEvent(self, event, parameter)
+    ISEjectMagazine_animEvent(self, event, parameter)
 end
 
 local ISEjectMagazine_stop = ISEjectMagazine.stop
@@ -186,7 +183,7 @@ function ISEjectMagazine:complete()
     return ISEjectMagazine_complete(self)
 end
 
-local function checkWeaponState(playerObj, weapon)
+local function checkWeaponStateOnEquip(playerObj, weapon)
     if not playerObj or not weapon then return end
     if instanceof(weapon, "HandWeapon") and weapon:isRanged() then
         if Animations.IsWeaponWithCustomStates(weapon:getFullType()) then
@@ -195,6 +192,6 @@ local function checkWeaponState(playerObj, weapon)
     end
 end
 
-Events.OnEquipPrimary.Add(checkWeaponState)
+Events.OnEquipPrimary.Add(checkWeaponStateOnEquip)
 
-Events.OnEquipSecondary.Add(checkWeaponState)
+Events.OnEquipSecondary.Add(checkWeaponStateOnEquip)
