@@ -45,6 +45,7 @@ StatsFactory.Registry = {
     ClipSize                     = { get = "getClipSize", set = "setClipSize" },
     MinRangeRanged               = { get = "getMinRangeRanged", set = "setMinRangeRanged" },
     BaseSpeed                    = { get = "getBaseSpeed", set = "setBaseSpeed" },
+    UseEndurance                 = { get = "isUseEndurance", set = "setUseEndurance" },
     EnduranceMod                 = { get = "getEnduranceMod", set = "setEnduranceMod" },
     SoundGain                    = { get = "getSoundGain", set = "setSoundGain" },
     TreeDamage                   = { get = "getTreeDamage", set = "setTreeDamage" },
@@ -79,6 +80,7 @@ StatsFactory.Registry = {
     DoorHitSound                 = { get = "getDoorHitSound", set = "setDoorHitSound" },
     HitFloorSound                = { get = "getHitFloorSound", set = "setHitFloorSound" },
     BulletOutSound               = { get = "getBulletOutSound", set = "setBulletOutSound" },
+
 }
 
 -------------------------------------------------
