@@ -18,6 +18,8 @@ RateOfFire.SPREAD_SUSTAINED_DEFAULT = 0.1
 RateOfFire.SPREAD_MAX_DEFAULT       = 3
 RateOfFire.SpreadPartModifiers      = {}
 
+RateOfFire.MOODLE_SPREAD_MULT       = { [0] = 1.0, [1] = 1.5, [2] = 2.0, [3] = 3.0, [4] = 4.0 }
+
 -------------------------------------------------
 -- Registry tables  (keyed by weapon fullType)
 -------------------------------------------------
@@ -130,6 +132,20 @@ function RateOfFire.getSpreadProfile(weapon)
     return sp
 end
 
+--- Returns the combined spread multiplier from ENDURANCE and TIRED moodles.
+--- Both moodles stack multiplicatively (mirrors vanilla melee damage penalty).
+--- initialSpread is intentionally unaffected — only sustainedSpread and maxSpread are scaled.
+---@param player any  player object
+---@return number     multiplier >= 1.0
+function RateOfFire.getMoodleSpreadMult(player)
+    if not player then return 1.0 end
+    local moodles = player:getMoodles()
+    if not moodles then return 1.0 end
+    local enduranceMult = RateOfFire.MOODLE_SPREAD_MULT[moodles:getMoodleLevel(MoodleType.ENDURANCE)] or 1.0
+    local tiredMult     = RateOfFire.MOODLE_SPREAD_MULT[moodles:getMoodleLevel(MoodleType.TIRED)] or 1.0
+    return enduranceMult * tiredMult
+end
+
 function RateOfFire.getWeaponRPM(weapon)
     if not weapon then return RateOfFire.DEFAULT_RPM end
 
@@ -185,10 +201,14 @@ function RateOfFire.applySpreadOnShot(player, weapon, intervalMs)
     local sp = RateOfFire.getSpreadProfile(weapon)
     if not sp then return end
 
-    local playerId = player:getPlayerNum()
-    local now      = getTimestampMs()
-    local fullType = weapon:getFullType()
-    local state    = RateOfFire.spreadState[playerId]
+    local moodleMult   = RateOfFire.getMoodleSpreadMult(player)
+    sp.sustainedSpread = sp.sustainedSpread * moodleMult
+    sp.maxSpread       = sp.maxSpread * moodleMult
+
+    local playerId     = player:getPlayerNum()
+    local now          = getTimestampMs()
+    local fullType     = weapon:getFullType()
+    local state        = RateOfFire.spreadState[playerId]
 
     if not state or state.weaponType ~= fullType then
         weapon:setRangeFalloff(true)
