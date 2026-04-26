@@ -147,6 +147,37 @@ function Railing.GetMountedAccessories(weapon)
     return mounted
 end
 
+--- Check whether a specific installed railing still has any mounted accessory depending on it.
+--- @param weapon HandWeapon
+--- @param railingPart WeaponPart|string
+--- @return boolean
+function Railing.HasMountedAccessoryOnRailing(weapon, railingPart)
+    if not weapon or not railingPart then return false end
+
+    local railingType = railingPart
+    if type(railingPart) ~= "string" then
+        railingType = railingPart:getFullType()
+    end
+
+    local accepted = Railing.AcceptedAccessories[railingType]
+    if not accepted then return false end
+
+    local acceptedSet = {}
+    for _, acc in ipairs(accepted) do
+        acceptedSet[acc] = true
+    end
+
+    local parts = weapon:getAllWeaponParts()
+    for i = 0, parts:size() - 1 do
+        local part = parts:get(i)
+        if part and acceptedSet[part:getFullType()] then
+            return true
+        end
+    end
+
+    return false
+end
+
 --- Check if a specific accessory type can be mounted right now.
 --- Returns false if the weapon already has a part in the same PartType slot.
 --- Checks across all installed railings.

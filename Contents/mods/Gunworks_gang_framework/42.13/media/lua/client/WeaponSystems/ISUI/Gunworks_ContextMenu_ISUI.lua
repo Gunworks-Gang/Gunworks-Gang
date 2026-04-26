@@ -468,6 +468,8 @@ local function filterPermanentParts(playerid, context, items)
                 subMenu:removeOptionByName(v.name)
             elseif isUnderbarrelMode and Underbarrel.UnderbarrelAttachments[partType] then
                 subMenu:removeOptionByName(v.name)
+            elseif weapon and Railing.HasMountedAccessoryOnRailing(weapon, v.param1) then
+                subMenu:removeOptionByName(v.name)
             end
         end
     end
@@ -513,6 +515,9 @@ ISInventoryPaneContextMenu.onRemoveUpgradeWeapon = function(weapon, part, player
     end
     if weapon and part and Underbarrel.IsWeaponInUnderbarrelMode(weapon)
         and Underbarrel.UnderbarrelAttachments[part:getFullType()] then
+        return
+    end
+    if weapon and part and Railing.HasMountedAccessoryOnRailing(weapon, part) then
         return
     end
     _onRemoveUpgradeWeapon_Original(weapon, part, player)
