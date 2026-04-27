@@ -39,12 +39,28 @@ end
 --- Register two items as mutually exclusive.
 --- If one is mounted, the other cannot be mounted.
 --- @param itemA string  e.g. "MWA.BIPOD_DEPLOYED"
---- @param itemB string  e.g. "MWA.INTEGRATED_BIPOD_DEPLOYED"
+--- @param itemB string|string[]  e.g. "MWA.INTEGRATED_BIPOD_DEPLOYED" or { "MWA.SCOPE_A", "MWA.SCOPE_B" }
 function Railing.SetExclusives(itemA, itemB)
+    if not itemA or not itemB then return end
+
     if not Railing.Exclusives[itemA] then Railing.Exclusives[itemA] = {} end
-    if not Railing.Exclusives[itemB] then Railing.Exclusives[itemB] = {} end
-    Railing.Exclusives[itemA][itemB] = true
-    Railing.Exclusives[itemB][itemA] = true
+
+    local itemsB = {}
+    if type(itemB) == "table" then
+        for _, exclusiveItem in ipairs(itemB) do
+            table.insert(itemsB, exclusiveItem)
+        end
+    else
+        table.insert(itemsB, itemB)
+    end
+
+    for _, exclusiveItem in ipairs(itemsB) do
+        if exclusiveItem then
+            if not Railing.Exclusives[exclusiveItem] then Railing.Exclusives[exclusiveItem] = {} end
+            Railing.Exclusives[itemA][exclusiveItem] = true
+            Railing.Exclusives[exclusiveItem][itemA] = true
+        end
+    end
 end
 
 --- Check if an accessory is blocked by an exclusive item already on the weapon.

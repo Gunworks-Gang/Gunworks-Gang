@@ -16,12 +16,28 @@ UpgradeExclusives.Exclusives = {}
 --- Register two vanilla upgrade parts as mutually exclusive.
 --- While one is mounted the other upgrade option will be hidden.
 --- @param itemA string  e.g. "Base.Bipod"
---- @param itemB string  e.g. "Base.Foregrip"
+--- @param itemB string|string[]  e.g. "Base.Foregrip" or { "Base.Scope", "Base.Sling" }
 function UpgradeExclusives.SetExclusives(itemA, itemB)
+    if not itemA or not itemB then return end
+
     if not UpgradeExclusives.Exclusives[itemA] then UpgradeExclusives.Exclusives[itemA] = {} end
-    if not UpgradeExclusives.Exclusives[itemB] then UpgradeExclusives.Exclusives[itemB] = {} end
-    UpgradeExclusives.Exclusives[itemA][itemB] = true
-    UpgradeExclusives.Exclusives[itemB][itemA] = true
+
+    local itemsB = {}
+    if type(itemB) == "table" then
+        for _, exclusiveItem in ipairs(itemB) do
+            table.insert(itemsB, exclusiveItem)
+        end
+    else
+        table.insert(itemsB, itemB)
+    end
+
+    for _, exclusiveItem in ipairs(itemsB) do
+        if exclusiveItem then
+            if not UpgradeExclusives.Exclusives[exclusiveItem] then UpgradeExclusives.Exclusives[exclusiveItem] = {} end
+            UpgradeExclusives.Exclusives[itemA][exclusiveItem] = true
+            UpgradeExclusives.Exclusives[exclusiveItem][itemA] = true
+        end
+    end
 end
 
 -------------------------------------------------
