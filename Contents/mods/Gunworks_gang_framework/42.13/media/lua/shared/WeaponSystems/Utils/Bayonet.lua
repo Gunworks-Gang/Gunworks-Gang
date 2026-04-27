@@ -13,6 +13,13 @@ Bayonet.PendingHotbarRestorations = {}
 Bayonet.IntegratedBayonets = {}
 
 -------------------------------------------------
+-- Exclusives: bayonetAttachmentFullType -> { otherFullType = true, ... }
+-- If any registered exclusive is already installed on the weapon,
+-- that bayonet attachment cannot be mounted.
+-------------------------------------------------
+Bayonet.Exclusives = {}
+
+-------------------------------------------------
 -- Registration API
 -------------------------------------------------
 
@@ -41,6 +48,33 @@ end
 ---@param spearType string    fullType of the spear substitute item e.g. "MWA.M9_BAYONET_SPEAR"
 function Bayonet.RegisterBayonetKnife(knifeType, bayonetType, spearType)
     Bayonet.BayonetKnives[knifeType] = { bayonetType = bayonetType, spearType = spearType }
+end
+
+--- Register one or more weapon parts as exclusive with a bayonet attachment.
+--- If one of the exclusive parts is installed, the bayonet cannot be mounted.
+---@param bayonetType string           e.g. "MWA.M9_BAYONET"
+---@param itemB string|string[]        e.g. "Base.Scope" or { "Base.Scope", "Base.Sling" }
+function Bayonet.SetExclusives(bayonetType, itemB)
+    if not bayonetType or not itemB then return end
+
+    if not Bayonet.Exclusives[bayonetType] then Bayonet.Exclusives[bayonetType] = {} end
+
+    local itemsB = {}
+    if type(itemB) == "table" then
+        for _, exclusiveItem in ipairs(itemB) do
+            table.insert(itemsB, exclusiveItem)
+        end
+    else
+        table.insert(itemsB, itemB)
+    end
+
+    for _, exclusiveItem in ipairs(itemsB) do
+        if exclusiveItem then
+            if not Bayonet.Exclusives[exclusiveItem] then Bayonet.Exclusives[exclusiveItem] = {} end
+            Bayonet.Exclusives[bayonetType][exclusiveItem] = true
+            Bayonet.Exclusives[exclusiveItem][bayonetType] = true
+        end
+    end
 end
 
 --- Register a weapon with an integrated (non-removable) bayonet.
@@ -87,6 +121,29 @@ function Bayonet.GetAttachedBayonetPart(weapon)
     return nil
 end
 
+--- Check if a bayonet attachment is blocked by an exclusive already installed on the weapon.
+---@param weapon HandWeapon
+---@param bayonetType string
+---@return boolean
+function Bayonet.IsBlockedByExclusive(weapon, bayonetType)
+    if not weapon or not bayonetType then return false end
+
+    local exclusives = Bayonet.Exclusives[bayonetType]
+    if not exclusives then return false end
+
+    local parts = weapon:getAllWeaponParts()
+    if not parts then return false end
+
+    for i = 0, parts:size() - 1 do
+        local part = parts:get(i)
+        if part and exclusives[part:getFullType()] then
+            return true
+        end
+    end
+
+    return false
+end
+
 function Bayonet.CanAttachBayonet(weapon, bayonetKnife)
     if not weapon or not bayonetKnife then return false end
     if not instanceof(weapon, "HandWeapon") then return false end
@@ -100,6 +157,7 @@ function Bayonet.CanAttachBayonet(weapon, bayonetKnife)
     if not knifeEntry then return false end
 
     if not acceptedBayonets[knifeEntry.bayonetType] then return false end
+    if Bayonet.IsBlockedByExclusive(weapon, knifeEntry.bayonetType) then return false end
 
     return true
 end
