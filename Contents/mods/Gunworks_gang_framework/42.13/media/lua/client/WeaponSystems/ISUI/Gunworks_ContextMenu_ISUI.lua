@@ -1,4 +1,6 @@
 require("ISUI/ISInventoryPaneContextMenu")
+require("TimedActions/ISTimedActionQueue")
+require("WeaponSystems/TimedActions/ISUniversalAttachment")
 
 local FoldingStock = require("WeaponSystems/Utils/FoldingStock")
 local FoldingBipod = require("WeaponSystems/Utils/FoldingBipod")
@@ -7,6 +9,7 @@ local Magazine = require("WeaponSystems/Utils/Magazine")
 local Ammo = require("WeaponSystems/Utils/Ammo")
 local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachment")
 local Railing = require("WeaponSystems/Utils/Railing")
+local UniversalAttachment = require("WeaponSystems/Utils/UniversalAttachment")
 local PreventRemoval = require("WeaponSystems/Utils/PreventRemovals")
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusives")
@@ -416,6 +419,200 @@ local function addRailingOptions(playerObj, item, context)
     end
 end
 
+-------------------------------------------------
+-- Universal Attachment Context Menu
+-------------------------------------------------
+local UniversalAttachmentContext = {}
+
+local function getUniversalDisplayName(fullType)
+    local item = fullType and instanceItem(fullType) or nil
+    return item and item:getDisplayName() or fullType
+end
+
+local function sortFullTypesByDisplayName(fullTypes)
+    table.sort(fullTypes, function(left, right)
+        return string.lower(getUniversalDisplayName(left)) < string.lower(getUniversalDisplayName(right))
+    end)
+end
+
+local function sortInstalledOutcomesByDisplayName(outcomeInfos)
+    table.sort(outcomeInfos, function(left, right)
+        return string.lower(getUniversalDisplayName(left.fullType)) < string.lower(getUniversalDisplayName(right.fullType))
+    end)
+end
+
+UniversalAttachmentContext.installOutcome = function(player, weapon, genericItem, outcomeFullType)
+    if not player or not weapon or not genericItem or not outcomeFullType then return end
+
+    ISInventoryPaneContextMenu.transferIfNeeded(player, weapon)
+    ISInventoryPaneContextMenu.transferIfNeeded(player, genericItem)
+    if player:getPrimaryHandItem() ~= weapon then
+        ISTimedActionQueue.add(ISEquipWeaponAction:new(player, weapon, 50, true, true))
+    end
+    ISTimedActionQueue.add(ISUniversalAttachmentInstall:new(player, weapon, genericItem, outcomeFullType))
+end
+
+UniversalAttachmentContext.removeOutcome = function(player, weapon, partType, genericItemType)
+    if not player or not weapon or not partType then return end
+
+    ISInventoryPaneContextMenu.transferIfNeeded(player, weapon)
+    if player:getPrimaryHandItem() ~= weapon then
+        ISTimedActionQueue.add(ISEquipWeaponAction:new(player, weapon, 50, true, true))
+    end
+    ISTimedActionQueue.add(ISUniversalAttachmentRemove:new(player, weapon, partType, genericItemType))
+end
+
+local function addUniversalAttachmentOptions(playerObj, item, context)
+    if not UniversalAttachment then return end
+    if not instanceof(item, "HandWeapon") then return end
+    if not item:isRanged() then return end
+
+    local genericItemTypes = UniversalAttachment.GetGenericItemTypes(item)
+    if not genericItemTypes then return end
+
+    sortFullTypesByDisplayName(genericItemTypes)
+
+    local isInInventory = item:getContainer() == playerObj:getInventory()
+
+    for _, genericItemType in ipairs(genericItemTypes) do
+        local genericItem = playerObj:getInventory():getFirstTypeRecurse(genericItemType)
+        local genericItemName = getUniversalDisplayName(genericItemType)
+        local genericItemInstance = instanceItem(genericItemType)
+
+        local availableOutcomes = genericItem and UniversalAttachment.GetAvailableOutcomes(item, genericItemType) or nil
+        if availableOutcomes then
+            sortFullTypesByDisplayName(availableOutcomes)
+
+            if #availableOutcomes == 1 then
+                local outcomeType = availableOutcomes[1]
+                local outcomeName = getUniversalDisplayName(outcomeType)
+                local listEntry = context:addOption("Install " .. outcomeName, playerObj,
+                    UniversalAttachmentContext.installOutcome, item, genericItem, outcomeType)
+
+                local tooltip = ISInventoryPaneContextMenu.addToolTip()
+                tooltip:setName("Install " .. outcomeName)
+                tooltip.texture = genericItemInstance and genericItemInstance:getTex() or item:getTex()
+
+                if isInInventory then
+                    tooltip.description = "Install " .. outcomeName .. " using one " .. genericItemName .. "."
+                else
+                    listEntry.notAvailable = true
+                    tooltip.description = getText("IGUI_MoveToInventory")
+                end
+
+                listEntry.toolTip = tooltip
+            elseif #availableOutcomes > 1 then
+                local installOption = context:addOption("Install " .. genericItemName)
+                local installMenu = context:getNew(context)
+                context:addSubMenu(installOption, installMenu)
+
+                local tooltip = ISInventoryPaneContextMenu.addToolTip()
+                tooltip:setName("Install " .. genericItemName)
+                tooltip.texture = genericItemInstance and genericItemInstance:getTex() or item:getTex()
+
+                if isInInventory then
+                    tooltip.description = "Select an installation outcome for " .. genericItemName .. "."
+                else
+                    installOption.notAvailable = true
+                    tooltip.description = getText("IGUI_MoveToInventory")
+                end
+
+                installOption.toolTip = tooltip
+
+                for _, outcomeType in ipairs(availableOutcomes) do
+                    local outcomeName = getUniversalDisplayName(outcomeType)
+                    local outcomeItem = instanceItem(outcomeType)
+                    local subEntry = installMenu:addOption(outcomeName, playerObj,
+                        UniversalAttachmentContext.installOutcome, item, genericItem, outcomeType)
+
+                    local subTip = ISInventoryPaneContextMenu.addToolTip()
+                    subTip:setName(outcomeName)
+                    subTip.texture = outcomeItem and outcomeItem:getTex() or item:getTex()
+
+                    if isInInventory then
+                        subTip.description = "Install " .. outcomeName .. " using one " .. genericItemName .. "."
+                    else
+                        subEntry.notAvailable = true
+                        subTip.description = getText("IGUI_MoveToInventory")
+                    end
+
+                    subEntry.toolTip = subTip
+                end
+            end
+        end
+
+        local installedOutcomes = UniversalAttachment.GetInstalledOutcomes(item, genericItemType)
+        if installedOutcomes then
+            local removableOutcomes = {}
+            for _, outcomeInfo in ipairs(installedOutcomes) do
+                if UniversalAttachment.CanRemoveInstalledPart(item, outcomeInfo.part) then
+                    table.insert(removableOutcomes, outcomeInfo)
+                end
+            end
+
+            if #removableOutcomes > 0 then
+                sortInstalledOutcomesByDisplayName(removableOutcomes)
+
+                if #removableOutcomes == 1 then
+                    local outcomeInfo = removableOutcomes[1]
+                    local outcomeName = getUniversalDisplayName(outcomeInfo.fullType)
+                    local listEntry = context:addOption("Remove " .. outcomeName, playerObj,
+                        UniversalAttachmentContext.removeOutcome, item, outcomeInfo.partType, genericItemType)
+
+                    local tooltip = ISInventoryPaneContextMenu.addToolTip()
+                    tooltip:setName("Remove " .. outcomeName)
+                    tooltip.texture = outcomeInfo.part and outcomeInfo.part:getTex() or item:getTex()
+
+                    if isInInventory then
+                        tooltip.description = "Remove " .. outcomeName .. " and refund one " .. genericItemName .. "."
+                    else
+                        listEntry.notAvailable = true
+                        tooltip.description = getText("IGUI_MoveToInventory")
+                    end
+
+                    listEntry.toolTip = tooltip
+                else
+                    local removeOption = context:addOption("Remove " .. genericItemName)
+                    local removeMenu = context:getNew(context)
+                    context:addSubMenu(removeOption, removeMenu)
+
+                    local tooltip = ISInventoryPaneContextMenu.addToolTip()
+                    tooltip:setName("Remove " .. genericItemName)
+                    tooltip.texture = genericItemInstance and genericItemInstance:getTex() or item:getTex()
+
+                    if isInInventory then
+                        tooltip.description = "Select an installed outcome to remove and refund one " .. genericItemName .. "."
+                    else
+                        removeOption.notAvailable = true
+                        tooltip.description = getText("IGUI_MoveToInventory")
+                    end
+
+                    removeOption.toolTip = tooltip
+
+                    for _, outcomeInfo in ipairs(removableOutcomes) do
+                        local outcomeName = getUniversalDisplayName(outcomeInfo.fullType)
+                        local subEntry = removeMenu:addOption(outcomeName, playerObj,
+                            UniversalAttachmentContext.removeOutcome, item, outcomeInfo.partType, genericItemType)
+
+                        local subTip = ISInventoryPaneContextMenu.addToolTip()
+                        subTip:setName(outcomeName)
+                        subTip.texture = outcomeInfo.part and outcomeInfo.part:getTex() or item:getTex()
+
+                        if isInInventory then
+                            subTip.description = "Remove " .. outcomeName .. " and refund one " .. genericItemName .. "."
+                        else
+                            subEntry.notAvailable = true
+                            subTip.description = getText("IGUI_MoveToInventory")
+                        end
+
+                        subEntry.toolTip = subTip
+                    end
+                end
+            end
+        end
+    end
+end
+
 local onFillInventoryObjectContextMenu = function(playerid, context, items)
     local player = getSpecificPlayer(playerid)
     for _, v in ipairs(items) do
@@ -431,6 +628,7 @@ local onFillInventoryObjectContextMenu = function(playerid, context, items)
             addIntegratedUnderbarrelOption(player, item, context)
             addSwapAttachmentOption(player, item, context)
             addRailingOptions(player, item, context)
+            addUniversalAttachmentOptions(player, item, context)
         end
     end
 end
@@ -469,6 +667,8 @@ local function filterPermanentParts(playerid, context, items)
             elseif isUnderbarrelMode and Underbarrel.UnderbarrelAttachments[partType] then
                 subMenu:removeOptionByName(v.name)
             elseif weapon and Railing.HasMountedAccessoryOnRailing(weapon, v.param1) then
+                subMenu:removeOptionByName(v.name)
+            elseif weapon and UniversalAttachment.IsRegisteredOutcome(weapon, v.param1) then
                 subMenu:removeOptionByName(v.name)
             end
         end
@@ -518,6 +718,9 @@ ISInventoryPaneContextMenu.onRemoveUpgradeWeapon = function(weapon, part, player
         return
     end
     if weapon and part and Railing.HasMountedAccessoryOnRailing(weapon, part) then
+        return
+    end
+    if weapon and part and UniversalAttachment.IsRegisteredOutcome(weapon, part) then
         return
     end
     _onRemoveUpgradeWeapon_Original(weapon, part, player)
