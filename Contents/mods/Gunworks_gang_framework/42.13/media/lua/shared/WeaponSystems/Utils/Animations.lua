@@ -13,7 +13,16 @@ function Animations.RegisterWeaponWithAnimatedParts(fullType, entry)
     Animations.WeaponsWithAnimatedParts[fullType] = entry
 end
 
+local function MarkSkipEquipRestore(weapon)
+    if not weapon then return end
+    local modData = weapon:getModData()
+    local current = modData.GW_SkipEquipRestoreCount or 0
+    local increment = weapon:isTwoHandWeapon() and 2 or 1
+    modData.GW_SkipEquipRestoreCount = current + increment
+end
+
 function Animations.CallSyncHandWeaponFields(player, weapon)
+    MarkSkipEquipRestore(weapon)
     syncHandWeaponFields(player, weapon)
     player:setPrimaryHandItem(nil)
     player:setSecondaryHandItem(nil)

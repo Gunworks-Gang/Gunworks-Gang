@@ -31,9 +31,28 @@ local function restorePlayer(playerObj)
     restoreContainer(playerObj:getInventory())
 end
 
+local function consumeSyncEquipRestoreSkip(weapon)
+    if not weapon then return false end
+    local modData = weapon:getModData()
+    local remaining = modData.GW_SkipEquipRestoreCount
+    if not remaining or remaining <= 0 then
+        return false
+    end
+
+    remaining = remaining - 1
+    if remaining > 0 then
+        modData.GW_SkipEquipRestoreCount = remaining
+    else
+        modData.GW_SkipEquipRestoreCount = nil
+    end
+
+    return true
+end
+
 local function restoreEquippedWeapon(playerObj, weapon)
     if not playerObj or not weapon then return end
     if instanceof(weapon, "HandWeapon") and weapon:isRanged() then
+        if consumeSyncEquipRestoreSkip(weapon) then return end
         Underbarrel.RestoreOnLoad(weapon)
         FoldingStock.RestoreFoldedStockState(weapon)
         FoldingBipod.RestoreDeployedBipodState(weapon)

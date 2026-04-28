@@ -1,6 +1,7 @@
 local Ammo = require("WeaponSystems/Utils/Ammo")
 local Animations = require("WeaponSystems/Utils/Animations")
 local RateOfFire = require('WeaponSystems/Utils/RateOfFire')
+local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local Client = {}
 
 function Client.getFiremodeMenuKey(firemode)
@@ -68,6 +69,24 @@ function Client.OnServerCommand(module, command, args)
         local item = playerObj:getInventory():getItemWithIDRecursiv(args.itemId)
         if item then
             item:getModData().AmmoList = args.ammoList
+        end
+    elseif command == "applyUnderbarrelMode" then
+        local item = playerObj:getInventory():getItemWithIDRecursiv(args.itemId)
+        if item and instanceof(item, "HandWeapon") then
+            local currentState = Underbarrel.GetModeState(item)
+            local targetIsUnderbarrel = args.isUnderbarrelMode == true
+            if currentState.isUnderbarrelMode ~= targetIsUnderbarrel
+                or currentState.underbarrelType ~= args.underbarrelType
+                or currentState.modeSource ~= args.modeSource then
+                Underbarrel.ReconcileModeState(
+                    item,
+                    playerObj,
+                    targetIsUnderbarrel,
+                    args.modeSource,
+                    args.underbarrelType,
+                    true
+                )
+            end
         end
     elseif command == "syncWeapon" then
         local targetPlayer = getPlayerByOnlineID(args.onlineID)

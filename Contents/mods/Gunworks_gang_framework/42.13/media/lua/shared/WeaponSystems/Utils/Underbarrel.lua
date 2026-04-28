@@ -23,6 +23,12 @@ local Underbarrel                    = {}
 
 Underbarrel.UnderbarrelAttachments   = {}
 Underbarrel.IntegratedUnderbarrels   = {}
+Underbarrel.MODE_SOURCE_ATTACHMENT   = "attachment"
+Underbarrel.MODE_SOURCE_INTEGRATED   = "integrated"
+
+Underbarrel.ACTION_ENTER_ATTACHMENT  = "enterAttachment"
+Underbarrel.ACTION_ENTER_INTEGRATED  = "enterIntegrated"
+Underbarrel.ACTION_RESTORE           = "restore"
 
 -------------------------------------------------
 -- Default stat set swapped between modes.
@@ -152,6 +158,17 @@ local function DisplayMessage(character, messageKey)
     character:Say(getText(messageKey), 0.55, 0.55, 0.55, UIFont.Dialogue, 0, "default")
 end
 
+local function RefreshEquippedWeapon(player, weapon)
+    if not player or not weapon then return end
+    player:setPrimaryHandItem(weapon)
+    if weapon:isTwoHandWeapon() then
+        player:setSecondaryHandItem(weapon)
+    else
+        player:setSecondaryHandItem(nil)
+    end
+    player:resetEquippedHandsModels()
+end
+
 local function IsWeaponValid(weapon)
     if not weapon then return false end
     if not instanceof(weapon, "HandWeapon") then return false end
@@ -168,11 +185,71 @@ end
 --- Return the active key-set for a weapon currently in underbarrel mode.
 local function GetActiveKeys(weapon)
     local modData = weapon:getModData()
-    local entry   = Underbarrel.IntegratedUnderbarrels[weapon:getFullType()]
+    if modData.GW_UnderbarrelModeSource == Underbarrel.MODE_SOURCE_INTEGRATED then
+        return INTEGRATED_KEYS
+    end
+    if modData.GW_UnderbarrelModeSource == Underbarrel.MODE_SOURCE_ATTACHMENT then
+        return ATTACHMENT_KEYS
+    end
+    local entry = Underbarrel.IntegratedUnderbarrels[weapon:getFullType()]
     if entry and modData.GW_UnderbarrelModeWeaponType == entry.type then
         return INTEGRATED_KEYS
     end
     return ATTACHMENT_KEYS
+end
+
+local function GetAttachmentEntry(weapon)
+    if not weapon then return nil end
+    local attachment = weapon:getWeaponPart("Underbarrel") or weapon:getWeaponPart("UnderbarrelIntegrated")
+    if not attachment then return nil end
+    return Underbarrel.UnderbarrelAttachments[attachment:getFullType()]
+end
+
+local function GetIntegratedEntry(weapon)
+    if not weapon then return nil end
+    return Underbarrel.IntegratedUnderbarrels[weapon:getFullType()]
+end
+
+local function ResolveModeSource(weapon, modeWeaponType)
+    if not weapon then return nil end
+    local modData = weapon:getModData()
+    if modData.GW_UnderbarrelModeSource then
+        return modData.GW_UnderbarrelModeSource
+    end
+    local integratedEntry = GetIntegratedEntry(weapon)
+    if integratedEntry and modeWeaponType == integratedEntry.type then
+        return Underbarrel.MODE_SOURCE_INTEGRATED
+    end
+    return Underbarrel.MODE_SOURCE_ATTACHMENT
+end
+
+local function ResolveModeConfig(weapon, modeSource, underbarrelType)
+    local entry = nil
+    local keys = nil
+
+    if modeSource == Underbarrel.MODE_SOURCE_ATTACHMENT then
+        entry = GetAttachmentEntry(weapon)
+        keys = ATTACHMENT_KEYS
+    elseif modeSource == Underbarrel.MODE_SOURCE_INTEGRATED then
+        entry = GetIntegratedEntry(weapon)
+        keys = INTEGRATED_KEYS
+    end
+
+    if not entry then return nil end
+    if underbarrelType and entry.type ~= underbarrelType then return nil end
+
+    return entry.type, keys, entry.swapStats
+end
+
+local function SendModeRequest(player, weapon, action, underbarrelType, modeSource)
+    if not isClient() or not player or not weapon then return end
+    sendClientCommand(player, "SWMG", "underbarrelMode", {
+        onlineID = player:getOnlineID(),
+        itemId = weapon:getID(),
+        action = action,
+        underbarrelType = underbarrelType,
+        modeSource = modeSource,
+    })
 end
 
 -------------------------------------------------
@@ -347,9 +424,9 @@ end
 -- Core enter / exit logic
 -------------------------------------------------
 
-local function EnterUnderbarrelMode(weapon, player, underbarrelType, keys, swapStats)
-    if not weapon or not player or not underbarrelType then return end
-    if Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return end
+local function EnterUnderbarrelMode(weapon, player, underbarrelType, keys, swapStats, modeSource, silent)
+    if not weapon or not player or not underbarrelType then return false end
+    if Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return false end
 
     -- Persist the main weapon's entire state to modData before touching anything.
     SaveScriptStatsToModData(weapon, swapStats)
@@ -363,7 +440,7 @@ local function EnterUnderbarrelMode(weapon, player, underbarrelType, keys, swapS
         weapon:getModData().GW_MainWeaponSavedStats = nil
         RestoreMainWeaponRuntimeState(weapon)
         RestoreMainAmmoListAfterModeSwitch(weapon)
-        return
+        return false
     end
 
     -- The physical weapon object never changes; keep its sprite.
@@ -392,16 +469,42 @@ local function EnterUnderbarrelMode(weapon, player, underbarrelType, keys, swapS
     local modData                        = weapon:getModData()
     modData.GW_IsUnderbarrelMode         = true
     modData.GW_UnderbarrelModeWeaponType = underbarrelType
+    modData.GW_UnderbarrelModeSource     = modeSource
 
-    player:setPrimaryHandItem(weapon)
-    if weapon:isTwoHandWeapon() then
-        player:setSecondaryHandItem(weapon)
-    else
-        player:setSecondaryHandItem(nil)
+    RefreshEquippedWeapon(player, weapon)
+
+    if not silent then
+        DisplayMessage(player, "Using underbarrel weapon")
     end
-    player:resetEquippedHandsModels()
 
-    DisplayMessage(player, "Using underbarrel weapon")
+    return true
+end
+
+local function ExitUnderbarrelMode(weapon, player, silent)
+    if not weapon or not player then return false end
+    if not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return false end
+
+    local keys = GetActiveKeys(weapon)
+
+    SaveRuntimeFromActiveUnderbarrel(weapon, keys)
+    SaveCurrentModeAmmoList(weapon, keys)
+
+    RestoreScriptStatsFromModData(weapon)
+    RestoreMainWeaponRuntimeState(weapon)
+    RestoreMainAmmoListAfterModeSwitch(weapon)
+
+    local modData                        = weapon:getModData()
+    modData.GW_IsUnderbarrelMode         = nil
+    modData.GW_UnderbarrelModeWeaponType = nil
+    modData.GW_UnderbarrelModeSource     = nil
+
+    RefreshEquippedWeapon(player, weapon)
+
+    if not silent then
+        DisplayMessage(player, "Using main weapon")
+    end
+
+    return true
 end
 
 -------------------------------------------------
@@ -410,9 +513,14 @@ end
 
 function Underbarrel.CanSwapToUnderbarrel(weapon)
     if not IsWeaponValid(weapon) then return false end
-    local attachment = weapon:getWeaponPart("Underbarrel") or weapon:getWeaponPart("UnderbarrelIntegrated")
-    if not attachment then return false end
-    return Underbarrel.UnderbarrelAttachments[attachment:getFullType()] ~= nil
+    return GetAttachmentEntry(weapon) ~= nil
+end
+
+function Underbarrel.CanSwapToIntegratedUnderbarrel(weapon)
+    if not IsWeaponValid(weapon) then return false end
+    if Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return false end
+    if not Underbarrel.HasIntegratedUnderbarrel(weapon) then return false end
+    return Underbarrel.IsIntegratedUnderbarrelDeployed(weapon)
 end
 
 function Underbarrel.IsUsingUnderbarrel(player)
@@ -438,6 +546,66 @@ function Underbarrel.GetModeUnderbarrelType(weapon)
     return weapon:getModData().GW_UnderbarrelModeWeaponType
 end
 
+function Underbarrel.GetModeSource(weapon)
+    if not weapon then return end
+    if not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return end
+    return ResolveModeSource(weapon, weapon:getModData().GW_UnderbarrelModeWeaponType)
+end
+
+function Underbarrel.GetModeState(weapon)
+    if not weapon then
+        return {
+            isUnderbarrelMode = false,
+            underbarrelType = nil,
+            modeSource = nil,
+        }
+    end
+
+    local modData = weapon:getModData()
+    local isUnderbarrelMode = modData.GW_IsUnderbarrelMode == true
+
+    return {
+        isUnderbarrelMode = isUnderbarrelMode,
+        underbarrelType = modData.GW_UnderbarrelModeWeaponType,
+        modeSource = isUnderbarrelMode and ResolveModeSource(weapon, modData.GW_UnderbarrelModeWeaponType) or nil,
+    }
+end
+
+function Underbarrel.GetAttachmentEntry(weapon)
+    return GetAttachmentEntry(weapon)
+end
+
+function Underbarrel.GetIntegratedEntry(weapon)
+    return GetIntegratedEntry(weapon)
+end
+
+function Underbarrel.ReconcileModeState(weapon, player, isUnderbarrelMode, modeSource, underbarrelType, silent)
+    if not weapon or not player then return false end
+
+    if not isUnderbarrelMode then
+        if not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return true end
+        return ExitUnderbarrelMode(weapon, player, silent)
+    end
+
+    local currentState = Underbarrel.GetModeState(weapon)
+    if currentState.isUnderbarrelMode
+        and currentState.underbarrelType == underbarrelType
+        and currentState.modeSource == modeSource then
+        return true
+    end
+
+    if currentState.isUnderbarrelMode then
+        if not ExitUnderbarrelMode(weapon, player, true) then
+            return false
+        end
+    end
+
+    local resolvedType, keys, swapStats = ResolveModeConfig(weapon, modeSource, underbarrelType)
+    if not resolvedType then return false end
+
+    return EnterUnderbarrelMode(weapon, player, resolvedType, keys, swapStats, modeSource, silent)
+end
+
 -------------------------------------------------
 -- Public API — actions
 -------------------------------------------------
@@ -446,9 +614,14 @@ function Underbarrel.SwapToUnderbarrel(weapon, player)
     if not weapon or not player then return end
     if not Underbarrel.CanSwapToUnderbarrel(weapon) then return end
 
-    local attachment = weapon:getWeaponPart("Underbarrel") or weapon:getWeaponPart("UnderbarrelIntegrated")
-    local entry      = Underbarrel.UnderbarrelAttachments[attachment:getFullType()]
-    EnterUnderbarrelMode(weapon, player, entry.type, ATTACHMENT_KEYS, entry.swapStats)
+    local entry = GetAttachmentEntry(weapon)
+    if not entry then return end
+
+    if not Underbarrel.ReconcileModeState(weapon, player, true, Underbarrel.MODE_SOURCE_ATTACHMENT, entry.type, false) then
+        return
+    end
+
+    SendModeRequest(player, weapon, Underbarrel.ACTION_ENTER_ATTACHMENT, entry.type, Underbarrel.MODE_SOURCE_ATTACHMENT)
 end
 
 function Underbarrel.RestoreOriginalWeapon(player)
@@ -458,34 +631,12 @@ function Underbarrel.RestoreOriginalWeapon(player)
     if not weapon then return end
     if not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return end
 
-    local keys = GetActiveKeys(weapon)
-
-    -- Persist the current (underbarrel) ammo state before reverting.
-    SaveRuntimeFromActiveUnderbarrel(weapon, keys)
-    SaveCurrentModeAmmoList(weapon, keys)
-
-    -- Restore main weapon script stats.
-    RestoreScriptStatsFromModData(weapon)
-
-    -- Restore main weapon runtime ammo state (ammo count, chambered, jammed…).
-    RestoreMainWeaponRuntimeState(weapon)
-
-    -- Restore main weapon custom AmmoList.
-    RestoreMainAmmoListAfterModeSwitch(weapon)
-
-    local modData                        = weapon:getModData()
-    modData.GW_IsUnderbarrelMode         = nil
-    modData.GW_UnderbarrelModeWeaponType = nil
-
-    player:setPrimaryHandItem(weapon)
-    if weapon:isTwoHandWeapon() then
-        player:setSecondaryHandItem(weapon)
-    else
-        player:setSecondaryHandItem(nil)
+    local currentState = Underbarrel.GetModeState(weapon)
+    if not Underbarrel.ReconcileModeState(weapon, player, false, nil, nil, false) then
+        return
     end
-    player:resetEquippedHandsModels()
 
-    DisplayMessage(player, "Using main weapon")
+    SendModeRequest(player, weapon, Underbarrel.ACTION_RESTORE, currentState.underbarrelType, currentState.modeSource)
 end
 
 --- Called by Init.lua for every ranged weapon at game load time.
@@ -510,6 +661,7 @@ function Underbarrel.RestoreOnLoad(weapon)
     local modData                        = weapon:getModData()
     modData.GW_IsUnderbarrelMode         = nil
     modData.GW_UnderbarrelModeWeaponType = nil
+    modData.GW_UnderbarrelModeSource     = nil
 end
 
 --- Called by WeaponUpgradeHooks when an underbarrel attachment is removed.
@@ -539,15 +691,10 @@ function Underbarrel.HandleAttachmentRemoval(weapon, removedPart, player)
 
         modData.GW_IsUnderbarrelMode         = nil
         modData.GW_UnderbarrelModeWeaponType = nil
+        modData.GW_UnderbarrelModeSource     = nil
 
         if player then
-            player:setPrimaryHandItem(weapon)
-            if weapon:isTwoHandWeapon() then
-                player:setSecondaryHandItem(weapon)
-            else
-                player:setSecondaryHandItem(nil)
-            end
-            player:resetEquippedHandsModels()
+            RefreshEquippedWeapon(player, weapon)
         end
     end
 
@@ -596,6 +743,7 @@ function Underbarrel.HandleAttachmentRemoval(weapon, removedPart, player)
     modData[ATTACHMENT_KEYS.containsClip]    = nil
     modData[ATTACHMENT_KEYS.magazineType]    = nil
     modData.GW_MainWeaponSavedStats          = nil
+    modData.GW_UnderbarrelModeSource         = nil
 end
 
 -------------------------------------------------
@@ -631,11 +779,16 @@ end
 ---@param player IsoPlayer
 function Underbarrel.SwapToIntegratedUnderbarrel(weapon, player)
     if not weapon or not player then return end
-    if not Underbarrel.HasIntegratedUnderbarrel(weapon) then return end
-    if not Underbarrel.IsIntegratedUnderbarrelDeployed(weapon) then return end
+    if not Underbarrel.CanSwapToIntegratedUnderbarrel(weapon) then return end
 
-    local entry = Underbarrel.IntegratedUnderbarrels[weapon:getFullType()]
-    EnterUnderbarrelMode(weapon, player, entry.type, INTEGRATED_KEYS, entry.swapStats)
+    local entry = GetIntegratedEntry(weapon)
+    if not entry then return end
+
+    if not Underbarrel.ReconcileModeState(weapon, player, true, Underbarrel.MODE_SOURCE_INTEGRATED, entry.type, false) then
+        return
+    end
+
+    SendModeRequest(player, weapon, Underbarrel.ACTION_ENTER_INTEGRATED, entry.type, Underbarrel.MODE_SOURCE_INTEGRATED)
 end
 
 return Underbarrel
