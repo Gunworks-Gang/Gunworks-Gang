@@ -148,7 +148,7 @@ function CAttachBayonet:fillMenu(menu, weapon)
     if not knife then return end
     self.bayonetKnife = knife
     local text = getText("IGUI_AttachBayonet")
-    menu:addSlice(text, getTexture("media/ui/GunworksRadial_DeployBipod.png"), self.invoke, self)
+    menu:addSlice(text, getTexture("media/ui/GunworksRadial_DeployBayonet.png"), self.invoke, self)
 end
 
 function CAttachBayonet:invoke()
