@@ -23,6 +23,21 @@ Railing.KnownAccessories = {}
 Railing.Exclusives = {}
 
 -------------------------------------------------
+-- Weapon exclusions: weaponFullType -> { accessoryFullType = true, ... }
+-- Lets shared rails reuse the same accepted accessory list while
+-- still blocking specific accessories on specific weapons.
+-------------------------------------------------
+Railing.WeaponExclusions = {}
+
+local function normalizeWeaponType(weaponOrWeaponType)
+    if not weaponOrWeaponType then return nil end
+    if type(weaponOrWeaponType) == "string" then
+        return weaponOrWeaponType
+    end
+    return weaponOrWeaponType:getFullType()
+end
+
+-------------------------------------------------
 -- Registration API
 -------------------------------------------------
 
@@ -33,6 +48,30 @@ function Railing.RegisterRailing(railingType, accessories)
     Railing.AcceptedAccessories[railingType] = accessories
     for _, acc in ipairs(accessories) do
         Railing.KnownAccessories[acc] = true
+    end
+end
+
+--- Register one or more accessories as blocked on a specific weapon.
+--- This only applies after a railing has already accepted the accessory.
+--- @param weaponType string|HandWeapon  e.g. "MWA.AA12"
+--- @param accessories string|string[]   e.g. "Base.8xScope" or { "Base.8xScope", "Base.Laser" }
+function Railing.RegisterWeaponExclusions(weaponType, accessories)
+    local normalizedWeaponType = normalizeWeaponType(weaponType)
+    if not normalizedWeaponType or not accessories then return end
+
+    if not Railing.WeaponExclusions[normalizedWeaponType] then
+        Railing.WeaponExclusions[normalizedWeaponType] = {}
+    end
+
+    local blockedAccessories = accessories
+    if type(blockedAccessories) ~= "table" then
+        blockedAccessories = { blockedAccessories }
+    end
+
+    for _, accessoryType in ipairs(blockedAccessories) do
+        if accessoryType then
+            Railing.WeaponExclusions[normalizedWeaponType][accessoryType] = true
+        end
     end
 end
 
@@ -79,6 +118,18 @@ function Railing.IsBlockedByExclusive(weapon, accessoryType)
         end
     end
     return false
+end
+
+--- Check if an accessory is blocked on the current weapon regardless of the railing.
+--- @param weapon HandWeapon|string
+--- @param accessoryType string
+--- @return boolean  true if blocked on this weapon
+function Railing.IsBlockedByWeapon(weapon, accessoryType)
+    local weaponType = normalizeWeaponType(weapon)
+    if not weaponType or not accessoryType then return false end
+
+    local blockedAccessories = Railing.WeaponExclusions[weaponType]
+    return blockedAccessories ~= nil and blockedAccessories[accessoryType] == true
 end
 
 -------------------------------------------------
@@ -215,6 +266,8 @@ function Railing.CanMountAccessory(weapon, accessoryType)
         end
     end
     if not found then return false end
+
+    if Railing.IsBlockedByWeapon(weapon, accessoryType) then return false end
 
     -- Check if the slot is already occupied by looking at the accessory's PartType
     local tempPart = instanceItem(accessoryType)
