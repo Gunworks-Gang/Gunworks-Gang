@@ -5,6 +5,7 @@ Bayonet.BayonetKnives = {}
 Bayonet.MountableWeapons = {}
 Bayonet.PendingWeaponRestorations = {}
 Bayonet.PendingHotbarRestorations = {}
+Bayonet.PendingAttackContexts = {}
 
 -------------------------------------------------
 -- Integrated Bayonet Registry
@@ -18,6 +19,68 @@ Bayonet.IntegratedBayonets = {}
 -- that bayonet attachment cannot be mounted.
 -------------------------------------------------
 Bayonet.Exclusives = {}
+
+local function IsAuthoritativeConditionContext()
+    return not isClient()
+end
+
+local function CopyConditionState(targetItem, sourceItem)
+    if not targetItem or not sourceItem then return false end
+
+    local previousCondition = targetItem:getCondition()
+    targetItem:copyConditionStatesFrom(sourceItem)
+    return targetItem:getCondition() ~= previousCondition
+end
+
+local function PrepareTemporaryBayonetWeapon(tempWeapon, sourceItem)
+    if not tempWeapon then return end
+
+    if sourceItem then
+        CopyConditionState(tempWeapon, sourceItem)
+        return
+    end
+
+    tempWeapon:setCondition(tempWeapon:getConditionMax())
+    tempWeapon:applyMaxSharpness()
+end
+
+local function GetPendingAttackContext(character, tempWeapon)
+    local context = Bayonet.PendingAttackContexts[character]
+    if not context then return nil end
+    if tempWeapon and context.tempWeapon ~= tempWeapon then return nil end
+    return context
+end
+
+local function ClearPendingAttackContext(character)
+    Bayonet.PendingAttackContexts[character] = nil
+end
+
+local function RollWeaponConditionLoss(character, weapon)
+    if not character or not weapon then return false end
+    if weapon:getCondition() <= 0 then return false end
+
+    local maintenanceMod = weapon:getMaintenanceMod(character)
+    local oneIn = math.max(1, weapon:getConditionLowerChance() + maintenanceMod)
+    if ZombRand(oneIn) ~= 0 then return false end
+
+    weapon:setCondition(weapon:getCondition() - 1)
+    return true
+end
+
+local function ApplyBayonetWeaponWear(character, tempWeapon)
+    local context = GetPendingAttackContext(character, tempWeapon)
+    if not context or context.weaponWearProcessed then return false end
+
+    context.weaponWearProcessed = true
+
+    if not IsAuthoritativeConditionContext() then return false end
+    if RollWeaponConditionLoss(character, context.originalWeapon) then
+        context.needsWeaponSync = true
+        return true
+    end
+
+    return false
+end
 
 -------------------------------------------------
 -- Registration API
@@ -148,6 +211,7 @@ function Bayonet.CanAttachBayonet(weapon, bayonetKnife)
     if not weapon or not bayonetKnife then return false end
     if not instanceof(weapon, "HandWeapon") then return false end
     if not weapon:isRanged() then return false end
+    if bayonetKnife:isBroken() then return false end
     if Bayonet.GetAttachedBayonetPart(weapon) then return false end
 
     local acceptedBayonets = Bayonet.BayonetMountableWeapons[weapon:getFullType()]
@@ -177,6 +241,7 @@ function Bayonet.AttachBayonet(weapon, bayonetKnife, player)
     local bayonetAttachment = instanceItem(knifeEntry.bayonetType)
 
     if bayonetAttachment and instanceof(bayonetAttachment, "WeaponPart") then
+        CopyConditionState(bayonetAttachment, bayonetKnife)
         weapon:attachWeaponPart(bayonetAttachment, true)
         player:getInventory():Remove(bayonetKnife)
         weapon:getModData().GW_BayonetDeployed = true
@@ -219,6 +284,7 @@ function Bayonet.RemoveBayonet(weapon, player)
     if bayonetKnifeType then
         returnedKnife = instanceItem(bayonetKnifeType)
         if returnedKnife then
+            CopyConditionState(returnedKnife, bayonetPart)
             player:getInventory():AddItem(returnedKnife)
         end
     end
@@ -232,6 +298,30 @@ end
 
 function Bayonet.RestoreWeaponAfterBayonet(character, weapon)
     if not character or not weapon then return end
+
+    local attackContext = GetPendingAttackContext(character)
+    if attackContext and attackContext.originalWeapon == weapon then
+        if attackContext.tempWeapon then
+            attackContext.tempWeapon:getModData().MWA_BayonetOriginalWeapon = nil
+        end
+
+        if IsAuthoritativeConditionContext() and not attackContext.isIntegrated and attackContext.tempWeapon then
+            local bayonetPart = Bayonet.GetAttachedBayonetPart(weapon)
+            if bayonetPart and CopyConditionState(bayonetPart, attackContext.tempWeapon) then
+                attackContext.needsWeaponSync = true
+            end
+
+            if bayonetPart and bayonetPart:isBroken() then
+                local success, returnedKnife = Bayonet.RemoveBayonet(weapon, character)
+                if success then
+                    attackContext.needsWeaponSync = true
+                    if isServer() and returnedKnife then
+                        sendAddItemToContainer(character:getInventory(), returnedKnife)
+                    end
+                end
+            end
+        end
+    end
 
     character:setPrimaryHandItem(weapon)
     if weapon:isTwoHandWeapon() then
@@ -250,19 +340,28 @@ function Bayonet.RestoreWeaponAfterBayonet(character, weapon)
         Bayonet.PendingHotbarRestorations[character] = nil
     end
 
+    if IsAuthoritativeConditionContext() and attackContext and attackContext.needsWeaponSync then
+        syncHandWeaponFields(character, weapon)
+    end
+
     Bayonet.PendingWeaponRestorations[character] = nil
+    ClearPendingAttackContext(character)
 end
 
 function Bayonet.BayonetAttack(character, chargeDelta, weapon, callback)
     -- Resolve spear type from integrated registry or attachable part
     local spearType
+    local isIntegrated = false
+    local bayonetConditionSource
     local integratedEntry = Bayonet.IntegratedBayonets[weapon:getFullType()]
     if integratedEntry then
         spearType = integratedEntry.weaponRef
+        isIntegrated = true
     else
         local bayonetPart = Bayonet.GetAttachedBayonetPart(weapon)
         if bayonetPart then
             spearType = Bayonet.GetSpearTypeFromAttachment(bayonetPart:getFullType())
+            bayonetConditionSource = bayonetPart
         end
     end
     if not spearType then return end
@@ -274,6 +373,7 @@ function Bayonet.BayonetAttack(character, chargeDelta, weapon, callback)
         weapon:getModData().GW_CachedBayonetSpear = bayonetTempWeapon
     end
 
+    PrepareTemporaryBayonetWeapon(bayonetTempWeapon, bayonetConditionSource)
     bayonetTempWeapon:setWeaponSprite(weapon:getWeaponSprite())
     bayonetTempWeapon:setIcon(weapon:getIcon())
     bayonetTempWeapon:getModData().MWA_BayonetOriginalWeapon = weapon
@@ -324,6 +424,13 @@ function Bayonet.BayonetAttack(character, chargeDelta, weapon, callback)
     end
 
     Bayonet.PendingWeaponRestorations[character] = weapon
+    Bayonet.PendingAttackContexts[character] = {
+        originalWeapon = weapon,
+        tempWeapon = bayonetTempWeapon,
+        isIntegrated = isIntegrated,
+        weaponWearProcessed = false,
+        needsWeaponSync = false,
+    }
     callback(character, chargeDelta, bayonetTempWeapon)
 end
 
@@ -404,6 +511,18 @@ function Bayonet.RestoreIntegratedBayonetState(weapon)
     end
     Bayonet.SwapIntegratedBayonetVisual(weapon)
 end
+
+Events.OnWeaponSwingHitPoint.Add(function(character, weapon)
+    ApplyBayonetWeaponWear(character, weapon)
+end)
+
+Events.OnWeaponHitTree.Add(function(character, weapon)
+    ApplyBayonetWeaponWear(character, weapon)
+end)
+
+Events.OnWeaponHitCharacter.Add(function(character, target, weapon)
+    ApplyBayonetWeaponWear(character, weapon)
+end)
 
 Events.OnPlayerUpdate.Add(function(playerObj)
     if not playerObj then return end
