@@ -67,11 +67,64 @@ local function RollWeaponConditionLoss(character, weapon)
     return true
 end
 
+function Bayonet.ProcessMultiplayerHit(character, weapon)
+    if not character or not weapon then return false end
+
+    local needsWeaponSync = false
+    if RollWeaponConditionLoss(character, weapon) then
+        needsWeaponSync = true
+    end
+
+    if not Bayonet.HasIntegratedBayonet(weapon) then
+        local bayonetPart = Bayonet.GetAttachedBayonetPart(weapon)
+        if bayonetPart then
+            local spearType = Bayonet.GetSpearTypeFromAttachment(bayonetPart:getFullType())
+            if spearType then
+                local tempWeapon = instanceItem(spearType)
+                if tempWeapon then
+                    PrepareTemporaryBayonetWeapon(tempWeapon, bayonetPart)
+                    tempWeapon:damageCheck(0, 1, false)
+                    if CopyConditionState(bayonetPart, tempWeapon) then
+                        needsWeaponSync = true
+                    end
+                end
+            end
+
+            if bayonetPart:isBroken() then
+                local success, returnedKnife = Bayonet.RemoveBayonet(weapon, character)
+                if success then
+                    needsWeaponSync = true
+                    if isServer() and returnedKnife then
+                        sendAddItemToContainer(character:getInventory(), returnedKnife)
+                    end
+                end
+            end
+        end
+    end
+
+    if needsWeaponSync then
+        syncHandWeaponFields(character, weapon)
+    end
+
+    return needsWeaponSync
+end
+
 local function ApplyBayonetWeaponWear(character, tempWeapon)
     local context = GetPendingAttackContext(character, tempWeapon)
     if not context or context.weaponWearProcessed then return false end
 
     context.weaponWearProcessed = true
+
+    if isClient() then
+        if instanceof(character, "IsoPlayer") and character:isLocalPlayer() then
+            sendClientCommand(character, "SWMG", "bayonetHit", {
+                itemId = context.originalWeapon:getID(),
+            })
+            return true
+        end
+
+        return false
+    end
 
     if not IsAuthoritativeConditionContext() then return false end
     if RollWeaponConditionLoss(character, context.originalWeapon) then

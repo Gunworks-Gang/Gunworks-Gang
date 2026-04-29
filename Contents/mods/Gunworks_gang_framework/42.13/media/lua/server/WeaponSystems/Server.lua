@@ -1,6 +1,7 @@
 local Server = {}
 
 local Ammo = require("WeaponSystems/Utils/Ammo")
+local Bayonet = require("WeaponSystems/Utils/Bayonet")
 local RateOfFire = require('WeaponSystems/Utils/RateOfFire')
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 
@@ -116,6 +117,13 @@ function Server.OnClientCommand(module, command, player, args)
         for i = 0, onlinePlayers:size() - 1 do
             sendServerCommand(onlinePlayers:get(i), "SWMG", "syncWeapon", args)
         end
+    elseif command == "bayonetHit" then
+        local weapon = Server.getRecursiveWeaponById(player, args.itemId)
+        if not weapon then return end
+        if player:getPrimaryHandItem() ~= weapon and player:getSecondaryHandItem() ~= weapon then return end
+        if not Bayonet.IsBayonetDeployed(weapon) then return end
+
+        Bayonet.ProcessMultiplayerHit(player, weapon)
     elseif command == "underbarrelMode" then
         local weapon = Server.getRecursiveWeaponById(player, args.itemId)
         if not weapon then
