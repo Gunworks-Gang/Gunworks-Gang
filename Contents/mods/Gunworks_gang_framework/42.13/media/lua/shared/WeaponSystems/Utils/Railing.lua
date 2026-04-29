@@ -37,6 +37,27 @@ local function normalizeWeaponType(weaponOrWeaponType)
     return weaponOrWeaponType:getFullType()
 end
 
+local function normalizeWeaponTypes(weaponTypeOrTypes)
+    if not weaponTypeOrTypes then return nil end
+
+    if type(weaponTypeOrTypes) ~= "table" then
+        local weaponType = normalizeWeaponType(weaponTypeOrTypes)
+        if not weaponType then return nil end
+        return { weaponType }
+    end
+
+    local normalizedWeaponTypes = {}
+    for _, weaponTypeOrWeapon in ipairs(weaponTypeOrTypes) do
+        local weaponType = normalizeWeaponType(weaponTypeOrWeapon)
+        if weaponType then
+            table.insert(normalizedWeaponTypes, weaponType)
+        end
+    end
+
+    if #normalizedWeaponTypes == 0 then return nil end
+    return normalizedWeaponTypes
+end
+
 -------------------------------------------------
 -- Registration API
 -------------------------------------------------
@@ -53,24 +74,26 @@ end
 
 --- Register one or more accessories as blocked on a specific weapon.
 --- This only applies after a railing has already accepted the accessory.
---- @param weaponType string|HandWeapon  e.g. "MWA.AA12"
+--- @param weaponType string|HandWeapon|string[]  e.g. "MWA.AA12" or { "MWA.AA12", "MWA.AA13" }
 --- @param accessories string|string[]   e.g. "Base.8xScope" or { "Base.8xScope", "Base.Laser" }
 function Railing.RegisterWeaponExclusions(weaponType, accessories)
-    local normalizedWeaponType = normalizeWeaponType(weaponType)
-    if not normalizedWeaponType or not accessories then return end
-
-    if not Railing.WeaponExclusions[normalizedWeaponType] then
-        Railing.WeaponExclusions[normalizedWeaponType] = {}
-    end
+    local normalizedWeaponTypes = normalizeWeaponTypes(weaponType)
+    if not normalizedWeaponTypes or not accessories then return end
 
     local blockedAccessories = accessories
     if type(blockedAccessories) ~= "table" then
         blockedAccessories = { blockedAccessories }
     end
 
-    for _, accessoryType in ipairs(blockedAccessories) do
-        if accessoryType then
-            Railing.WeaponExclusions[normalizedWeaponType][accessoryType] = true
+    for _, normalizedWeaponType in ipairs(normalizedWeaponTypes) do
+        if not Railing.WeaponExclusions[normalizedWeaponType] then
+            Railing.WeaponExclusions[normalizedWeaponType] = {}
+        end
+
+        for _, accessoryType in ipairs(blockedAccessories) do
+            if accessoryType then
+                Railing.WeaponExclusions[normalizedWeaponType][accessoryType] = true
+            end
         end
     end
 end
