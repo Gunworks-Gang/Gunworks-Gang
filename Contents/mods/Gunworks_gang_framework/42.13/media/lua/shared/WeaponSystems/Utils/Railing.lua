@@ -37,35 +37,25 @@ local function normalizeWeaponType(weaponOrWeaponType)
     return weaponOrWeaponType:getFullType()
 end
 
-local function normalizeWeaponTypes(weaponTypeOrTypes)
-    if not weaponTypeOrTypes then return nil end
-
-    if type(weaponTypeOrTypes) ~= "table" then
-        local weaponType = normalizeWeaponType(weaponTypeOrTypes)
-        if not weaponType then return nil end
-        return { weaponType }
-    end
-
-    local normalizedWeaponTypes = {}
-    for _, weaponTypeOrWeapon in ipairs(weaponTypeOrTypes) do
-        local weaponType = normalizeWeaponType(weaponTypeOrWeapon)
-        if weaponType then
-            table.insert(normalizedWeaponTypes, weaponType)
-        end
-    end
-
-    if #normalizedWeaponTypes == 0 then return nil end
-    return normalizedWeaponTypes
-end
-
 -------------------------------------------------
 -- Registration API
 -------------------------------------------------
 
 --- Register a railing and the accessories it accepts.
---- @param railingType string          e.g. "MWA.PICATINNY_RAIL"
+--- @param railingType string|string[]  e.g. "MWA.PICATINNY_RAIL" or { "MWA.PICATINNY_RAIL", "MWA.AK_MOUNT" }
 --- @param accessories string[]        e.g. { "Base.2xScope", "Base.4xScope" }
 function Railing.RegisterRailing(railingType, accessories)
+    if not railingType or not accessories then return end
+
+    if type(railingType) == "table" then
+        for _, currentRailingType in ipairs(railingType) do
+            if currentRailingType then
+                Railing.RegisterRailing(currentRailingType, accessories)
+            end
+        end
+        return
+    end
+
     Railing.AcceptedAccessories[railingType] = accessories
     for _, acc in ipairs(accessories) do
         Railing.KnownAccessories[acc] = true
@@ -77,33 +67,51 @@ end
 --- @param weaponType string|HandWeapon|string[]  e.g. "MWA.AA12" or { "MWA.AA12", "MWA.AA13" }
 --- @param accessories string|string[]   e.g. "Base.8xScope" or { "Base.8xScope", "Base.Laser" }
 function Railing.RegisterWeaponExclusions(weaponType, accessories)
-    local normalizedWeaponTypes = normalizeWeaponTypes(weaponType)
-    if not normalizedWeaponTypes or not accessories then return end
+    if not weaponType or not accessories then return end
+
+    if type(weaponType) == "table" then
+        for _, currentWeaponType in ipairs(weaponType) do
+            if currentWeaponType then
+                Railing.RegisterWeaponExclusions(currentWeaponType, accessories)
+            end
+        end
+        return
+    end
+
+    local normalizedWeaponType = normalizeWeaponType(weaponType)
+    if not normalizedWeaponType then return end
+
+    if not Railing.WeaponExclusions[normalizedWeaponType] then
+        Railing.WeaponExclusions[normalizedWeaponType] = {}
+    end
 
     local blockedAccessories = accessories
     if type(blockedAccessories) ~= "table" then
         blockedAccessories = { blockedAccessories }
     end
 
-    for _, normalizedWeaponType in ipairs(normalizedWeaponTypes) do
-        if not Railing.WeaponExclusions[normalizedWeaponType] then
-            Railing.WeaponExclusions[normalizedWeaponType] = {}
-        end
-
-        for _, accessoryType in ipairs(blockedAccessories) do
-            if accessoryType then
-                Railing.WeaponExclusions[normalizedWeaponType][accessoryType] = true
-            end
+    for _, accessoryType in ipairs(blockedAccessories) do
+        if accessoryType then
+            Railing.WeaponExclusions[normalizedWeaponType][accessoryType] = true
         end
     end
 end
 
---- Register two items as mutually exclusive.
+--- Register one or more items as mutually exclusive with one or more other items.
 --- If one is mounted, the other cannot be mounted.
---- @param itemA string  e.g. "MWA.BIPOD_DEPLOYED"
+--- @param itemA string|string[]  e.g. "MWA.BIPOD_DEPLOYED" or { "MWA.BOOSTER_ON", "MWA.BOOSTER_OFF" }
 --- @param itemB string|string[]  e.g. "MWA.INTEGRATED_BIPOD_DEPLOYED" or { "MWA.SCOPE_A", "MWA.SCOPE_B" }
 function Railing.SetExclusives(itemA, itemB)
     if not itemA or not itemB then return end
+
+    if type(itemA) == "table" then
+        for _, primaryItem in ipairs(itemA) do
+            if primaryItem then
+                Railing.SetExclusives(primaryItem, itemB)
+            end
+        end
+        return
+    end
 
     if not Railing.Exclusives[itemA] then Railing.Exclusives[itemA] = {} end
 
@@ -124,6 +132,8 @@ function Railing.SetExclusives(itemA, itemB)
         end
     end
 end
+
+-------------------------------------------------
 
 --- Check if an accessory is blocked by an exclusive item already on the weapon.
 --- @param weapon HandWeapon

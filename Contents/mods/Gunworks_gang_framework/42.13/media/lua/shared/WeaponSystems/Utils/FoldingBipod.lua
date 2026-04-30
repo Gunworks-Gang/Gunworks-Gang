@@ -38,6 +38,14 @@ function FoldingBipod.RegisterWeapon(weaponType, entry)
     FoldingBipod.WeaponsWithFoldableBipod[weaponType] = entry
 end
 
+function FoldingBipod.RegisterMultipleWeapons(entriesTable)
+    if not entriesTable then return end
+
+    for weaponType, entry in pairs(entriesTable) do
+        FoldingBipod.RegisterWeapon(weaponType, entry)
+    end
+end
+
 -------------------------------------------------
 -- Core functions
 -------------------------------------------------

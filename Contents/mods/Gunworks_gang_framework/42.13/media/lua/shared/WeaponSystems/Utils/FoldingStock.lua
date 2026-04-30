@@ -38,6 +38,14 @@ function FoldingStock.RegisterWeapon(weaponType, entry)
     FoldingStock.WeaponsWithFoldableStock[weaponType] = entry
 end
 
+function FoldingStock.RegisterMultipleWeapons(entriesTable)
+    if not entriesTable then return end
+
+    for weaponType, entry in pairs(entriesTable) do
+        FoldingStock.RegisterWeapon(weaponType, entry)
+    end
+end
+
 -------------------------------------------------
 -- Core functions
 -------------------------------------------------

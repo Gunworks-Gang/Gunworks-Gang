@@ -168,29 +168,34 @@ end
 
 --- Register one or more weapon parts as exclusive with a bayonet attachment.
 --- If one of the exclusive parts is installed, the bayonet cannot be mounted.
----@param bayonetType string           e.g. "MWA.M9_BAYONET"
+---@param bayonetType string|string[]  e.g. "MWA.M9_BAYONET" or { "MWA.M9_BAYONET", "MWA.M5_BAYONET" }
 ---@param itemB string|string[]        e.g. "Base.Scope" or { "Base.Scope", "Base.Sling" }
 function Bayonet.SetExclusives(bayonetType, itemB)
     if not bayonetType or not itemB then return end
 
-    if not Bayonet.Exclusives[bayonetType] then Bayonet.Exclusives[bayonetType] = {} end
+    if type(bayonetType) == "table" then
+        for _, currentBayonetType in ipairs(bayonetType) do
+            if currentBayonetType then
+                Bayonet.SetExclusives(currentBayonetType, itemB)
+            end
+        end
+        return
+    end
 
-    local itemsB = {}
     if type(itemB) == "table" then
         for _, exclusiveItem in ipairs(itemB) do
-            table.insert(itemsB, exclusiveItem)
+            if exclusiveItem then
+                Bayonet.SetExclusives(bayonetType, exclusiveItem)
+            end
         end
-    else
-        table.insert(itemsB, itemB)
+        return
     end
 
-    for _, exclusiveItem in ipairs(itemsB) do
-        if exclusiveItem then
-            if not Bayonet.Exclusives[exclusiveItem] then Bayonet.Exclusives[exclusiveItem] = {} end
-            Bayonet.Exclusives[bayonetType][exclusiveItem] = true
-            Bayonet.Exclusives[exclusiveItem][bayonetType] = true
-        end
-    end
+    if not Bayonet.Exclusives[bayonetType] then Bayonet.Exclusives[bayonetType] = {} end
+
+    if not Bayonet.Exclusives[itemB] then Bayonet.Exclusives[itemB] = {} end
+    Bayonet.Exclusives[bayonetType][itemB] = true
+    Bayonet.Exclusives[itemB][bayonetType] = true
 end
 
 --- Register a weapon with an integrated (non-removable) bayonet.
