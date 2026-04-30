@@ -25,13 +25,21 @@ Magazine.ProfileMagazineSet = {}
 --- Register one or more weapons to a magazine profile.
 ---@param profileName string
 ---@param weaponTypes string|string[]  single fullType or array of fullTypes
-function Magazine.RegisterWeaponProfile(profileName, weaponTypes)
+function Magazine.RegisterWeaponWithProfile(profileName, weaponTypes)
     if type(weaponTypes) == "string" then
         Magazine.WeaponMagazineProfile[weaponTypes] = profileName
     else
         for i = 1, #weaponTypes do
             Magazine.WeaponMagazineProfile[weaponTypes[i]] = profileName
         end
+    end
+end
+
+function Magazine.RegisterMultipleWeaponsWithProfiles(entriesTable)
+    if not entriesTable then return end
+
+    for profileName, weaponTypes in pairs(entriesTable) do
+        Magazine.RegisterWeaponWithProfile(profileName, weaponTypes)
     end
 end
 
@@ -45,6 +53,14 @@ function Magazine.RegisterMagazineProfile(profileName, magazineTypes)
         set[magazineTypes[i]] = true
     end
     Magazine.ProfileMagazineSet[profileName] = set
+end
+
+function Magazine.RegisterMultipleMagazineProfiles(entriesTable)
+    if not entriesTable then return end
+
+    for profileName, magazineTypes in pairs(entriesTable) do
+        Magazine.RegisterMagazineProfile(profileName, magazineTypes)
+    end
 end
 
 -------------------------------------------------

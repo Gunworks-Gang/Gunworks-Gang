@@ -40,6 +40,16 @@ function UpgradeExclusives.SetExclusives(itemA, itemB)
     end
 end
 
+--- Convenience registry that allows you to pass a table of entries
+--- e.g. { ["Base.Bipod"] = "Base.Foregrip", ["Base.Scope"] = { "Base.Sling", "Base.Laser" } }
+function UpgradeExclusives.RegisterMultipleSetOfExclusives(entriesTable)
+    if not entriesTable then return end
+
+    for itemA, itemB in pairs(entriesTable) do
+        UpgradeExclusives.SetExclusives(itemA, itemB)
+    end
+end
+
 -------------------------------------------------
 -- Query
 -------------------------------------------------

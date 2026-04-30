@@ -80,13 +80,21 @@ end
 --- Register one or more weapons/magazines to an ammo family
 --- @param family string           e.g. "5.56x45mm"
 --- @param itemTypes string|table  single type string or array of type strings
-function Ammo.RegisterItemFamily(family, itemTypes)
+function Ammo.RegisterItemWithFamily(family, itemTypes)
     if type(itemTypes) == "table" then
         for _, itemType in ipairs(itemTypes) do
             Ammo.ItemAmmoFamily[itemType] = family
         end
     else
         Ammo.ItemAmmoFamily[itemTypes] = family
+    end
+end
+
+function Ammo.RegisterMultipleItemsWithFamilies(entriesTable)
+    if not entriesTable then return end
+
+    for family, itemTypes in pairs(entriesTable) do
+        Ammo.RegisterItemWithFamily(family, itemTypes)
     end
 end
 
@@ -102,12 +110,30 @@ function Ammo.RegisterAmmoFamily(family, bullets)
     end
 end
 
+function Ammo.RegisterMultipleAmmoFamilies(entriesTable)
+    if not entriesTable then return end
+
+    for family, bullets in pairs(entriesTable) do
+        Ammo.RegisterAmmoFamily(family, bullets)
+    end
+end
+
 --- Register a new ammo stat profile or overwrite an existing one
 --- @param profileName string  e.g. "IncendiaryAmmo"
 --- @param modifiers table  array of modifier functions (StatsFactory.Adjust / .Set / .Multiply / raw function)
 function Ammo.RegisterAmmoStats(profileName, modifiers)
     Ammo.AmmoStats[profileName] = modifiers
 end
+
+function Ammo.RegisterMultipleAmmoStats(entriesTable)
+    if not entriesTable then return end
+
+    for profileName, modifiers in pairs(entriesTable) do
+        Ammo.RegisterAmmoStats(profileName, modifiers)
+    end
+end
+
+-------------------------------------------------
 
 function Ammo.GetAmmoCharacteristics(bulletType)
     local entry = Ammo.FindBulletEntry(bulletType)

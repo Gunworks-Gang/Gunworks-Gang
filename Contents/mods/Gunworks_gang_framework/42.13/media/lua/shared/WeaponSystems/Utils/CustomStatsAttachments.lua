@@ -38,6 +38,14 @@ function CustomStatsAttachments.RegisterPart(partFullType, modifiers)
     }
 end
 
+function CustomStatsAttachments.RegisterMultipleParts(partsTable)
+    if not partsTable then return end
+
+    for partFullType, modifiers in pairs(partsTable) do
+        CustomStatsAttachments.RegisterPart(partFullType, modifiers)
+    end
+end
+
 -------------------------------------------------
 -- Modifier layer callback
 -------------------------------------------------
