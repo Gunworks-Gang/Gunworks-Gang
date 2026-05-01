@@ -140,22 +140,33 @@ end
 -------------------------------------------------
 
 --- Register one or more weapons that can accept a bayonet.
----@param weaponTypes string|string[]  fullType or table of fullTypes e.g. {"MWA.M16A2", "MWA.ACR"}
----@param bayonetType string           the bayonet attachment fullType e.g. "MWA.M9_BAYONET"
-function Bayonet.RegisterMountableWeapon(weaponTypes, bayonetType)
+---@param bayonetType string|string[]  the bayonet attachment fullType e.g. "MWA.M9_BAYONET" or { "MWA.M9_BAYONET", "MWA.M5_BAYONET" }
+---@param weaponTypes string|string[]  fullType or table of fullTypes e.g. "MWA.M16A2" or { "MWA.M16A2", "MWA.ACR" }
+function Bayonet.RegisterMountableWeapon(bayonetType, weaponTypes)
+    if not bayonetType or not weaponTypes then return end
+
+    if type(bayonetType) == "table" then
+        for _, currentBayonetType in ipairs(bayonetType) do
+            if currentBayonetType then
+                Bayonet.RegisterMountableWeapon(currentBayonetType, weaponTypes)
+            end
+        end
+        return
+    end
+
     if type(weaponTypes) == "table" then
         for _, weaponType in ipairs(weaponTypes) do
-            if not Bayonet.BayonetMountableWeapons[weaponType] then
-                Bayonet.BayonetMountableWeapons[weaponType] = {}
+            if weaponType then
+                Bayonet.RegisterMountableWeapon(bayonetType, weaponType)
             end
-            Bayonet.BayonetMountableWeapons[weaponType][bayonetType] = true
         end
-    else
-        if not Bayonet.BayonetMountableWeapons[weaponTypes] then
-            Bayonet.BayonetMountableWeapons[weaponTypes] = {}
-        end
-        Bayonet.BayonetMountableWeapons[weaponTypes][bayonetType] = true
+        return
     end
+
+    if not Bayonet.BayonetMountableWeapons[weaponTypes] then
+        Bayonet.BayonetMountableWeapons[weaponTypes] = {}
+    end
+    Bayonet.BayonetMountableWeapons[weaponTypes][bayonetType] = true
 end
 
 --- Register a knife item, its bayonet attachment, and the spear substitute used during melee.
