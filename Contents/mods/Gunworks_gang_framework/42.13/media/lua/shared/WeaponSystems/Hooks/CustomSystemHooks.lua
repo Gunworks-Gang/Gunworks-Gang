@@ -10,6 +10,7 @@ local Ammo = require("WeaponSystems/Utils/Ammo")
 local Bayonet = require("WeaponSystems/Utils/Bayonet")
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local OrdnanceFactory = require("ExplosivesSystems/OrdnanceFactory")
+local RateOfFire = require("WeaponSystems/Utils/RateOfFire")
 
 -------------------------------------------------
 -- BeginAutomaticReload (MagazineProfile support)
@@ -430,3 +431,32 @@ ISReloadWeaponAction.attackHook = function(character, chargeDelta, weapon)
 end
 
 Hook.Attack.Add(ISReloadWeaponAction.attackHook)
+
+Events.OnGameStart.Add(function()
+    local Original_Attack_Hook = ISReloadWeaponAction.attackHook
+
+    ISReloadWeaponAction.RAFattackHook = function(character, chargeDelta, weapon)
+        if weapon:isRanged() and not character:isDoShove() then
+            local canFire, intervalMs = RateOfFire.canFire(character, weapon)
+            if not canFire then return end
+
+            RateOfFire.applySpreadOnShot(character, weapon, intervalMs)
+
+            if weapon:getFireMode() == "RealBurst" then
+                if RateOfFire.burstState[character:getPlayerNum()] then return end
+                if not RateOfFire.canStartBurst(character) then return end
+
+                local result = Original_Attack_Hook(character, chargeDelta, weapon)
+                RateOfFire.startBurst(character, weapon, intervalMs, Original_Attack_Hook, chargeDelta)
+                return result
+            end
+        end
+
+        return Original_Attack_Hook(character, chargeDelta, weapon)
+    end
+
+    Hook.Attack.Remove(ISReloadWeaponAction.attackHook)
+    Hook.Attack.Add(ISReloadWeaponAction.RAFattackHook)
+    Events.OnTick.Add(RateOfFire.burstTickHandler)
+    Events.OnTick.Add(RateOfFire.decaySpreadTick)
+end)
