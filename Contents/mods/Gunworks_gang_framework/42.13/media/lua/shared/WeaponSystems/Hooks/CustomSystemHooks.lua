@@ -432,6 +432,9 @@ end
 
 Hook.Attack.Add(ISReloadWeaponAction.attackHook)
 
+------------------------------------------------
+-- RAF_Hook: Right on game start ensure the hook takes over after picking all attack hooks
+-------------------------------------------------
 Events.OnGameStart.Add(function()
     local Original_Attack_Hook = ISReloadWeaponAction.attackHook
 
