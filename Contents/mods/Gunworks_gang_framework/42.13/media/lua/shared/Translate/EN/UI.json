@@ -1,5 +1,6 @@
 {
   "UI_optionscreen_binding_Gunworks_UnderbarrelUse": "Gunworks: Use underbarrel",
   "UI_optionscreen_binding_Gunworks_UnderbarrelRestore": "Gunworks: Restore main weapon",
-  "UI_optionscreen_binding_Gunworks_OpenLoaderUI": "Gunworks: Open weapon loader UI"
+  "UI_optionscreen_binding_Gunworks_OpenLoaderUI": "Gunworks: Open weapon loader UI",
+  "UI_optionscreen_binding_Gunworks_SwitchFirerate": "Gunworks: Cycle fire mode"
 }

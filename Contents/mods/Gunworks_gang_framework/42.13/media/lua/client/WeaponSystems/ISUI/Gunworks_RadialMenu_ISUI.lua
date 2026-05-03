@@ -7,6 +7,7 @@ local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachment")
 local Underbarrel       = require("WeaponSystems/Utils/Underbarrel")
 local Magazine          = require("WeaponSystems/Utils/Magazine")
 local Ammo              = require("WeaponSystems/Utils/Ammo")
+local RateOfFireUI      = require("WeaponSystems/ISUI/RateOfFire_ISUI")
 
 -------------------------------------------------
 -- BaseCommand  (mirrors ISFirearmRadialMenu pattern)
@@ -82,7 +83,7 @@ end
 
 function CToggleIntegratedBayonet:fillMenu(menu, weapon)
     if not Bayonet.HasIntegratedBayonet(weapon) then return end
-    local isDeployed = Bayonet.IsIntegratedBayonetDeployed(weapon)
+    local isDeployed = Bayonet.IsBayonetDeployed(weapon)
     local text = getText(isDeployed and "IGUI_FoldBayonet" or "IGUI_DeployBayonet")
     local icon = isDeployed and "media/ui/GunworksRadial_FoldBayonet.png" or "media/ui/GunworksRadial_DeployBayonet.png"
     menu:addSlice(text, getTexture(icon), self.invoke, self)
@@ -389,6 +390,15 @@ local function onDirectAmmoTypeSelected(character, weapon, bulletType)
     ISTimedActionQueue.add(ISReloadWeaponAction:new(character, weapon))
 end
 
+local function getFiremodeRadialTexture(entry)
+    return getTexture("media/ui/GunworksRadial_FireMode_" .. entry.modeKey .. ".png")
+        or getTexture("media/ui/GunworksRadial_ChangeFireMode.png")
+end
+
+local function onFiremodeSelected(character, weapon, firemode)
+    RateOfFireUI.ApplyFiremode(character, weapon, firemode)
+end
+
 -------------------------------------------------
 -- CSelectAmmunition
 -- Shown on non-magazine weapons that have a
@@ -424,6 +434,42 @@ function CSelectAmmunition:invoke()
 end
 
 -------------------------------------------------
+-- CChangeFireMode
+-- Shows a sub-radial with the available fire
+-- modes when the weapon supports 2+ modes.
+-------------------------------------------------
+local CChangeFireMode = BaseCommand:derive("CChangeFireMode")
+
+function CChangeFireMode:new(frm)
+    return BaseCommand.new(self, frm)
+end
+
+function CChangeFireMode:fillMenu(menu, weapon)
+    if not RateOfFireUI.HasMultipleFiremodes(weapon) then return end
+    local text = getText("ContextMenu_ChangeFireMode")
+    menu:addSlice(text, getTexture("media/ui/GunworksRadial_ChangeFireMode.png"), self.invoke, self)
+end
+
+function CChangeFireMode:invoke()
+    local weapon = self:getWeapon()
+    if not weapon then return end
+
+    local entries = RateOfFireUI.GetSelectableFiremodeEntries(weapon)
+    if #entries == 0 then return end
+
+    local playerNum = self.character:getPlayerNum()
+    local menu = getPlayerRadialMenu(playerNum)
+    menu:clear()
+
+    for _, entry in ipairs(entries) do
+        menu:addSlice(entry.label, getFiremodeRadialTexture(entry),
+            onFiremodeSelected, self.character, weapon, entry.mode)
+    end
+
+    displaySubRadial(playerNum)
+end
+
+-------------------------------------------------
 -- Helper: does this weapon have any Gunworks feature?
 -------------------------------------------------
 local function hasGunworksFeature(weapon, playerObj)
@@ -433,6 +479,7 @@ local function hasGunworksFeature(weapon, playerObj)
     if Bayonet.CanRemoveBayonet(weapon) then return true end
     if Underbarrel.HasIntegratedUnderbarrel(weapon) then return true end
     if DynamicAttachment.HasSwappableAttachment(weapon) then return true end
+    if RateOfFireUI.HasMultipleFiremodes(weapon) then return true end
     if Bayonet.BayonetMountableWeapons[weapon:getFullType()] then
         local inventory = playerObj:getInventory():getItems()
         for i = 0, inventory:size() - 1 do
@@ -475,6 +522,7 @@ function ISFirearmRadialMenu:fillMenu()
         CRemoveBayonet:new(self),
         CAttachBayonet:new(self),
         CToggleIntegratedUnderbarrel:new(self),
+        CChangeFireMode:new(self),
         CSwapDynamicAttachment:new(self),
         CInsertMagazineProfile:new(self),
         CSelectAmmunition:new(self),
