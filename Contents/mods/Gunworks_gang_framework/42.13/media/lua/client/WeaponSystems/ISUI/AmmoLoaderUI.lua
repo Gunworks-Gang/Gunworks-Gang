@@ -817,7 +817,7 @@ local function onKeyPressed(key)
     local player = getSpecificPlayer(0)
     if not player then return end
 
-    if key == GunworksKeybinds.GetBoundKey(KEYBIND_OPEN_LOADER_UI, Keyboard.KEY_P) then
+    if key == GunworksKeybinds.GetBoundKey(KEYBIND_OPEN_LOADER_UI, Keyboard.KEY_O) then
         if player and not player:isDead() then
             if UIManager.getSpeedControls() and UIManager.getSpeedControls():getCurrentGameSpeed() == 0 then
                 return
