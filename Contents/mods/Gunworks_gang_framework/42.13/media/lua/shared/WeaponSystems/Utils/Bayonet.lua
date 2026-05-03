@@ -581,15 +581,18 @@ function Bayonet.RestoreIntegratedBayonetState(weapon)
     Bayonet.SwapIntegratedBayonetVisual(weapon)
 end
 
-Events.OnWeaponSwingHitPoint.Add(function(character, weapon)
-    ApplyBayonetWeaponWear(character, weapon)
-end)
-
 Events.OnWeaponHitTree.Add(function(character, weapon)
+    print("OnWeaponHitTree - applying bayonet weapon wear")
     ApplyBayonetWeaponWear(character, weapon)
 end)
 
 Events.OnWeaponHitCharacter.Add(function(character, target, weapon)
+    print("OnWeaponHitCharacter - applying bayonet weapon wear")
+    ApplyBayonetWeaponWear(character, weapon)
+end)
+
+Events.OnHitZombie.Add(function(zombie, character, bodyPart, weapon)
+    print("OnHitZombie - applying bayonet weapon wear")
     ApplyBayonetWeaponWear(character, weapon)
 end)
 
