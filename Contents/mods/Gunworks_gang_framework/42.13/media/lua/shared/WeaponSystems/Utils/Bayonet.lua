@@ -1,4 +1,5 @@
 local Bayonet = {}
+local random = newrandom()
 
 Bayonet.BayonetMountableWeapons = {}
 Bayonet.BayonetKnives = {}
@@ -61,7 +62,7 @@ local function RollWeaponConditionLoss(character, weapon)
 
     local maintenanceMod = weapon:getMaintenanceMod(character)
     local oneIn = math.max(1, weapon:getConditionLowerChance() + maintenanceMod)
-    if ZombRand(oneIn) ~= 0 then return false end
+    if random:random(oneIn) ~= 0 then return false end
 
     weapon:setCondition(weapon:getCondition() - 1)
     return true
@@ -582,17 +583,14 @@ function Bayonet.RestoreIntegratedBayonetState(weapon)
 end
 
 Events.OnWeaponHitTree.Add(function(character, weapon)
-    print("OnWeaponHitTree - applying bayonet weapon wear")
     ApplyBayonetWeaponWear(character, weapon)
 end)
 
 Events.OnWeaponHitCharacter.Add(function(character, target, weapon)
-    print("OnWeaponHitCharacter - applying bayonet weapon wear")
     ApplyBayonetWeaponWear(character, weapon)
 end)
 
 Events.OnHitZombie.Add(function(zombie, character, bodyPart, weapon)
-    print("OnHitZombie - applying bayonet weapon wear")
     ApplyBayonetWeaponWear(character, weapon)
 end)
 
