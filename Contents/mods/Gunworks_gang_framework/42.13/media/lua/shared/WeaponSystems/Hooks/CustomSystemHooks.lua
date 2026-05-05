@@ -461,31 +461,44 @@ end
 -------------------------------------------------
 local ISUnloadBulletsFromFirearm_animEvent_Original = ISUnloadBulletsFromFirearm.animEvent
 function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
-    -- 'ejectAmmoStart' is a sound-only cue that returns early in vanilla.
-    -- Actual bullet removal fires when parameter ~= 'ejectAmmoStart' (nil on
-    -- the server via emulateAnimEvent). Mirror that condition here.
-    if event == 'playReloadSound' and parameter ~= 'ejectAmmoStart' then
-        if not isClient() then
-            local gun = self.gun
-            local gunModData = gun:getModData()
-            local ammoList = gunModData.AmmoList
+    if event == 'playReloadSound' then
+        if parameter == 'ejectAmmoStart' then
+            return ISUnloadBulletsFromFirearm_animEvent_Original(self, event, parameter)
+        end
 
-            if ammoList and #ammoList > 0 and gun:getCurrentAmmoCount() > 0 then
-                local count = 1
-                if gun:isInsertAllBulletsReload() then
-                    count = gun:getCurrentAmmoCount()
-                end
-                for _ = 1, count do
-                    if #ammoList > 0 then
-                        table.remove(ammoList, 1)
-                    end
+        local gun = self.gun
+        local gunModData = gun:getModData()
+        local ammoList = gunModData.AmmoList
+
+        if ammoList and #ammoList > 0 and gun:getCurrentAmmoCount() > 0 then
+            if gun:getEjectAmmoSound() then
+                self.character:playSound(gun:getEjectAmmoSound())
+            end
+
+            local count = 1
+            if gun:isInsertAllBulletsReload() then
+                count = gun:getCurrentAmmoCount()
+            end
+
+            if not isClient() then
+                while gun:getCurrentAmmoCount() > 0 and count > 0 and #ammoList > 0 do
+                    local bulletType = table.remove(ammoList, 1)
+                    local newBullet = instanceItem(bulletType)
+                    self.character:getInventory():AddItem(newBullet)
+                    gun:setCurrentAmmoCount(gun:getCurrentAmmoCount() - 1)
+                    sendAddItemToContainer(self.character:getInventory(), newBullet)
+                    syncHandWeaponFields(self.character, gun)
+                    count = count - 1
                 end
 
                 if #ammoList == 0 then
                     gunModData.AmmoList = nil
                 end
+                Ammo.SyncAmmoListToClient(self.character, gun)
             end
-            Ammo.SyncAmmoListToClient(self.character, gun)
+
+            self.unloadFinished = false
+            return
         end
     end
 
