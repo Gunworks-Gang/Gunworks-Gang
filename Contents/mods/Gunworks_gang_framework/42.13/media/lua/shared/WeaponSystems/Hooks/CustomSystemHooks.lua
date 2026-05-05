@@ -46,7 +46,33 @@ ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
             ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
         end
     else
-        ISReloadWeaponAction_BeginAutomaticReload_Original(playerObj, gun)
+        local currentAmmoType = gun and gun:getAmmoType()
+        local currentItemKey = currentAmmoType and currentAmmoType:getItemKey()
+        local reloadAmmoType = Ammo.GetAutomaticReloadAmmoType(playerObj, gun)
+
+        if not reloadAmmoType or reloadAmmoType == currentItemKey then
+            ISReloadWeaponAction_BeginAutomaticReload_Original(playerObj, gun)
+            return
+        end
+
+        if gun:getCurrentAmmoCount() >= gun:getMaxAmmo() then
+            return
+        end
+        if gun:isJammed() then
+            return
+        end
+
+        local ammoCount = ISInventoryPaneContextMenu.transferBullets(
+            playerObj,
+            reloadAmmoType,
+            gun:getCurrentAmmoCount(),
+            gun:getMaxAmmo()
+        )
+        if ammoCount == 0 then
+            return
+        end
+
+        ISTimedActionQueue.add(ISReloadWeaponAction:new(playerObj, gun, nil, reloadAmmoType))
     end
 end
 
@@ -177,9 +203,70 @@ end
 -------------------------------------------------
 -- Load and Unload Bullets from Magazine update AmmoList
 -------------------------------------------------
+
+local ISLoadBulletsInMagazine_start_Original = ISLoadBulletsInMagazine.start
+function ISLoadBulletsInMagazine:start()
+    if not self.ammoTypeOverride then
+        return ISLoadBulletsInMagazine_start_Original(self)
+    end
+
+    if not self.character:getInventory():containsWithModule(self.ammoTypeOverride) then
+        self:forceStop()
+        return
+    end
+
+    self.ammoCountStart = self.magazine:getCurrentAmmoCount()
+    self.magazine:setJobDelta(0.0)
+    self:setOverrideHandModels(nil, "GunMagazine")
+    self:setActionAnim(CharacterActionAnims.InsertBullets)
+    self:initVars()
+    self.loadedThisLoop = false
+    self.updateLoadBulletsTime = 0.0
+    self.character:setVariable("UpdateLoadBulletsTime", 0.0)
+end
+
 local ISLoadBulletsInMagazine_animEvent_Original = ISLoadBulletsInMagazine.animEvent
 function ISLoadBulletsInMagazine:animEvent(event, parameter)
     if event == 'InsertBullet' then
+        if self.ammoTypeOverride then
+            if self:isLoadFinished() then
+                return
+            end
+            if self:isLocal() and self.loadedThisLoop then
+                return
+            end
+
+            self.loadedThisLoop = true
+
+            if not isClient() then
+                local chance = 5
+                local xp = 1
+                if self.character:getPerkLevel(Perks.Reloading) < 5 then
+                    chance = 2
+                    xp = 4
+                end
+                if ZombRand(chance) == 0 then
+                    addXp(self.character, Perks.Reloading, xp)
+                end
+
+                local removedBullet = self.character:getInventory():RemoveOneOf(self.ammoTypeOverride, true)
+                if not removedBullet then
+                    return
+                end
+
+                self.magazine:setCurrentAmmoCount(self.magazine:getCurrentAmmoCount() + 1)
+                sendRemoveItemFromContainer(self.character:getInventory(), removedBullet)
+                syncItemFields(self.character, self.magazine)
+
+                local modData = self.magazine:getModData()
+                modData.AmmoList = modData.AmmoList or {}
+                modData.AmmoList[#modData.AmmoList + 1] = self.ammoTypeOverride
+                Ammo.SyncAmmoListToClient(self.character, self.magazine)
+            end
+
+            return
+        end
+
         if self:isLoadFinished() then
             return ISLoadBulletsInMagazine_animEvent_Original(self, event, parameter)
         end
@@ -241,14 +328,44 @@ function ISLoadBulletsInMagazine:isLoadFinished()
         return true
     end
 
+    if self.ammoTypeOverride then
+        return self.magazine:getCurrentAmmoCount() >= self.magazine:getMaxAmmo()
+            or not self.character:getInventory():containsWithModule(self.ammoTypeOverride)
+    end
+
     return ISLoadBulletsInMagazine_isLoadFinished_Original(self)
 end
 
 local ISLoadBulletsInMagazine_new_Original = ISLoadBulletsInMagazine.new
-function ISLoadBulletsInMagazine:new(character, magazine, ammoCount, ammoLimit)
+function ISLoadBulletsInMagazine:new(character, magazine, ammoCount, ammoLimit, ammoTypeOverride)
     local o = ISLoadBulletsInMagazine_new_Original(self, character, magazine, ammoCount)
     o.ammoLimit = ammoLimit
+    o.ammoTypeOverride = ammoTypeOverride
+    if ammoTypeOverride then
+        o.ammo = instanceItem(ammoTypeOverride)
+    end
     return o
+end
+
+local ISReloadWeaponAction_initVars_Original = ISReloadWeaponAction.initVars
+function ISReloadWeaponAction:initVars()
+    if not self.ammoTypeOverride then
+        return ISReloadWeaponAction_initVars_Original(self)
+    end
+
+    ISReloadWeaponAction.setReloadSpeed(self.character, false)
+
+    local ammoCount = self.character:getInventory():getItemCountRecurse(self.ammoTypeOverride)
+    ammoCount = math.min(ammoCount, self.gun:getMaxAmmo() - self.gun:getCurrentAmmoCount())
+    if ammoCount <= 0 then
+        return
+    end
+
+    local bullets = self.character:getInventory():getSomeTypeRecurse(self.ammoTypeOverride, ammoCount)
+    if bullets and not bullets:isEmpty() then
+        self.bullets = bullets
+        self.ammoCount = ammoCount
+    end
 end
 
 -------------------------------------------------
@@ -331,10 +448,11 @@ function ISReloadWeaponAction:loadAmmo()
 end
 
 local ISReloadWeaponAction_new_Original = ISReloadWeaponAction.new
-function ISReloadWeaponAction:new(character, gun, ammoLimit)
+function ISReloadWeaponAction:new(character, gun, ammoLimit, ammoTypeOverride)
     local o = ISReloadWeaponAction_new_Original(self, character, gun)
     o.ammoLimit = ammoLimit
     o.ammoCountStart = gun:getCurrentAmmoCount()
+    o.ammoTypeOverride = ammoTypeOverride
     return o
 end
 

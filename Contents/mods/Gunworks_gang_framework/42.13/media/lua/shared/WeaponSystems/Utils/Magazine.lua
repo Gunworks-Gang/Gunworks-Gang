@@ -1,4 +1,5 @@
 local Magazine = {}
+local Ammo = require("WeaponSystems/Utils/Ammo")
 
 -------------------------------------------------
 -- Table 1: Weapon -> Magazine Profile
@@ -122,12 +123,15 @@ function Magazine.reloadMagazine(playerObj, magazine)
     if not magazine then
         return 0
     end
-    local itemKey = magazine:getAmmoType():getItemKey();
+    local itemKey = Ammo.GetAutomaticReloadAmmoType(playerObj, magazine)
+    if not itemKey then
+        return 0
+    end
     local ammoCount = magazine:getCurrentAmmoCount() +
         ISInventoryPaneContextMenu.transferBullets(playerObj, itemKey, magazine:getCurrentAmmoCount(),
             magazine:getMaxAmmo())
     if ammoCount > 0 then
-        ISTimedActionQueue.add(ISLoadBulletsInMagazine:new(playerObj, magazine, ammoCount))
+        ISTimedActionQueue.add(ISLoadBulletsInMagazine:new(playerObj, magazine, ammoCount, nil, itemKey))
     end
     return ammoCount
 end
