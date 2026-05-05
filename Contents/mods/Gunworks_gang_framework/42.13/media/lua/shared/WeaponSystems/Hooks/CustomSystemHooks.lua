@@ -16,6 +16,15 @@ local RateOfFire = require("WeaponSystems/Utils/RateOfFire")
 -- BeginAutomaticReload (MagazineProfile support)
 -------------------------------------------------
 local ISReloadWeaponAction_BeginAutomaticReload_Original = ISReloadWeaponAction.BeginAutomaticReload
+local function ReloadBestMagazineForGun(playerObj, gun)
+    local magazine = gun:getBestMagazine(playerObj)
+    local ammoCount = Magazine.reloadMagazine(playerObj, magazine)
+    if not magazine or ammoCount == 0 then
+        return
+    end
+    ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
+end
+
 ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
     if gun and Underbarrel.IsWeaponInUnderbarrelMode(gun) then
         ISReloadWeaponAction_BeginAutomaticReload_Original(playerObj, gun)
@@ -33,6 +42,29 @@ ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
                 return
             end
             ISTimedActionQueue.queueActions(playerObj, Magazine.ReloadBestMagazineFromList, gun)
+            return
+        end
+        if not magazine then return end
+        if magazine:getCurrentAmmoCount() > 0 then
+            ISInventoryPaneContextMenu.transferIfNeeded(playerObj, magazine)
+            ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
+            return
+        end
+        local ammoCount = Magazine.reloadMagazine(playerObj, magazine)
+        if ammoCount > 0 or not hasMagazine then
+            ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
+        end
+    elseif gun:getMagazineType() then
+        local magazine = gun:getBestMagazine(playerObj)
+        local hasMagazine = gun:isContainsClip()
+        if hasMagazine then
+            ISTimedActionQueue.add(ISEjectMagazine:new(playerObj, gun))
+            if magazine and magazine:getCurrentAmmoCount() > 0 then
+                ISInventoryPaneContextMenu.transferIfNeeded(playerObj, magazine)
+                ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
+                return
+            end
+            ISTimedActionQueue.queueActions(playerObj, ReloadBestMagazineForGun, gun)
             return
         end
         if not magazine then return end
