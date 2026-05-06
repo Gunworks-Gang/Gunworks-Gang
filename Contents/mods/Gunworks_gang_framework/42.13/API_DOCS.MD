@@ -1994,3 +1994,115 @@ UpgradeExclusives.RegisterMultipleSetOfExclusives({
 	},
 })
 ```
+
+## Explosives Systems (Experimental WIP)
+
+This system lets you register throwable explosives and explosive ammo as ordnance projectiles.
+Unspecified values use the framework defaults.
+
+Keep it simple:
+
+1. Register thrown explosives with `Register`.
+2. Register explosive ammo with `RegisterAmmo`.
+3. Only pass the fields you want to change.
+
+### Module import
+
+```lua
+local OrdnanceFactory = require("ExplosivesSystems/OrdnanceFactory")
+```
+
+### 1. Throwable explosive registration
+
+Use this for grenades, thrown bombs, or other thrown ordnance items.
+
+```lua
+OrdnanceFactory.Register(fullType, overrides)
+```
+
+Parameters:
+
+- `fullType`: full item type of the throwable item. --> this should point to a existing explosive script, example Base.Pipeboms, so it overwrites the vanilla throwing behavior.
+- `overrides`: table of optional ordnance settings.
+
+Common override fields:
+
+- `throwForce`: how hard the item is thrown.
+- `maxThrowDist`: max throw distance.
+- `floorBounces`: how many floor bounces it gets.
+- `bounceEnergy`: how much bounce it keeps.
+- `detonateOnImpact`: set to `true` for impact detonation.
+- `detonationDelay`: fuse time before detonation.
+- `explosionPower`: explosion power.
+- `explosionRange`: explosion radius.
+- `worldModel`: optional projectile model shown in flight.
+
+Example:
+
+```lua
+OrdnanceFactory.Register("MyMod.M67", {
+	throwForce = 8,
+	maxThrowDist = 15,
+	floorBounces = 5,
+	bounceEnergy = 0.2,
+	detonateOnImpact = false,
+	detonationDelay = 3,
+	explosionPower = 220,
+	explosionRange = 5,
+})
+```
+
+### 2. Explosive ammo registration
+
+Use this for ammo that should spawn an ordnance projectile instead of acting like a normal bullet.
+
+```lua
+OrdnanceFactory.RegisterAmmo(bulletFullType, overrides)
+```
+
+Parameters:
+
+- `bulletFullType`: full item type of the ammo.
+- `overrides`: table of optional ordnance settings.
+
+This is commonly used for rounds like 40mm grenades.
+
+Example:
+
+```lua
+OrdnanceFactory.RegisterAmmo("MyMod.40mm_HE", {
+	throwSpeed = 25,
+	maxThrowDist = 40,
+	arcFactor = 0.03,
+	detonateOnImpact = true,
+	explosionPower = 180,
+	explosionRange = 4,
+	worldModel = "MyMod.40mm_Projectile",
+})
+```
+
+### Complete example
+
+```lua
+local OrdnanceFactory = require("ExplosivesSystems/OrdnanceFactory")
+
+OrdnanceFactory.Register("MyMod.M67", {
+	throwForce = 8,
+	maxThrowDist = 15,
+	floorBounces = 5,
+	bounceEnergy = 0.2,
+	detonationDelay = 3,
+	explosionPower = 220,
+	explosionRange = 5,
+})
+
+OrdnanceFactory.RegisterAmmo("MyMod.40mm_HE", {
+	throwSpeed = 25,
+	maxThrowDist = 40,
+	arcFactor = 0.03,
+	detonateOnImpact = true,
+	explosionPower = 180,
+	explosionRange = 4,
+	worldModel = "MyMod.40mm_Projectile",
+})
+```
