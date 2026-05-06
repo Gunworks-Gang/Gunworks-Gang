@@ -1911,3 +1911,86 @@ UniversalAttachment.RegisterWeapons({
 	},
 })
 ```
+
+## Upgrade Exclusives System
+
+This system lets you block normal weapon upgrade parts from being installed together.
+If one exclusive part is already mounted, the other upgrade option is hidden.
+
+Typical setup:
+
+1. Register one exclusive pair.
+2. Or register several exclusive pairs in one table.
+
+### Module import
+
+```lua
+local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusives")
+```
+
+### 1. Single exclusive registration
+
+Use this to make one part exclusive with one or more other parts.
+
+```lua
+UpgradeExclusives.SetExclusives(itemA, itemB)
+```
+
+Parameters:
+
+- `itemA`: full item type of the first part.
+- `itemB`: one full item type or an array of full item types that should be blocked with `itemA`.
+
+This works both ways automatically.
+If `itemA` blocks `itemB`, then `itemB` also blocks `itemA`.
+
+Examples:
+
+```lua
+UpgradeExclusives.SetExclusives("Base.Bipod", "Base.Foregrip")
+```
+
+```lua
+UpgradeExclusives.SetExclusives("Base.Scope", {
+	"Base.Sling",
+	"Base.Laser",
+})
+```
+
+### 2. Multiple exclusive registration
+
+Use this to register many exclusives in one call.
+
+```lua
+UpgradeExclusives.RegisterMultipleSetOfExclusives(entriesTable)
+```
+
+Parameters:
+
+- `entriesTable`: table in the form `{ [itemA] = itemB }`.
+
+Example:
+
+```lua
+UpgradeExclusives.RegisterMultipleSetOfExclusives({
+	["Base.Bipod"] = "Base.Foregrip",
+	["Base.Scope"] = {
+		"Base.Sling",
+		"Base.Laser",
+	},
+})
+```
+
+### Complete example
+
+```lua
+local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusives")
+
+UpgradeExclusives.RegisterMultipleSetOfExclusives({
+	["Base.Bipod"] = "Base.Foregrip",
+	["Base.Scope"] = {
+		"Base.Sling",
+		"Base.Laser",
+	},
+})
+```
