@@ -1,6 +1,6 @@
 # Gunworks Gang API Docs
 
-## Ammunition System
+# Ammunition System
 
 This system lets you register weapons and magazines that can use more than one ammo type.
 You can also register stat profiles that change how the weapon performs with each ammo type.
@@ -206,7 +206,7 @@ Ammo.RegisterMultipleAmmoStats({
 })
 ```
 
-## Animations System
+# Animations System
 
 This system lets you animate parts of a weapon to simulate cycling and racking.
 You can do this with attached parts or with model swaps.
@@ -389,7 +389,7 @@ Animations.RegisterWeaponsWithCustomStates("MyMod.M60", {
 })
 ```
 
-## Bayonet System
+# Bayonet System
 
 The bayonet system supports two kinds of bayonets:
 
@@ -618,7 +618,7 @@ Bayonet.RegisterIntegratedBayonet("MyMod.SKS", {
 })
 ```
 
-## Custom Stats Attachment System
+# Custom Stats Attachment System
 
 This system lets weapon parts change weapon stats while attached.
 If a weapon has more than one registered part attached, all of their modifiers are combined and applied together.
@@ -744,7 +744,7 @@ CustomStatsAttachments.RegisterMultipleParts({
 })
 ```
 
-## Dynamic Attachments System
+# Dynamic Attachments System
 
 This system lets one installed attachment swap into another attachment.
 A common use is a part with two states, such as a folded bipod and a deployed bipod.
@@ -786,7 +786,7 @@ DynamicAttachment.RegisterPair("MyMod.Bipod_Deployed", "MyMod.Bipod_Folded")
 Registering a pair adds both directions automatically.
 That means the system can swap from `attachmentA` to `attachmentB`, and from `attachmentB` back to `attachmentA`.
 
-## Folding Bipod System
+# Folding Bipod System
 
 This system lets you register weapons with a foldable bipod.
 It can change weapon stats and visuals between folded and deployed states.
@@ -989,7 +989,7 @@ FoldingBipod.RegisterMultipleWeapons({
 })
 ```
 
-## Folding Stock System
+# Folding Stock System
 
 This follows the same idea as Folding Bipod, but for folding stocks.
 It can change weapon stats and visuals between folded and deployed states.
@@ -1104,7 +1104,7 @@ FoldingStock.RegisterMultipleWeapons({
 })
 ```
 
-## Magazine Systems
+# Magazine Systems
 
 This system lets you assign weapons to magazine profiles and define which magazines belong to each profile.
 
@@ -1231,7 +1231,7 @@ Visible magazine syncing does not need a separate registry function.
 If your weapon uses a visible detachable magazine, add the `InsertMag` anim event to the reload anim when the hand reaches the magazine well.
 The weapon model should use the `Clip` part slot for the magazine visual.
 
-## Prevent Removal System
+# Prevent Removal System
 
 This lets you mark weapon parts as permanent.
 Registered parts will not appear in the vanilla `Remove Weapon Upgrade` submenu.
@@ -1280,7 +1280,7 @@ PreventRemoval.Register({
 })
 ```
 
-## Railing System
+# Railing System
 
 This system lets you register rails and define which accessories each rail can accept.
 You can also block specific accessories on specific weapons and set exclusives.
@@ -1408,7 +1408,7 @@ Railing.SetExclusives({
 })
 ````
 
-## Rate Of Fire System
+# Rate Of Fire System
 
 This system lets you register custom RPM, burst count, and optional spread settings for weapons.
 You can also register spread multipliers for weapon parts and ammo.
@@ -1611,7 +1611,7 @@ RateOfFire.RegisterMultipleSpreadAmmoModifier({
 })
 ```
 
-## Stats Factory - Short Explanation
+# Stats Factory - Short Explanation
 
 `StatsFactory` is the helper module used by other systems when you want to change weapon stats.
 Most of the time, you only need three modifier helpers.
@@ -1665,7 +1665,7 @@ Quick rule:
 You usually place these inside systems like ammo, attachments, bipods, or stocks when those systems ask for a `modifiers` table.
 Feel free to extend this system in a custom module. Contact me directly if I miss a getter/setter that you wish to see in the main table.
 
-## Underbarrel System
+# Underbarrel System
 
 This system lets a weapon switch to an underbarrel weapon, such as a grenade launcher or shotgun.
 The framework handles the actual mode swap and ammo state.
@@ -1779,7 +1779,7 @@ Underbarrel.RegisterIntegratedUnderbarrel({
 }, "MyMod.M203")
 ```
 
-## Universal Attachment System
+# Universal Attachment System
 
 This system lets one generic item install different real weapon parts depending on the weapon.
 A common use is a universal rail kit or adapter item.
@@ -1912,7 +1912,7 @@ UniversalAttachment.RegisterWeapons({
 })
 ```
 
-## Upgrade Exclusives System
+# Upgrade Exclusives System
 
 This system lets you block normal weapon upgrade parts from being installed together.
 If one exclusive part is already mounted, the other upgrade option is hidden.
@@ -1995,7 +1995,7 @@ UpgradeExclusives.RegisterMultipleSetOfExclusives({
 })
 ```
 
-## Explosives Systems (Experimental WIP)
+# Explosives Systems (Experimental WIP)
 
 This system lets you register throwable explosives and explosive ammo as ordnance projectiles.
 Unspecified values use the framework defaults.
