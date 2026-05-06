@@ -1663,3 +1663,251 @@ Quick rule:
 - `Adjust` adds or subtracts from the value.
 
 You usually place these inside systems like ammo, attachments, bipods, or stocks when those systems ask for a `modifiers` table.
+Feel free to extend this system in a custom module. Contact me directly if I miss a getter/setter that you wish to see in the main table.
+
+## Underbarrel System
+
+This system lets a weapon switch to an underbarrel weapon, such as a grenade launcher or shotgun.
+The framework handles the actual mode swap and ammo state.
+For setup, you only need to register what the underbarrel weapon is.
+
+Typical setup:
+
+1. Register the attachment item and the underbarrel weapon it should use.
+2. Or register a weapon that has a built-in underbarrel.
+3. Only pass `swapStats` if you need a custom stat list.
+
+### Module import
+
+```lua
+local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
+```
+
+### 1. Attachment underbarrel registration
+
+Use this when the underbarrel comes from an attachment part.
+
+```lua
+Underbarrel.RegisterUnderbarrelAttachment(attachmentType, underbarrelType, swapStats)
+```
+
+Parameters:
+
+- `attachmentType`: full item type of the underbarrel attachment part.
+- `underbarrelType`: full item type of the underbarrel weapon.
+- `swapStats`: optional array of stat names to swap between the main weapon and the underbarrel weapon.
+
+If you leave `swapStats` empty, the framework uses its default stat list.
+
+IMPORTANT, For the system to detect the attachment correctly, the PartType for your underbarrel attachment needs to be set to "Underbarrel"
+
+```
+item M203
+    {
+        DisplayCategory  = WeaponPart,
+        ItemType         = base:weaponpart,
+        Icon             = M203,
+        Weight           = 0.9,
+        WeightModifier   = 0.9,
+        MountOn          = MarzGuns.FakeItemRifles,
+        PartType         = Underbarrel,   <------------------- IMPORTANT!
+        Tooltip          = Tooltip_Underbarrel_m203,
+        WorldStaticModel = MarzGuns.M203,
+        CanAttach        = ItemCodeOnTest.hasScrewdriver,
+        CanDetach        = ItemCodeOnTest.hasScrewdriver,
+    }
+```
+
+Example:
+
+```lua
+Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_Attachment", "MyMod.M203")
+```
+
+Example with custom swap stats:
+
+```lua
+Underbarrel.RegisterUnderbarrelAttachment("MyMod.Masterkey_Attachment", "MyMod.Masterkey", {
+	"AmmoType",
+	"MaxAmmo",
+	"ClipSize",
+	"MinDamage",
+	"MaxDamage",
+	"SoundRadius",
+	"SoundVolume",
+})
+```
+
+### 2. Integrated underbarrel registration
+
+Use this when the weapon has a built-in underbarrel.
+
+```lua
+Underbarrel.RegisterIntegratedUnderbarrel(weaponType, underbarrelType, swapStats)
+```
+
+Parameters:
+
+- `weaponType`: one full weapon type or an array of full weapon types.
+- `underbarrelType`: full item type of the underbarrel weapon.
+- `swapStats`: optional array of stat names to swap between the main weapon and the underbarrel weapon.
+
+Example:
+
+```lua
+Underbarrel.RegisterIntegratedUnderbarrel("MyMod.M4_M203", "MyMod.M203")
+```
+
+```lua
+Underbarrel.RegisterIntegratedUnderbarrel({
+	"MyMod.M4_M203",
+	"MyMod.M16_M203",
+}, "MyMod.M203")
+```
+
+### Complete example
+
+```lua
+local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
+
+Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_Attachment", "MyMod.M203")
+Underbarrel.RegisterUnderbarrelAttachment("MyMod.Masterkey_Attachment", "MyMod.Masterkey")
+
+Underbarrel.RegisterIntegratedUnderbarrel({
+	"MyMod.M4_M203",
+	"MyMod.M16_M203",
+}, "MyMod.M203")
+```
+
+## Universal Attachment System
+
+This system lets one generic item install different real weapon parts depending on the weapon.
+A common use is a universal rail kit or adapter item.
+
+You register the generic item and the possible outcome parts.
+After that, the framework menu handles the install and remove flow.
+
+Typical setup:
+
+1. Register one generic item with its possible outcome parts for a weapon.
+2. Or register all generic items for one weapon in one table.
+3. Or register many weapons at once.
+
+### Module import
+
+```lua
+local UniversalAttachment = require("WeaponSystems/Utils/UniversalAttachment")
+```
+
+### 1. Outcome registration
+
+Use this to register one generic item for one weapon.
+
+```lua
+UniversalAttachment.RegisterOutcomes(weaponType, genericItemType, outcomes)
+```
+
+Parameters:
+
+- `weaponType`: full item type of the weapon.
+- `genericItemType`: full item type of the generic item the player uses.
+- `outcomes`: array of full item types for the real weapon parts that item can become.
+
+Each outcome should be a real weapon part item for that weapon.
+
+Example:
+
+```lua
+UniversalAttachment.RegisterOutcomes("MyMod.AR15", "MyMod.UniversalRailKit", {
+	"MyMod.AR15_TopRail",
+	"MyMod.AR15_HandguardRail",
+})
+```
+
+If you register the same generic item again for the same weapon, the new outcome list replaces the old one.
+
+### 2. Single weapon registration
+
+Use this to register all generic items for one weapon in one call.
+
+```lua
+UniversalAttachment.RegisterWeapon(weaponType, entries)
+```
+
+Parameters:
+
+- `weaponType`: full item type of the weapon.
+- `entries`: table in the form `{ [genericItemType] = outcomes }`.
+
+Example:
+
+```lua
+UniversalAttachment.RegisterWeapon("MyMod.AR15", {
+	["MyMod.UniversalRailKit"] = {
+		"MyMod.AR15_TopRail",
+		"MyMod.AR15_HandguardRail",
+	},
+	["MyMod.UniversalMuzzleKit"] = {
+		"MyMod.AR15_FlashHider",
+		"MyMod.AR15_MuzzleBrake",
+	},
+})
+```
+
+### 3. Multiple weapon registration
+
+Use this to register many weapons at once.
+
+```lua
+UniversalAttachment.RegisterWeapons(entriesTable)
+```
+
+Parameters:
+
+- `entriesTable`: table in the form `{ [weaponType] = entries }`.
+
+This is the easiest way to register the same generic item across many weapons.
+
+Example:
+
+```lua
+UniversalAttachment.RegisterWeapons({
+	["MyMod.AR15"] = {
+		["MyMod.UniversalRailKit"] = {
+			"MyMod.AR15_TopRail",
+			"MyMod.AR15_HandguardRail",
+		},
+	},
+	["MyMod.AKM"] = {
+		["MyMod.UniversalRailKit"] = {
+			"MyMod.AKM_SideRail",
+			"MyMod.AKM_HandguardRail",
+		},
+	},
+})
+```
+
+### Complete example
+
+```lua
+local UniversalAttachment = require("WeaponSystems/Utils/UniversalAttachment")
+
+UniversalAttachment.RegisterWeapons({
+	["MyMod.AR15"] = {
+		["MyMod.UniversalRailKit"] = {
+			"MyMod.AR15_TopRail",
+			"MyMod.AR15_HandguardRail",
+		},
+		["MyMod.UniversalMuzzleKit"] = {
+			"MyMod.AR15_FlashHider",
+			"MyMod.AR15_MuzzleBrake",
+		},
+	},
+	["MyMod.AKM"] = {
+		["MyMod.UniversalRailKit"] = {
+			"MyMod.AKM_SideRail",
+			"MyMod.AKM_HandguardRail",
+		},
+	},
+})
+```
