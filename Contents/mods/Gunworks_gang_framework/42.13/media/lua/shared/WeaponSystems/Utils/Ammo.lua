@@ -73,6 +73,39 @@ function Ammo.GetBulletTypesForFamily(family)
     return types
 end
 
+--- Pick reload ammo with the simplest rule set:
+--- use the family's registered base ammo first, otherwise use the next
+--- registered ammo type that exists in inventory.
+---@param playerObj IsoPlayer
+---@param item InventoryItem
+---@return string|nil
+function Ammo.GetAutomaticReloadAmmoType(playerObj, item)
+    if not playerObj or not item or not item.getAmmoType then return nil end
+
+    local inventory = playerObj:getInventory()
+    if not inventory then return nil end
+
+    local family = Ammo.ItemAmmoFamily[item:getFullType()]
+    local bulletTypes = family and Ammo.GetBulletTypesForFamily(family)
+    if bulletTypes and #bulletTypes > 0 then
+        for i = 1, #bulletTypes do
+            local bulletType = bulletTypes[i]
+            if inventory:getCountTypeRecurse(bulletType) > 0 then
+                return bulletType
+            end
+        end
+        return nil
+    end
+
+    local ammoType = item:getAmmoType()
+    local itemKey = ammoType and ammoType:getItemKey()
+    if itemKey and inventory:getCountTypeRecurse(itemKey) > 0 then
+        return itemKey
+    end
+
+    return nil
+end
+
 -------------------------------------------------
 -- Registration API for modders
 -------------------------------------------------
