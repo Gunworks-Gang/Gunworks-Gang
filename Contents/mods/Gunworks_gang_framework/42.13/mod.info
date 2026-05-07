@@ -1,4 +1,5 @@
 name=Gunworks-gang
 id=SWMG
-description=wip
+description=Gunworks Framework, Has all the functionalities to make your weapons pack be super cool! check the API docs in the mod folder to see how you can integrate in yours.
 icon=logo_mini.png
+poster=poster.png

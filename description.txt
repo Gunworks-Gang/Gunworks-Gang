@@ -1,0 +1,38 @@
+[h1]Gunworks Framework[/h1]
+
+Welcome to Gunworks Framework.
+
+This is a library mod that simplifies the process of adding features to weapon mods. By itself, this mod does not change the game.
+
+[h3]For End Users[/h3]
+Subscribe to this mod only if another mod lists it as a required dependency.
+
+[h3]For Modders[/h3]
+The framework currently includes:
+
+[b]Current Features[/b]
+[list]
+[*] Magazine profiles for weapons
+[*] Alternative ammunition
+[*] Dynamic attachments
+[*] Attachment exclusivity rules
+[*] Bayonets, stocks, and bipods
+[*] A robust system for applying custom weapon stats
+[*] Explosives and throwing arcs
+[*] Distribution functions
+[/list]
+
+[b]Coming Soon[/b]
+[list]
+[*] Custom animations with visible magazines
+[*] Hip firing, dual wielding, and firing while running
+[/list]
+
+To add these systems to your mod, read the API docs included in the mod files.
+
+[b]Permission & Redistribution Notice[/b]
+This mod may not be copied, reuploaded, redistributed, mirrored, included in collections or modpacks, or stored on any third-party site, in whole or in part, without my explicit written permission.
+You may link to the original Workshop page, but do not upload this mod anywhere else.
+
+Workshop ID:
+Mod ID: SWMG
