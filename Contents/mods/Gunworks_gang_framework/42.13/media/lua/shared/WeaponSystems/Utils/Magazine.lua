@@ -240,7 +240,7 @@ function Magazine.manageMagazineAttachment(weapon, magTypeOverride)
         end
         if not currentClip then
             local magPart = instanceItem(magType)
-            if magPart then
+            if magPart and instanceof(magPart, "WeaponPart") then
                 weapon:attachWeaponPart(magPart, true)
             end
         end
@@ -264,7 +264,7 @@ function Magazine.attachMagazineVisual(weapon, magTypeOverride)
     end
     if currentClip then return end
     local magPart = instanceItem(magType)
-    if magPart then
+    if magPart and instanceof(magPart, "WeaponPart") then
         weapon:attachWeaponPart(magPart, true)
     end
 end

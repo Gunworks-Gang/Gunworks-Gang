@@ -8,6 +8,7 @@ local Underbarrel               = require("WeaponSystems/Utils/Underbarrel")
 -- After a weapon part is attached or removed via the
 -- vanilla upgrade system, reapply all modifier layers
 -- so custom-stats attachments take effect immediately.
+-- NOTE: Need to double check if I really still needs. We reaply modifiers on equip and unequip, so it might be redundant. will see UPDATE: it's not redundant lmao
 -------------------------------------------------
 
 local _ISUpgradeWeapon_complete = ISUpgradeWeapon.complete

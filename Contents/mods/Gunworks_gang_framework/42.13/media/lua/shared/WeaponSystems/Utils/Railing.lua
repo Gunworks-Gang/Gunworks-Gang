@@ -231,7 +231,6 @@ function Railing.GetMountedAccessories(weapon)
     local accepted = Railing.GetAcceptedAccessories(weapon)
     if not accepted then return mounted end
 
-    -- Build a quick lookup set from ALL railings' accepted lists
     local acceptedSet = {}
     for _, acc in ipairs(accepted) do
         acceptedSet[acc] = true
@@ -290,7 +289,6 @@ function Railing.CanMountAccessory(weapon, accessoryType)
     local accepted = Railing.GetAcceptedAccessories(weapon)
     if not accepted then return false end
 
-    -- Is this accessory in any railing's accepted list?
     local found = false
     for _, acc in ipairs(accepted) do
         if acc == accessoryType then
@@ -302,7 +300,6 @@ function Railing.CanMountAccessory(weapon, accessoryType)
 
     if Railing.IsBlockedByWeapon(weapon, accessoryType) then return false end
 
-    -- Check if the slot is already occupied by looking at the accessory's PartType
     local tempPart = instanceItem(accessoryType)
     if not tempPart then return false end
     local partType = tempPart:getPartType()

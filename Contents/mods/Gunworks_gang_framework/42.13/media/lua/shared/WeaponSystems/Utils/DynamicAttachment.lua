@@ -1,4 +1,5 @@
 local DynamicAttachment = {}
+local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
 -------------------------------------------------
 -- Registry: attachmentFullType -> partnerFullType
@@ -46,6 +47,11 @@ function DynamicAttachment.HasSwappableAttachment(weapon)
     return DynamicAttachment.GetSwappableAttachment(weapon) ~= nil
 end
 
+function DynamicAttachment.DeployedBipodAdjustStats(weapon)
+    if not weapon then return end
+    StatsFactory.ReapplyAllModifiers(weapon)
+end
+
 -------------------------------------------------
 -- Core swap
 -------------------------------------------------
@@ -58,27 +64,15 @@ function DynamicAttachment.SwapAttachment(weapon)
     local partnerType, partType, currentPart = DynamicAttachment.GetSwappableAttachment(weapon)
     if not partnerType or not partType then return end
 
-    -- Detach current
     if currentPart then
         weapon:detachWeaponPart(currentPart)
     end
 
-    -- Attach partner
     local newPart = instanceItem(partnerType)
     if newPart and instanceof(newPart, "WeaponPart") then
         weapon:attachWeaponPart(newPart, true)
     end
-end
-
---- Restore the correct visual on game load (re-attach whichever paired
---- attachment the weapon's modData says it had).  Because the swap is purely
---- attachment-based, the engine already persists the installed part – but
---- calling this ensures the model is refreshed after a reload.
---- @param weapon HandWeapon
-function DynamicAttachment.RestoreState(weapon)
-    if not weapon then return end
-    -- Nothing extra needed – PZ persists WeaponParts automatically.
-    -- Placeholder in case future visual work requires a refresh.
+    DynamicAttachment.DeployedBipodAdjustStats(weapon)
 end
 
 return DynamicAttachment

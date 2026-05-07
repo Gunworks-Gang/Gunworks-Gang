@@ -175,12 +175,8 @@ end
 
 function Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
     local profileName = Ammo.GetAmmoCharacteristics(bulletType)
-
-    -- Store active profile so the modifier layer can find it
     weapon:getModData().ActiveAmmoProfile = profileName
-
     weapon:setAmmoType(ammoEnum)
-
     StatsFactory.ReapplyAllModifiers(weapon)
 end
 
@@ -205,8 +201,6 @@ function Ammo.AmmoProfileSetter(weapon, bulletType)
         print(weapon:getAmmoType(), "  -->   ", ammoEnum)
     end
 
-    -- Always apply locally for immediate effect; in MP the server
-    -- will also apply authoritatively when it processes the command.
     Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
 end
 

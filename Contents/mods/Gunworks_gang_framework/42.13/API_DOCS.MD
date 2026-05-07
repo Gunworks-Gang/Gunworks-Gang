@@ -2106,3 +2106,81 @@ OrdnanceFactory.RegisterAmmo("MyMod.40mm_HE", {
 	worldModel = "MyMod.40mm_Projectile",
 })
 ```
+
+# Distribution Functions
+
+These helpers let you add, remove, or change items in loot tables.
+They work with zombie loot and normal container loot.
+
+They look for an existing item first, then use that item as the reference.
+If the reference item is not found, nothing is changed.
+
+### Module import
+
+```lua
+local WeaponDistribution = require("Distribution/Functions")
+```
+
+### 1. Insert items
+
+Use this when you want a new item to appear anywhere an existing item already appears.
+
+```lua
+WeaponDistribution.Insert(baseItem, chance, tables, newItem)
+WeaponDistribution.InsertMany(baseItem, chance, tables, ...)
+```
+
+Parameters:
+
+- `baseItem`: existing item already present in the loot table.
+- `chance`: chance multiplier copied from the base item. `1` means same chance, `0.5` means half, `2` means double.
+- `tables`: loot tables to search through.
+- `newItem`: full item type to add.
+- `...`: extra item types for `InsertMany`.
+
+Example:
+
+```lua
+local WeaponDistribution = require("Distribution/Functions")
+
+WeaponDistribution.Insert("Base.Pistol", 0.5, {
+	SuburbsDistributions,
+	ProceduralDistributions.list,
+}, "MyMod.CustomPistol")
+```
+
+### 2. Remove items
+
+Use this when you want to delete one item or several items from the tables you pass in.
+
+```lua
+WeaponDistribution.RemoveEverywhere(tables, item)
+WeaponDistribution.RemoveMany(tables, ...)
+```
+
+Parameters:
+
+- `tables`: loot tables to search through.
+- `item`: full item type to remove.
+- `...`: extra item types for `RemoveMany`.
+
+This removes the item from normal `items` lists and from `weapons` lists.
+
+### 3. Change chance
+
+Use this when the item is already in the loot table and you only want to change its spawn chance.
+
+```lua
+WeaponDistribution.SetChance(item, chance, tables)
+WeaponDistribution.SetChanceMany(chance, tables, ...)
+```
+
+Parameters:
+
+- `item`: full item type to update.
+- `chance`: new chance value to write into the loot table.
+- `tables`: loot tables to search through.
+- `...`: extra item types for `SetChanceMany`.
+
+This only changes entries in normal `items` lists.
+It does not change `weapons` lists.

@@ -214,7 +214,6 @@ end
 function StatsFactory.ReapplyAllModifiers(weapon)
     local baseStats = StatsFactory.GetBaseStatsWithAttachments(weapon)
 
-    -- Collect restore stats from all layers (active or inactive)
     local toRestore = {}
     local activeLayers = {}
     for _, layer in ipairs(StatsFactory.ModifierLayers) do
@@ -228,10 +227,8 @@ function StatsFactory.ReapplyAllModifiers(weapon)
         end
     end
 
-    -- Restore only the needed stats from shadow copy
     StatsFactory.RestoreStats(weapon, baseStats, toRestore)
 
-    -- Apply all active layers in order
     for _, modifiers in ipairs(activeLayers) do
         StatsFactory.ApplyModifiers(weapon, baseStats, modifiers)
     end

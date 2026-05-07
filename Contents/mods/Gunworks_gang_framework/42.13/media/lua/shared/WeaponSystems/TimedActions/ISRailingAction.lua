@@ -66,7 +66,6 @@ end
 ISRailingUnmount = ISBaseTimedAction:derive("ISRailingUnmount")
 
 function ISRailingUnmount:isValid()
-    -- Block removal of a registered underbarrel attachment while the weapon is in underbarrel mode.
     if self.weapon and self.accessoryPart and Underbarrel.IsWeaponInUnderbarrelMode(self.weapon) then
         if Underbarrel.UnderbarrelAttachments[self.accessoryPart:getFullType()] then
             return false
@@ -94,7 +93,6 @@ function ISRailingUnmount:perform()
 end
 
 function ISRailingUnmount:complete()
-    -- Return any loaded underbarrel ammo and clean up modData before the part is detached.
     Underbarrel.HandleAttachmentRemoval(self.weapon, self.accessoryPart, self.character)
     local success, returnedItem = Railing.UnmountAccessory(self.weapon, self.accessoryPart, self.character)
     Animations.CallSyncHandWeaponFields(self.character, self.weapon)

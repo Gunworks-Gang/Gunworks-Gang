@@ -150,9 +150,6 @@ function ISInsertMagazine:loadAmmo()
         if magList and #magList > 0 then
             local gunModData = self.gun:getModData()
 
-            -- Invariant: chambered round is always the last AmmoList entry.
-            -- If a chambered round already exists, keep it at tail and place
-            -- inserted magazine rounds before it so it fires first.
             if self.gun:isRoundChambered() and gunModData.AmmoList and #gunModData.AmmoList > 0 then
                 local chamberedType = gunModData.AmmoList[#gunModData.AmmoList]
                 local merged = Ammo.CopyAmmoList(magList)
@@ -193,8 +190,6 @@ function ISEjectMagazine:unloadAmmo()
 
     if gunList and #gunList > 0 then
         if self.gun:isRoundChambered() and #gunList > 1 then
-            -- Keep chambered round on gun as tail entry; magazine receives
-            -- every entry before tail.
             ammoListForMag = {}
             for i = 1, #gunList - 1 do
                 ammoListForMag[#ammoListForMag + 1] = gunList[i]
@@ -550,7 +545,6 @@ ISReloadWeaponAction.attackHook = function(character, chargeDelta, weapon)
                 local bulletType = ammoList[#ammoList]
                 Ammo.AmmoProfileSetter(weapon, bulletType)
 
-                -- Flag explosive ammo for interception by the ExplosivesSystems client hooks
                 if OrdnanceFactory.IsAmmoRegistered(bulletType) then
                     weapon:getModData().GWG_FiringExplosiveAmmo = bulletType
                 else
@@ -565,7 +559,6 @@ ISReloadWeaponAction.attackHook = function(character, chargeDelta, weapon)
                     weapon:getModData().AmmoList = nil
                 end
 
-                -- Tell server to consume the round from its AmmoList
                 if isClient() then
                     sendClientCommand(character, "SWMG", "consumeRound", {
                         itemId = weapon:getID()

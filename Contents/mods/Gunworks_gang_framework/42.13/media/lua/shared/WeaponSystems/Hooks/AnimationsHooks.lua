@@ -193,5 +193,4 @@ local function checkWeaponStateOnEquip(playerObj, weapon)
 end
 
 Events.OnEquipPrimary.Add(checkWeaponStateOnEquip)
-
 Events.OnEquipSecondary.Add(checkWeaponStateOnEquip)
