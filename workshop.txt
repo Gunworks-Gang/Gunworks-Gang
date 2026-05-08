@@ -1,0 +1,6 @@
+version=1
+id=3722064198
+title=Gunworks Framework
+description=yo
+tags=Build 42;Framework;Items;Military;Multiplayer;QoL;WIP;Weapons
+visibility=private

@@ -1,38 +1,46 @@
 [h1]Gunworks Framework[/h1]
 
-Welcome to Gunworks Framework.
-
 This is a library mod that simplifies the process of adding features to weapon mods. By itself, this mod does not change the game.
 
 [h3]For End Users[/h3]
 Subscribe to this mod only if another mod lists it as a required dependency.
 
 [h3]For Modders[/h3]
-The framework currently includes:
+What sets this framework apart is its focus on making weapons modular platforms for ammo, magazines, and attachments instead of forcing each weapon to use rigid, exact parts and ammunition types.
 
-[b]Current Features[/b]
+[b]Current Systems[/b]
 [list]
-[*] Magazine profiles for weapons
-[*] Alternative ammunition
-[*] Dynamic attachments
-[*] Attachment exclusivity rules
-[*] Bayonets, stocks, and bipods
-[*] A robust system for applying custom weapon stats
-[*] Explosives and throwing arcs
-[*] Distribution functions
+[*] Ammunition system for weapons and magazines that can use more than one ammo type, with optional stat changes per load.
+[*] Animation system for weapon cycling, racking, and extra ammo-count visuals.
+[*] Bayonet system for both attachable bayonets and built-in bayonets.
+[*] Custom stats attachment system so installed parts can modify weapon stats while attached.
+[*] Dynamic attachments system for parts that swap between two states, such as folded and deployed variants.
+[*] Folding bipod system with optional stat and visual changes between folded and deployed states.
+[*] Folding stock system with optional stat and visual changes between folded and deployed states.
+[*] Magazine system for assigning multiple compatible magazines or speed-loaders to the same weapon family.
+[*] Prevent removal system for permanent or non-removable weapon parts.
+[*] Railing system for defining which accessories a rail accepts, plus weapon-specific exclusions.
+[*] Rate of fire system for custom RPM, burst settings, and optional spread tuning.
+[*] Stats factory helpers for setting, scaling, and adjusting weapon stats across the framework.
+[*] Underbarrel system for grenade launchers, shotguns, and other alternate weapon modes.
+[*] Universal attachment system for generic kits that install different real parts depending on the weapon.
+[*] Upgrade exclusives system for blocking incompatible upgrades from being installed together.
+[*] Explosives system for throwable explosives and explosive ammo with custom arcs and detonation behavior.
+[*] Distribution functions for adding, removing, and tuning weapons, parts, and ammo in loot tables.
 [/list]
 
 [b]Coming Soon[/b]
 [list]
-[*] Custom animations with visible magazines
+[*] Custom animations with visible magazines during the animation process
 [*] Hip firing, dual wielding, and firing while running
+[*] Further improvements to the explosives system
 [/list]
 
-To add these systems to your mod, read the API docs included in the mod files.
+To add these systems to your mod, read the API docs included in the mod files for setup details and examples.
 
 [b]Permission & Redistribution Notice[/b]
 This mod may not be copied, reuploaded, redistributed, mirrored, included in collections or modpacks, or stored on any third-party site, in whole or in part, without my explicit written permission.
 You may link to the original Workshop page, but do not upload this mod anywhere else.
 
-Workshop ID:
+Workshop ID: 3722064198
 Mod ID: SWMG
