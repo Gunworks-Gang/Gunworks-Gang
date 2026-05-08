@@ -3,10 +3,9 @@ local GunworksKeybinds = {}
 GunworksKeybinds.MOD_OPTIONS_ID = "Gunworks"
 
 GunworksKeybinds.Bindings = {
-    { value = "Gunworks_UnderbarrelUse",     key = Keyboard.KEY_U, name = "UI_optionscreen_binding_Gunworks_UnderbarrelUse" },
-    { value = "Gunworks_UnderbarrelRestore", key = Keyboard.KEY_Y, name = "UI_optionscreen_binding_Gunworks_UnderbarrelRestore" },
-    { value = "Gunworks_OpenLoaderUI",       key = Keyboard.KEY_O, name = "UI_optionscreen_binding_Gunworks_OpenLoaderUI" },
-    { value = "Gunworks_SwitchFirerate",     key = Keyboard.KEY_T, name = "UI_optionscreen_binding_Gunworks_SwitchFirerate" },
+    { value = "Gunworks_UnderbarrelUse", key = Keyboard.KEY_U, name = "UI_optionscreen_binding_Gunworks_UnderbarrelUse" },
+    { value = "Gunworks_OpenLoaderUI",   key = Keyboard.KEY_O, name = "UI_optionscreen_binding_Gunworks_OpenLoaderUI" },
+    { value = "Gunworks_SwitchFirerate", key = Keyboard.KEY_T, name = "UI_optionscreen_binding_Gunworks_SwitchFirerate" },
 }
 
 local function getOptions()

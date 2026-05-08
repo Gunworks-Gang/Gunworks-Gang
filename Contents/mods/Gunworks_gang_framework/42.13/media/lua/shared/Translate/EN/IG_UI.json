@@ -35,5 +35,7 @@
   "IGUI_DeployUnderbarrelDesc": "Deploy the integrated underbarrel launcher.",
   "IGUI_StowUnderbarrel": "Stow Underbarrel",
   "IGUI_StowUnderbarrelDesc": "Stow the underbarrel launcher.",
+  "IGUI_UseUnderbarrel": "Use Underbarrel",
+  "IGUI_UseMainWeapon": "Use Main Weapon",
   "IGUI_LoadAmmo": "Load Ammo"
 }

@@ -503,6 +503,13 @@ function Underbarrel.CanSwapToIntegratedUnderbarrel(weapon)
     return Underbarrel.IsIntegratedUnderbarrelDeployed(weapon)
 end
 
+function Underbarrel.CanToggleUnderbarrel(weapon)
+    if not IsWeaponValid(weapon) then return false end
+    if Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return true end
+    if Underbarrel.CanSwapToUnderbarrel(weapon) then return true end
+    return Underbarrel.CanSwapToIntegratedUnderbarrel(weapon)
+end
+
 function Underbarrel.IsUsingUnderbarrel(player)
     if not player then return false end
     local primaryHand = player:getPrimaryHandItem()
@@ -605,18 +612,40 @@ function Underbarrel.SwapToUnderbarrel(weapon, player)
 end
 
 function Underbarrel.RestoreOriginalWeapon(player)
-    if not player then return end
+    if not player then return false end
 
     local weapon = player:getPrimaryHandItem()
-    if not weapon then return end
-    if not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return end
+    if not weapon then return false end
+    if not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return false end
 
     local currentState = Underbarrel.GetModeState(weapon)
     if not Underbarrel.ReconcileModeState(weapon, player, false, nil, nil, false) then
-        return
+        return false
     end
 
     SendModeRequest(player, weapon, Underbarrel.ACTION_RESTORE, currentState.underbarrelType, currentState.modeSource)
+
+    return true
+end
+
+function Underbarrel.ToggleUnderbarrel(weapon, player)
+    if not weapon or not player then return false end
+
+    if Underbarrel.IsWeaponInUnderbarrelMode(weapon) then
+        return Underbarrel.RestoreOriginalWeapon(player)
+    end
+
+    if Underbarrel.CanSwapToUnderbarrel(weapon) then
+        Underbarrel.SwapToUnderbarrel(weapon, player)
+        return true
+    end
+
+    if Underbarrel.CanSwapToIntegratedUnderbarrel(weapon) then
+        Underbarrel.SwapToIntegratedUnderbarrel(weapon, player)
+        return true
+    end
+
+    return false
 end
 
 --- Called by Init.lua for every ranged weapon at game load time.

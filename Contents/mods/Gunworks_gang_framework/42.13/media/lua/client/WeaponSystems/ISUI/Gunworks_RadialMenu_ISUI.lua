@@ -188,6 +188,28 @@ function CToggleIntegratedUnderbarrel:invoke()
 end
 
 -------------------------------------------------
+-- CToggleUnderbarrelMode
+-------------------------------------------------
+local CToggleUnderbarrelMode = BaseCommand:derive("CToggleUnderbarrelMode")
+
+function CToggleUnderbarrelMode:new(frm)
+    return BaseCommand.new(self, frm)
+end
+
+function CToggleUnderbarrelMode:fillMenu(menu, weapon)
+    if not Underbarrel.CanToggleUnderbarrel(weapon) then return end
+    local isUnderbarrelMode = Underbarrel.IsWeaponInUnderbarrelMode(weapon)
+    local text = getText(isUnderbarrelMode and "IGUI_UseMainWeapon" or "IGUI_UseUnderbarrel")
+    menu:addSlice(text, getTexture("media/ui/GunworksRadial_Underbarrel.png"), self.invoke, self)
+end
+
+function CToggleUnderbarrelMode:invoke()
+    local weapon = self:getWeapon()
+    if not weapon then return end
+    Underbarrel.ToggleUnderbarrel(weapon, self.character)
+end
+
+-------------------------------------------------
 -- CSwapDynamicAttachment
 -------------------------------------------------
 local CSwapDynamicAttachment = BaseCommand:derive("CSwapDynamicAttachment")
@@ -477,6 +499,7 @@ local function hasGunworksFeature(weapon, playerObj)
     if FoldingBipod.HasFoldableBipod(weapon) then return true end
     if Bayonet.HasIntegratedBayonet(weapon) then return true end
     if Bayonet.CanRemoveBayonet(weapon) then return true end
+    if Underbarrel.CanToggleUnderbarrel(weapon) then return true end
     if Underbarrel.HasIntegratedUnderbarrel(weapon) then return true end
     if DynamicAttachment.HasSwappableAttachment(weapon) then return true end
     if RateOfFireUI.HasMultipleFiremodes(weapon) then return true end
@@ -522,6 +545,7 @@ function ISFirearmRadialMenu:fillMenu()
         CRemoveBayonet:new(self),
         CAttachBayonet:new(self),
         CToggleIntegratedUnderbarrel:new(self),
+        CToggleUnderbarrelMode:new(self),
         CChangeFireMode:new(self),
         CSwapDynamicAttachment:new(self),
         CInsertMagazineProfile:new(self),
