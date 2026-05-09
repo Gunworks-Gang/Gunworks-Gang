@@ -228,12 +228,14 @@ Use this to register a weapon that changes attachments or models while firing, r
 
 ```lua
 Animations.RegisterWeaponWithAnimatedParts(fullType, entry)
+Animations.RegisterMultipleWeaponsWithAnimatedParts(entriesTable)
 ```
 
 Parameters:
 
 - `fullType`: full item type of the weapon, such as `"MyMod.AR15"`.
 - `entry`: table that describes the two visual states. Use either `attachments` or `models`.
+- `entriesTable`: table in the form `{ [fullType] = entry }`.
 
 Attachment shape:
 
@@ -282,6 +284,23 @@ Animations.RegisterWeaponWithAnimatedParts("MyMod.TestWeapon", {
 		open = "TestWeapon_Open",
 		locked = "TestWeapon_Locked",
 	}
+})
+```
+
+```lua
+Animations.RegisterMultipleWeaponsWithAnimatedParts({
+	["MyMod.USP"] = = {
+		attachments = {
+			open = "MyMod.Slide_Fired",
+			locked = "MyMod.Slide_Lock",
+		}
+	},
+	["MyMod.AR15"] = {
+		attachments = {
+			open = "MyMod.Bolt_Fired",
+			locked = "MyMod.Bolt_Lock",
+		}
+	},
 })
 ```
 

@@ -13,6 +13,14 @@ function Animations.RegisterWeaponWithAnimatedParts(fullType, entry)
     Animations.WeaponsWithAnimatedParts[fullType] = entry
 end
 
+function Animations.RegisterMultipleWeaponsWithAnimatedParts(entriesTables)
+    if not entriesTables then return end
+
+    for fullType, entry in pairs(entriesTables) do
+        Animations.WeaponsWithAnimatedParts[fullType] = entry
+    end
+end
+
 local function MarkSkipEquipRestore(weapon)
     if not weapon then return end
     local modData = weapon:getModData()
