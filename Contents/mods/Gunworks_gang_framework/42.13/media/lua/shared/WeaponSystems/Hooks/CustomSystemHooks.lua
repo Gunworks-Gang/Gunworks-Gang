@@ -198,6 +198,13 @@ function ISInsertMagazine:loadAmmo()
             syncHandWeaponFields(self.character, self.gun)
             Ammo.SyncAmmoListToClient(self.character, self.magazine)
             Ammo.SyncAmmoListToClient(self.character, self.gun)
+
+            if not isServer() and not isClient()
+                and self.gun:isRackAfterShoot()
+                and not self.gun:isRoundChambered()
+                and self.gun:getCurrentAmmoCount() >= self.gun:getAmmoPerShoot() then
+                ISTimedActionQueue.addAfter(self, ISRackFirearm:new(self.character, self.gun))
+            end
         end
 
         return
