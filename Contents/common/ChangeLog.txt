@@ -1,5 +1,4 @@
-[9/May/2026 ]
+[10/May/2026 ]
 B42.17:
-- Add new multiple registries for animations system
-- Fix issue in MP with handgrenades duplicating in other player views
+- Fix issue when magazine ammolist was getting transfer to another similar magazine, causing desync in ammo types.
 [ ------ ]
