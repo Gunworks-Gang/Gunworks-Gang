@@ -169,13 +169,54 @@ end
 -------------------------------------------------
 -- Eject Magazine: Transfer AmmoList gun -> mag
 -------------------------------------------------
+local function getInventoryItemIdsByType(inventory, itemType)
+    local ids = {}
+    if not inventory or not itemType then
+        return ids
+    end
+
+    local items = inventory:getAllTypeRecurse(itemType)
+    if not items then
+        return ids
+    end
+
+    for i = 0, items:size() - 1 do
+        local item = items:get(i)
+        if item then
+            ids[item:getID()] = true
+        end
+    end
+
+    return ids
+end
+
+local function getNewInventoryItemByType(inventory, itemType, knownIds)
+    if not inventory or not itemType then
+        return nil
+    end
+
+    local items = inventory:getAllTypeRecurse(itemType)
+    if not items then
+        return nil
+    end
+
+    for i = 0, items:size() - 1 do
+        local item = items:get(i)
+        if item and not knownIds[item:getID()] then
+            return item
+        end
+    end
+
+    return nil
+end
+
 local ISEjectMagazine_unloadAmmo_original = ISEjectMagazine.unloadAmmo
 function ISEjectMagazine:unloadAmmo()
     if self.gun and Underbarrel.IsWeaponInUnderbarrelMode(self.gun) then
         return ISEjectMagazine_unloadAmmo_original(self)
     end
 
-    local savedMagType = Magazine.GetMagazineType(self.gun)
+    local savedMagType = self._actualMagType or Magazine.GetMagazineType(self.gun)
     if not savedMagType then
         return ISEjectMagazine_unloadAmmo_original(self)
     end
@@ -183,6 +224,7 @@ function ISEjectMagazine:unloadAmmo()
     if not magazineInstance then
         return ISEjectMagazine_unloadAmmo_original(self)
     end
+    local inventory = self.character and self.character:getInventory()
     local gunModData = self.gun:getModData()
     local gunList = gunModData.AmmoList
 
@@ -213,10 +255,15 @@ function ISEjectMagazine:unloadAmmo()
         self.gun:setMaxAmmo(magazineInstance:getMaxAmmo())
     end
 
+    local knownMagazineIds = nil
+    if ammoListForMag and inventory then
+        knownMagazineIds = getInventoryItemIdsByType(inventory, savedMagType)
+    end
+
     ISEjectMagazine_unloadAmmo_original(self)
 
-    if ammoListForMag and savedMagType then
-        local ejectedMag = self.character:getInventory():getFirstType(savedMagType)
+    if ammoListForMag and knownMagazineIds and inventory then
+        local ejectedMag = getNewInventoryItemByType(inventory, savedMagType, knownMagazineIds)
         if ejectedMag then
             ejectedMag:getModData().AmmoList = ammoListForMag
             Ammo.SyncAmmoListToClient(self.character, ejectedMag)
