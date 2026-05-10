@@ -107,14 +107,6 @@ function SpeedLoader.GetBestSpeedLoaderForGun(playerObj, gun)
         end
     end
 
-    for i = 1, #typeList do
-        local typeName = typeList[i]
-        local speedLoader = inv:getFirstTypeRecurse(typeName)
-        if speedLoader then
-            return speedLoader
-        end
-    end
-
     return nil
 end
 

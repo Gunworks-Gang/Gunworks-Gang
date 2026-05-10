@@ -45,18 +45,8 @@ local function BeginAutomaticSpeedLoaderReload(playerObj, gun)
         return false
     end
 
-    if speedLoader:getCurrentAmmoCount() > 0 then
-        ISInventoryPaneContextMenu.transferIfNeeded(playerObj, speedLoader)
-        ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, speedLoader))
-        return true
-    end
-
-    local ammoCount = Magazine.reloadMagazine(playerObj, speedLoader)
-    if ammoCount > 0 then
-        ISInventoryPaneContextMenu.transferIfNeeded(playerObj, speedLoader)
-        ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, speedLoader))
-    end
-
+    ISInventoryPaneContextMenu.transferIfNeeded(playerObj, speedLoader)
+    ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, speedLoader))
     return true
 end
 
