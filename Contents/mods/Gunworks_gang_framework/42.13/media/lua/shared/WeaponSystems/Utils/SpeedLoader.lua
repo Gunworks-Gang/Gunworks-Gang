@@ -5,8 +5,6 @@ local SpeedLoader = {}
 -------------------------------------------------
 SpeedLoader.WeaponSpeedLoaders = {}
 
-local LAST_INDEX_KEY = "GW_SpeedLoaderTypeLastIndex"
-
 local function copyTypeList(source)
     if not source then return nil end
 
@@ -96,31 +94,23 @@ function SpeedLoader.GetBestSpeedLoaderForGun(playerObj, gun)
     local inv = playerObj:getInventory()
     if not inv then return nil end
 
-    local modData = gun:getModData()
-    local listSize = #typeList
-    local lastIndex = modData[LAST_INDEX_KEY] or 0
-
-    for offset = 1, listSize do
-        local idx = ((lastIndex + offset - 1) % listSize) + 1
-        local typeName = typeList[idx]
+    for i = 1, #typeList do
+        local typeName = typeList[i]
         local items = inv:getAllTypeRecurse(typeName)
         if items then
-            for i = 0, items:size() - 1 do
-                local speedLoader = items:get(i)
+            for itemIndex = 0, items:size() - 1 do
+                local speedLoader = items:get(itemIndex)
                 if speedLoader and speedLoader:getCurrentAmmoCount() > 0 then
-                    modData[LAST_INDEX_KEY] = idx
                     return speedLoader
                 end
             end
         end
     end
 
-    for offset = 1, listSize do
-        local idx = ((lastIndex + offset - 1) % listSize) + 1
-        local typeName = typeList[idx]
+    for i = 1, #typeList do
+        local typeName = typeList[i]
         local speedLoader = inv:getFirstTypeRecurse(typeName)
         if speedLoader then
-            modData[LAST_INDEX_KEY] = idx
             return speedLoader
         end
     end
