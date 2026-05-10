@@ -27,8 +27,12 @@ local function ReloadBestMagazineForGun(playerObj, gun)
 end
 
 local function BeginAutomaticSpeedLoaderReload(playerObj, gun)
-    if gun:getCurrentAmmoCount() >= gun:getMaxAmmo() then
-        return true
+    if gun:getCurrentAmmoCount() > 0 then
+        return false
+    end
+
+    if gun:haveChamber() and gun:isRoundChambered() then
+        return false
     end
 
     if gun:isJammed() then
