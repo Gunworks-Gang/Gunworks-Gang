@@ -6,6 +6,7 @@ require("TimedActions/ISEjectMagazine")
 require("TimedActions/ISRackFirearm")
 
 local Magazine = require("WeaponSystems/Utils/Magazine")
+local SpeedLoader = require("WeaponSystems/Utils/SpeedLoader")
 local Ammo = require("WeaponSystems/Utils/Ammo")
 local Bayonet = require("WeaponSystems/Utils/Bayonet")
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
@@ -13,7 +14,7 @@ local OrdnanceFactory = require("ExplosivesSystems/OrdnanceFactory")
 local RateOfFire = require("WeaponSystems/Utils/RateOfFire")
 
 -------------------------------------------------
--- BeginAutomaticReload (MagazineProfile support)
+-- BeginAutomaticReload (MagazineProfile + SpeedLoader support)
 -------------------------------------------------
 local ISReloadWeaponAction_BeginAutomaticReload_Original = ISReloadWeaponAction.BeginAutomaticReload
 local function ReloadBestMagazineForGun(playerObj, gun)
@@ -23,6 +24,30 @@ local function ReloadBestMagazineForGun(playerObj, gun)
         return
     end
     ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
+end
+
+local function BeginAutomaticSpeedLoaderReload(playerObj, gun)
+    if gun:getCurrentAmmoCount() > 0 then
+        return false
+    end
+
+    if gun:haveChamber() and gun:isRoundChambered() then
+        return false
+    end
+
+    if gun:isJammed() then
+        return false
+    end
+
+    local speedLoader = SpeedLoader.GetBestSpeedLoaderForGun(playerObj, gun)
+
+    if not speedLoader then
+        return false
+    end
+
+    ISInventoryPaneContextMenu.transferIfNeeded(playerObj, speedLoader)
+    ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, speedLoader))
+    return true
 end
 
 ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
@@ -54,7 +79,14 @@ ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
         if ammoCount > 0 or not hasMagazine then
             ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
         end
-    elseif gun:getMagazineType() then
+        return
+    end
+
+    if SpeedLoader.IsRegisteredGun(gun) and BeginAutomaticSpeedLoaderReload(playerObj, gun) then
+        return
+    end
+
+    if gun:getMagazineType() then
         local magazine = gun:getBestMagazine(playerObj)
         local hasMagazine = gun:isContainsClip()
         if hasMagazine then
@@ -77,35 +109,36 @@ ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
         if ammoCount > 0 or not hasMagazine then
             ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
         end
-    else
-        local currentAmmoType = gun and gun:getAmmoType()
-        local currentItemKey = currentAmmoType and currentAmmoType:getItemKey()
-        local reloadAmmoType = Ammo.GetAutomaticReloadAmmoType(playerObj, gun)
-
-        if not reloadAmmoType or reloadAmmoType == currentItemKey then
-            ISReloadWeaponAction_BeginAutomaticReload_Original(playerObj, gun)
-            return
-        end
-
-        if gun:getCurrentAmmoCount() >= gun:getMaxAmmo() then
-            return
-        end
-        if gun:isJammed() then
-            return
-        end
-
-        local ammoCount = ISInventoryPaneContextMenu.transferBullets(
-            playerObj,
-            reloadAmmoType,
-            gun:getCurrentAmmoCount(),
-            gun:getMaxAmmo()
-        )
-        if ammoCount == 0 then
-            return
-        end
-
-        ISTimedActionQueue.add(ISReloadWeaponAction:new(playerObj, gun, nil, reloadAmmoType))
+        return
     end
+
+    local currentAmmoType = gun and gun:getAmmoType()
+    local currentItemKey = currentAmmoType and currentAmmoType:getItemKey()
+    local reloadAmmoType = Ammo.GetAutomaticReloadAmmoType(playerObj, gun)
+
+    if not reloadAmmoType or reloadAmmoType == currentItemKey then
+        ISReloadWeaponAction_BeginAutomaticReload_Original(playerObj, gun)
+        return
+    end
+
+    if gun:getCurrentAmmoCount() >= gun:getMaxAmmo() then
+        return
+    end
+    if gun:isJammed() then
+        return
+    end
+
+    local ammoCount = ISInventoryPaneContextMenu.transferBullets(
+        playerObj,
+        reloadAmmoType,
+        gun:getCurrentAmmoCount(),
+        gun:getMaxAmmo()
+    )
+    if ammoCount == 0 then
+        return
+    end
+
+    ISTimedActionQueue.add(ISReloadWeaponAction:new(playerObj, gun, nil, reloadAmmoType))
 end
 
 -------------------------------------------------
@@ -132,10 +165,42 @@ end
 -------------------------------------------------
 -- Insert Magazine: Transfer AmmoList mag -> gun
 -------------------------------------------------
+local ISInsertMagazine_start_original = ISInsertMagazine.start
+function ISInsertMagazine:start()
+    ISInsertMagazine_start_original(self)
+
+    if self.magazine and SpeedLoader.IsCompatibleTypeForGun(self.magazine:getFullType(), self.gun) then
+        ISReloadWeaponAction.ejectSpentRounds(self)
+    end
+end
+
+local ISInsertMagazine_serverStart_original = ISInsertMagazine.serverStart
+function ISInsertMagazine:serverStart()
+    ISInsertMagazine_serverStart_original(self)
+
+    if self.magazine and SpeedLoader.IsCompatibleTypeForGun(self.magazine:getFullType(), self.gun) then
+        ISReloadWeaponAction.ejectSpentRounds(self)
+    end
+end
+
 local ISInsertMagazine_loadAmmo_original = ISInsertMagazine.loadAmmo
 function ISInsertMagazine:loadAmmo()
     if self.gun and Underbarrel.IsWeaponInUnderbarrelMode(self.gun) then
         return ISInsertMagazine_loadAmmo_original(self)
+    end
+
+    if self.magazine and SpeedLoader.IsCompatibleTypeForGun(self.magazine:getFullType(), self.gun) then
+        local transferredCount = SpeedLoader.TransferAmmoToGun(self.gun, self.magazine)
+        self.character:clearVariable("isLoading")
+
+        if transferredCount > 0 then
+            syncItemFields(self.character, self.magazine)
+            syncHandWeaponFields(self.character, self.gun)
+            Ammo.SyncAmmoListToClient(self.character, self.magazine)
+            Ammo.SyncAmmoListToClient(self.character, self.gun)
+        end
+
+        return
     end
 
     local magazineInstance = instanceItem(self.magazine:getFullType())
@@ -269,6 +334,7 @@ function ISEjectMagazine:unloadAmmo()
             Ammo.SyncAmmoListToClient(self.character, ejectedMag)
         end
     end
+
     Ammo.SyncAmmoListToClient(self.character, self.gun)
 
     Magazine.ClearMagazineType(self.gun)

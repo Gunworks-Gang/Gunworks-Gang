@@ -33,7 +33,9 @@ function Animations.CallSyncHandWeaponFields(player, weapon)
     MarkSkipEquipRestore(weapon)
     syncHandWeaponFields(player, weapon)
     player:setPrimaryHandItem(nil)
-    player:setSecondaryHandItem(nil)
+    if weapon:isTwoHandWeapon() then
+        player:setSecondaryHandItem(nil)
+    end
     player:setPrimaryHandItem(weapon)
     if weapon:isTwoHandWeapon() then
         player:setSecondaryHandItem(weapon)
