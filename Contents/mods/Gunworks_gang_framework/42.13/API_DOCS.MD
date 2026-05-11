@@ -1684,6 +1684,102 @@ Quick rule:
 You usually place these inside systems like ammo, attachments, bipods, or stocks when those systems ask for a `modifiers` table.
 Feel free to extend this system in a custom module. Contact me directly if I miss a getter/setter that you wish to see in the main table.
 
+# SpeedLoader System
+
+This system lets direct-load firearms use one or more compatible speedloaders.
+You register the weapon and the allowed speedloader item types.
+After that, the framework can find a compatible loaded speedloader and transfer rounds into the gun.
+
+Keep it simple:
+
+1. Register one weapon or many weapons with compatible speedloader types.
+2. If you register more than one speedloader type for the same gun, keep them in the order you prefer.
+3. Let the framework handle the reload flow, or use the helper functions if you need custom logic.
+
+### Module import
+
+```lua
+local SpeedLoader = require("WeaponSystems/Utils/SpeedLoader")
+```
+
+### 1. Weapon registration
+
+Use this to register one weapon or many weapons with one or more compatible speedloader item types.
+
+```lua
+SpeedLoader.RegisterWeapon(weaponTypes, speedLoaderTypes)
+```
+
+Parameters:
+
+- `weaponTypes`: one full weapon type or an array of full weapon types.
+- `speedLoaderTypes`: one full speedloader type or an array of full speedloader types.
+
+Examples:
+
+```lua
+SpeedLoader.RegisterWeapon("MyMod.Python357", "MyMod.SpeedLoader357")
+```
+
+```lua
+SpeedLoader.RegisterWeapon({
+	"MyMod.Redhawk44",
+	"MyMod.Anaconda44",
+}, {
+	"MyMod.SpeedLoader44",
+	"MyMod.QuickLoader44",
+})
+```
+
+If you register the same weapon again, the new speedloader list replaces the old one.
+
+### 2. Multiple weapon registration
+
+Use this to register many weapons in one call.
+
+```lua
+SpeedLoader.RegisterMultipleWeapons(entriesTable)
+```
+
+Parameters:
+
+- `entriesTable`: table in the form `{ [weaponType] = speedLoaderType|string[] }`.
+
+Example:
+
+```lua
+SpeedLoader.RegisterMultipleWeapons({
+	["MyMod.Python357"] = "MyMod.SpeedLoader357",
+	["MyMod.Redhawk44"] = {
+		"MyMod.SpeedLoader44",
+		"MyMod.QuickLoader44",
+	},
+	["MyMod.Anaconda44"] = "MyMod.SpeedLoader44",
+})
+```
+
+### Complete example
+
+```lua
+local SpeedLoader = require("WeaponSystems/Utils/SpeedLoader")
+
+SpeedLoader.RegisterMultipleWeapons({
+	["MyMod.Python357"] = "MyMod.SpeedLoader357",
+	["MyMod.Redhawk44"] = {
+		"MyMod.SpeedLoader44",
+		"MyMod.QuickLoader44",
+	},
+})
+
+local loader = SpeedLoader.GetBestSpeedLoaderForGun(playerObj, gun)
+if loader then
+	local moved = SpeedLoader.TransferAmmoToGun(gun, loader)
+	if moved > 0 then
+		print("Loaded rounds: " .. tostring(moved))
+	end
+end
+```
+
 # Underbarrel System
 
 This system lets a weapon switch to an underbarrel weapon, such as a grenade launcher or shotgun.
