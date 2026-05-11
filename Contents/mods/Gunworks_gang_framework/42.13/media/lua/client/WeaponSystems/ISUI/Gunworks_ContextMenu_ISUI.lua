@@ -2,7 +2,6 @@ require("ISUI/ISInventoryPaneContextMenu")
 require("TimedActions/ISTimedActionQueue")
 require("WeaponSystems/TimedActions/ISUniversalAttachment")
 
-local WeaponUpgradeUI = require("WeaponSystems/ISUI/WeaponUpgradeUI")
 local FoldingStock = require("WeaponSystems/Utils/FoldingStock")
 local FoldingBipod = require("WeaponSystems/Utils/FoldingBipod")
 local Bayonet = require("WeaponSystems/Utils/Bayonet")
@@ -14,31 +13,6 @@ local UniversalAttachment = require("WeaponSystems/Utils/UniversalAttachment")
 local PreventRemoval = require("WeaponSystems/Utils/PreventRemovals")
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusives")
-
--------------------------------------------------
--- Weapon Upgrade Manager Context Menu
--------------------------------------------------
-local function addWeaponUpgradeManagerOption(playerObj, item, context)
-    if not WeaponUpgradeUI then return end
-    if not instanceof(item, "HandWeapon") then return end
-    if not item:isRanged() then return end
-
-    local actionString = getText("IGUI_WeaponUpgradeUI_Open")
-    local listEntry = context:addOption(actionString, playerObj, WeaponUpgradeUI.OpenPanel, item)
-
-    local tooltip = ISInventoryPaneContextMenu.addToolTip()
-    tooltip:setName(actionString)
-    tooltip.texture = item:getTex()
-
-    if item:getContainer() == playerObj:getInventory() then
-        tooltip.description = getText("IGUI_WeaponUpgradeUI_OpenDesc")
-    else
-        listEntry.notAvailable = true
-        tooltip.description = getText("IGUI_MoveToInventory")
-    end
-
-    listEntry.toolTip = tooltip
-end
 
 -------------------------------------------------
 -- Foldable Stock Context Menu
@@ -405,7 +379,6 @@ local function addRailingOptions(playerObj, item, context)
 
     local isInInventory = item:getContainer() == playerObj:getInventory()
     local railingMenus = {}
-    local topLevelOptionCount = 0
 
     for _, railInfo in ipairs(railings) do
         local railingType = railInfo.railingType
@@ -436,7 +409,6 @@ local function addRailingOptions(playerObj, item, context)
                     )
                     table.insert(contextEntries, entry)
                     table.insert(mergedEntries, entry)
-                    topLevelOptionCount = topLevelOptionCount + 1
                 end
             end
 
@@ -465,7 +437,6 @@ local function addRailingOptions(playerObj, item, context)
                 )
                 table.insert(contextEntries, entry)
                 table.insert(mergedEntries, entry)
-                topLevelOptionCount = topLevelOptionCount + 1
             elseif #compatibleItems > 1 then
                 local submenuEntries = {}
 
@@ -495,7 +466,6 @@ local function addRailingOptions(playerObj, item, context)
                     nil,
                     submenuEntries
                 ))
-                topLevelOptionCount = topLevelOptionCount + 1
             end
 
             if #contextEntries > 0 then
@@ -508,18 +478,9 @@ local function addRailingOptions(playerObj, item, context)
         end
     end
 
-    if topLevelOptionCount == 0 then return end
+    if #railingMenus == 0 then return end
 
-    if topLevelOptionCount == 1 then
-        for _, railMenuInfo in ipairs(railingMenus) do
-            for _, entry in ipairs(railMenuInfo.contextEntries) do
-                addRailingEntryToMenu(context, playerObj, entry, isInInventory)
-            end
-        end
-        return
-    end
-
-    local parentLabel = getText("IGUI_RailingMounting")
+    local parentLabel = getText("IGUI_RailingOptions")
     local parentOption = context:addOption(parentLabel)
     local parentMenu = context:getNew(context)
     context:addSubMenu(parentOption, parentMenu)
@@ -757,7 +718,6 @@ local onFillInventoryObjectContextMenu = function(playerid, context, items)
             item = v.items[1]
         end
         if instanceof(item, "HandWeapon") then
-            addWeaponUpgradeManagerOption(player, item, context)
             addFoldableStockOption(player, item, context)
             addFoldableBipodOption(player, item, context)
             addBayonetAttachmentOption(player, item, context)
