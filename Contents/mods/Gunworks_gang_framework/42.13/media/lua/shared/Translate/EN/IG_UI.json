@@ -27,6 +27,7 @@
   "IGUI_RailingMountMenu": "Mount on %1...",
   "IGUI_RailingUnmount": "Remove %1 (%2)",
   "IGUI_RailingUnmountDesc": "Remove %1 from %2.",
+  "IGUI_RailingOptions": "Railing Options",
   "IGUI_DeployBayonet": "Deploy Bayonet",
   "IGUI_DeployBayonetDesc": "Unfold the integrated bayonet for melee attacks.",
   "IGUI_FoldBayonet": "Fold Bayonet",
