@@ -92,7 +92,7 @@ function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
     if event == 'changeWeaponSprite' then
         if parameter and parameter ~= '' and self.gun:getFullType() ~= 'Base.DoubleBarrelShotgun' then
             local open = parameter ~= 'original'
-            Animations.CallAnimate(self.character, self.gun, open)
+            return Animations.CallAnimate(self.character, self.gun, open)
         end
     end
     ISUnloadBulletsFromFirearm_animEvent(self, event, parameter)

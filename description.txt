@@ -38,6 +38,9 @@ What sets this framework apart is its focus on making weapons modular platforms 
 
 To add these systems to your mod, read the API docs included in the mod files for setup details and examples.
 
+[b]You can join the Modding discord and contact directly there[/b]
+[url=https://discord.gg/sqE9eK4Xav][img]https://raw.githubusercontent.com/Chuckleberry-Finn/chuckImages/refs/heads/main/PZmodCommBanner3.png[/img][/url]
+
 [b]Permission & Redistribution Notice[/b]
 This mod may not be copied, reuploaded, redistributed, mirrored, included in collections or modpacks, or stored on any third-party site, in whole or in part, without my explicit written permission.
 You may link to the original Workshop page, but do not upload this mod anywhere else.
