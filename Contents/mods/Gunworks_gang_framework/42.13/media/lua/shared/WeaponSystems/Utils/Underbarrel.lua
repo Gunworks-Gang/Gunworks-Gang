@@ -41,33 +41,10 @@ Underbarrel.ACTION_RESTORE           = "restore"
 --   Jammed, ContainsClip, MagazineType  (runtime ammo — managed by keys)
 -------------------------------------------------
 local UNDERBARREL_DEFAULT_SWAP_STATS = {
-    "AmmoType",
-    "MaxAmmo", "ClipSize",
-    "WeaponReloadType", "FireMode", "HaveChamber",
-    "RackAfterShot",
-    "MinDamage", "MaxDamage",
-    "MaxRange", "MinRange", "MinRangeRanged",
-    "MaxSightRange", "MinSightRange",
-    "MaxAngle", "MinAngle",
-    "ReloadTime", "AimingTime",
-    "JamGunChance", "RecoilDelay",
-    "ProjectileCount", "ProjectileSpread", "ProjectileWeightCenter",
-    "SoundRadius", "SoundVolume", "SoundGain",
-    "SwingSound", "ClickSound", "RackSound", "BreakSound",
-    "ShellFallSound", "ImpactSound", "DoorHitSound", "HitFloorSound", "BulletOutSound",
-    "MuzzleFlashModelKey",
-    "HitChance", "ToHitModifier",
-    "CriticalChance", "CritDmgMultiplier",
-    "PiercingBullets",
-    "PushBackMod", "KnockdownMod", "KnockBackOnNoDeath",
-    "SplatNumber", "SplatBloodOnNoDeath", "MultipleHitConditionAffected",
-    "RangeFalloff", "AngleFalloff",
-    "ConditionLowerChanceOneIn", "ConditionMax",
-    "MaxHitCount",
-    "AimingPerkCritModifier", "AimingPerkHitChanceModifier",
-    "AimingPerkMinAngleModifier", "AimingPerkRangeModifier",
-    "DoorDamage", "TreeDamage",
-    "BaseSpeed", "SwingTime", "EnduranceMod",
+    "AmmoType", "MaxAmmo", "ClipSize", "WeaponReloadType", "FireMode", "HaveChamber", "RackAfterShot", "MinDamage", "MaxDamage", "MaxRange", "MinRange", "MinRangeRanged", "MaxSightRange", "MinSightRange", "MaxAngle", "MinAngle", "ReloadTime", "AimingTime", "JamGunChance", "RecoilDelay",
+    "ProjectileCount", "ProjectileSpread", "ProjectileWeightCenter", "SoundRadius", "SoundVolume", "SoundGain", "SwingSound", "ClickSound", "RackSound", "BreakSound", "ShellFallSound", "ImpactSound", "DoorHitSound", "HitFloorSound", "BulletOutSound", "MuzzleFlashModelKey", "HitChance",
+    "ToHitModifier", "CriticalChance", "CritDmgMultiplier", "PiercingBullets", "PushBackMod", "KnockdownMod", "KnockBackOnNoDeath", "SplatNumber", "SplatBloodOnNoDeath", "MultipleHitConditionAffected", "RangeFalloff", "AngleFalloff", "ConditionLowerChanceOneIn", "ConditionMax", "MaxHitCount",
+    "AimingPerkCritModifier", "AimingPerkHitChanceModifier", "AimingPerkMinAngleModifier", "AimingPerkRangeModifier", "DoorDamage", "TreeDamage", "BaseSpeed", "SwingTime", "EnduranceMod",
 }
 
 -- Runtime ammo stats applied from the cached underbarrel weapon when entering mode.
@@ -121,12 +98,24 @@ local MAIN_AMMO_KEYS = {
 --- Register an underbarrel attachment and the weapon it swaps to.
 ---@param attachmentType string    fullType of the attachment part e.g. "MWA.M203_Attachment"
 ---@param underbarrelType string   fullType of the underbarrel weapon e.g. "MWA.M203"
+---@param willRequiredManualRemovalOfAmmo boolean|string[]|nil  optional flag for underbarrels that manually remove spent rounds; old third-arg swapStats calls are still accepted
 ---@param swapStats string[]|nil  stat names to swap between modes; defaults to UNDERBARREL_DEFAULT_SWAP_STATS
-function Underbarrel.RegisterUnderbarrelAttachment(attachmentType, underbarrelType, swapStats)
+function Underbarrel.RegisterUnderbarrelAttachment(attachmentType, underbarrelType, willRequiredManualRemovalOfAmmo, swapStats)
     if not attachmentType or not underbarrelType then return end
+
+    local manualRemoval = false
+    local resolvedSwapStats = swapStats
+
+    if type(willRequiredManualRemovalOfAmmo) == "table" and swapStats == nil then
+        resolvedSwapStats = willRequiredManualRemovalOfAmmo
+    else
+        manualRemoval = willRequiredManualRemovalOfAmmo == true
+    end
+
     Underbarrel.UnderbarrelAttachments[attachmentType] = {
-        type      = underbarrelType,
-        swapStats = swapStats or UNDERBARREL_DEFAULT_SWAP_STATS,
+        type                            = underbarrelType,
+        willRequiredManualRemovalOfAmmo = manualRemoval,
+        swapStats                       = resolvedSwapStats or UNDERBARREL_DEFAULT_SWAP_STATS,
     }
 end
 
@@ -180,7 +169,7 @@ local function ResolveModeConfig(weapon, modeSource, underbarrelType)
     if not entry then return nil end
     if underbarrelType and entry.type ~= underbarrelType then return nil end
 
-    return entry.type, ATTACHMENT_KEYS, entry.swapStats
+    return entry.type, ATTACHMENT_KEYS, entry.swapStats, entry.willRequiredManualRemovalOfAmmo == true
 end
 
 local function SendModeRequest(player, weapon, action, underbarrelType, modeSource)
@@ -409,7 +398,7 @@ end
 -- Core enter / exit logic
 -------------------------------------------------
 
-local function EnterUnderbarrelMode(weapon, player, underbarrelType, keys, swapStats, modeSource, silent)
+local function EnterUnderbarrelMode(weapon, player, underbarrelType, keys, swapStats, willRequiredManualRemovalOfAmmo, modeSource, silent)
     if not weapon or not player or not underbarrelType then return false end
     if Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return false end
 
@@ -438,10 +427,11 @@ local function EnterUnderbarrelMode(weapon, player, underbarrelType, keys, swapS
 
     RestoreModeAmmoList(weapon, keys)
 
-    local modData                        = weapon:getModData()
-    modData.GW_IsUnderbarrelMode         = true
-    modData.GW_UnderbarrelModeWeaponType = underbarrelType
-    modData.GW_UnderbarrelModeSource     = modeSource
+    local modData                           = weapon:getModData()
+    modData.GW_IsUnderbarrelMode            = true
+    modData.GW_UnderbarrelModeWeaponType    = underbarrelType
+    modData.GW_UnderbarrelModeSource        = modeSource
+    modData.WillRequiredManualRemovalOfAmmo = willRequiredManualRemovalOfAmmo == true
 
     RefreshEquippedWeapon(player, weapon)
 
@@ -465,10 +455,11 @@ local function ExitUnderbarrelMode(weapon, player, silent)
     RestoreMainWeaponRuntimeState(weapon)
     RestoreMainAmmoListAfterModeSwitch(weapon)
 
-    local modData                        = weapon:getModData()
-    modData.GW_IsUnderbarrelMode         = nil
-    modData.GW_UnderbarrelModeWeaponType = nil
-    modData.GW_UnderbarrelModeSource     = nil
+    local modData                           = weapon:getModData()
+    modData.GW_IsUnderbarrelMode            = nil
+    modData.GW_UnderbarrelModeWeaponType    = nil
+    modData.GW_UnderbarrelModeSource        = nil
+    modData.WillRequiredManualRemovalOfAmmo = nil
 
     RefreshEquippedWeapon(player, weapon)
 
@@ -567,10 +558,10 @@ function Underbarrel.ReconcileModeState(weapon, player, isUnderbarrelMode, modeS
         end
     end
 
-    local resolvedType, keys, swapStats = ResolveModeConfig(weapon, modeSource, underbarrelType)
+    local resolvedType, keys, swapStats, willRequiredManualRemovalOfAmmo = ResolveModeConfig(weapon, modeSource, underbarrelType)
     if not resolvedType then return false end
 
-    return EnterUnderbarrelMode(weapon, player, resolvedType, keys, swapStats, modeSource, silent)
+    return EnterUnderbarrelMode(weapon, player, resolvedType, keys, swapStats, willRequiredManualRemovalOfAmmo, modeSource, silent)
 end
 
 -------------------------------------------------
@@ -647,6 +638,7 @@ function Underbarrel.RestoreOnLoad(weapon)
     modData.GW_UnderbarrelModeWeaponType     = nil
     modData.GW_UnderbarrelModeSource         = nil
     modData.GW_IntegratedUnderbarrelDeployed = nil
+    modData.WillRequiredManualRemovalOfAmmo  = nil
 end
 
 --- Called by WeaponUpgradeHooks when an underbarrel attachment is removed.
@@ -672,9 +664,10 @@ function Underbarrel.HandleAttachmentRemoval(weapon, removedPart, player)
         RestoreMainWeaponRuntimeState(weapon)
         RestoreMainAmmoListAfterModeSwitch(weapon)
 
-        modData.GW_IsUnderbarrelMode         = nil
-        modData.GW_UnderbarrelModeWeaponType = nil
-        modData.GW_UnderbarrelModeSource     = nil
+        modData.GW_IsUnderbarrelMode            = nil
+        modData.GW_UnderbarrelModeWeaponType    = nil
+        modData.GW_UnderbarrelModeSource        = nil
+        modData.WillRequiredManualRemovalOfAmmo = nil
 
         if player then
             RefreshEquippedWeapon(player, weapon)
@@ -735,6 +728,7 @@ function Underbarrel.HandleAttachmentRemoval(weapon, removedPart, player)
     modData.GW_MainWeaponSavedStats                 = nil
     modData.GW_UnderbarrelModeSource                = nil
     modData.GW_IntegratedUnderbarrelDeployed        = nil
+    modData.WillRequiredManualRemovalOfAmmo         = nil
 end
 
 return Underbarrel

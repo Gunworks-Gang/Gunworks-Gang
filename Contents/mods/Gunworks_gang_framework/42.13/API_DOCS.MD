@@ -1839,6 +1839,12 @@ Example:
 Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_Attachment", "MyMod.M203")
 ```
 
+Example with manual spent-round removal:
+
+```lua
+Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_Attachment", "MyMod.M203", true)
+```
+
 Example with custom swap stats:
 
 ```lua
@@ -1850,6 +1856,16 @@ Underbarrel.RegisterUnderbarrelAttachment("MyMod.Masterkey_Attachment", "MyMod.M
 	"MaxDamage",
 	"SoundRadius",
 	"SoundVolume",
+})
+```
+
+Example with manual spent-round removal and custom swap stats:
+
+```lua
+Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_Attachment", "MyMod.M203", true, {
+	"AmmoType",
+	"MaxAmmo",
+	"ClipSize",
 })
 ```
 
