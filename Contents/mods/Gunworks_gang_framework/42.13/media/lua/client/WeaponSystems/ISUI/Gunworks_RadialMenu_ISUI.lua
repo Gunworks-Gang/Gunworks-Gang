@@ -160,34 +160,6 @@ function CAttachBayonet:invoke()
 end
 
 -------------------------------------------------
--- CToggleIntegratedUnderbarrel
--------------------------------------------------
-local CToggleIntegratedUnderbarrel = BaseCommand:derive("CToggleIntegratedUnderbarrel")
-
-function CToggleIntegratedUnderbarrel:new(frm)
-    return BaseCommand.new(self, frm)
-end
-
-function CToggleIntegratedUnderbarrel:fillMenu(menu, weapon)
-    if not Underbarrel.HasIntegratedUnderbarrel(weapon) then return end
-    local isDeployed = Underbarrel.IsIntegratedUnderbarrelDeployed(weapon)
-    local text = getText(isDeployed and "IGUI_StowUnderbarrel" or "IGUI_DeployUnderbarrel")
-    local icon = isDeployed and "media/ui/GunworksRadial_StowUnderbarrel.png" or "media/ui/GunworksRadial_DeployUnderbarrel.png"
-    menu:addSlice(text, getTexture(icon), self.invoke, self)
-end
-
-function CToggleIntegratedUnderbarrel:invoke()
-    local weapon = self:getWeapon()
-    if not weapon then return end
-    Underbarrel.ToggleIntegratedUnderbarrel(weapon)
-    sendClientCommand("SWMG", "syncWeapon", {
-        onlineID                         = self.character:getOnlineID(),
-        itemId                           = weapon:getID(),
-        GW_IntegratedUnderbarrelDeployed = weapon:getModData().GW_IntegratedUnderbarrelDeployed,
-    })
-end
-
--------------------------------------------------
 -- CToggleUnderbarrelMode
 -------------------------------------------------
 local CToggleUnderbarrelMode = BaseCommand:derive("CToggleUnderbarrelMode")
@@ -500,7 +472,6 @@ local function hasGunworksFeature(weapon, playerObj)
     if Bayonet.HasIntegratedBayonet(weapon) then return true end
     if Bayonet.CanRemoveBayonet(weapon) then return true end
     if Underbarrel.CanToggleUnderbarrel(weapon) then return true end
-    if Underbarrel.HasIntegratedUnderbarrel(weapon) then return true end
     if DynamicAttachment.HasSwappableAttachment(weapon) then return true end
     if RateOfFireUI.HasMultipleFiremodes(weapon) then return true end
     if Bayonet.BayonetMountableWeapons[weapon:getFullType()] then
@@ -544,7 +515,6 @@ function ISFirearmRadialMenu:fillMenu()
         CToggleIntegratedBayonet:new(self),
         CRemoveBayonet:new(self),
         CAttachBayonet:new(self),
-        CToggleIntegratedUnderbarrel:new(self),
         CToggleUnderbarrelMode:new(self),
         CChangeFireMode:new(self),
         CSwapDynamicAttachment:new(self),

@@ -227,57 +227,6 @@ IntegratedBayonetContext.callAction = function(player, weapon)
 end
 
 -------------------------------------------------
--- Integrated Underbarrel Deploy / Stow Context Menu
--------------------------------------------------
-local function addIntegratedUnderbarrelOption(playerObj, item, context)
-    if not Underbarrel then return end
-    if not instanceof(item, "HandWeapon") then return end
-    if not item:isRanged() then return end
-    if not Underbarrel.HasIntegratedUnderbarrel(item) then return end
-
-    local isInInventory = item:getContainer() == playerObj:getInventory()
-    local isDeployed = Underbarrel.IsIntegratedUnderbarrelDeployed(item)
-
-    local actionString
-    if isDeployed then
-        actionString = getText("IGUI_StowUnderbarrel")
-    else
-        actionString = getText("IGUI_DeployUnderbarrel")
-    end
-
-    local listEntry = context:addOption(actionString, playerObj, IntegratedUnderbarrelContext.callAction, item)
-
-    local tooltip = ISInventoryPaneContextMenu.addToolTip()
-    tooltip:setName(actionString)
-    tooltip.texture = item:getTex()
-
-    if isInInventory then
-        if isDeployed then
-            tooltip.description = getText("IGUI_StowUnderbarrelDesc")
-        else
-            tooltip.description = getText("IGUI_DeployUnderbarrelDesc")
-        end
-    else
-        listEntry.notAvailable = true
-        tooltip.description = getText("IGUI_MoveToInventory")
-    end
-
-    listEntry.toolTip = tooltip
-end
-
-IntegratedUnderbarrelContext = {}
-
-IntegratedUnderbarrelContext.callAction = function(player, weapon)
-    if not player or not weapon then return end
-    Underbarrel.ToggleIntegratedUnderbarrel(weapon)
-    sendClientCommand("SWMG", "syncWeapon", {
-        onlineID                         = player:getOnlineID(),
-        itemId                           = weapon:getID(),
-        GW_IntegratedUnderbarrelDeployed = weapon:getModData().GW_IntegratedUnderbarrelDeployed,
-    })
-end
-
--------------------------------------------------
 -- Dynamic Attachment Swap Context Menu
 -------------------------------------------------
 local function addSwapAttachmentOption(playerObj, item, context)
@@ -722,7 +671,6 @@ local onFillInventoryObjectContextMenu = function(playerid, context, items)
             addFoldableBipodOption(player, item, context)
             addBayonetAttachmentOption(player, item, context)
             addIntegratedBayonetOption(player, item, context)
-            addIntegratedUnderbarrelOption(player, item, context)
             addSwapAttachmentOption(player, item, context)
             addRailingOptions(player, item, context)
             addUniversalAttachmentOptions(player, item, context)

@@ -64,6 +64,7 @@ StatsFactory.Registry = {
     WeaponReloadType             = { get = "getWeaponReloadType", set = "setWeaponReloadType" },
     FireMode                     = { get = "getFireMode", set = "setFireMode" },
     FireModePossibilities        = { get = "getFireModePossibilities", set = "setFireModePossibilities" },
+    HaveChamber                  = { get = "haveChamber", set = "setHaveChamber" },
     RoundChambered               = { get = "isRoundChambered", set = "setRoundChambered" },
     ContainsClip                 = { get = "isContainsClip", set = "setContainsClip" },
     CurrentAmmoCount             = { get = "getCurrentAmmoCount", set = "setCurrentAmmoCount" },

@@ -1839,6 +1839,12 @@ Example:
 Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_Attachment", "MyMod.M203")
 ```
 
+Example with manual spent-round removal:
+
+```lua
+Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_Attachment", "MyMod.M203", true)
+```
+
 Example with custom swap stats:
 
 ```lua
@@ -1853,31 +1859,26 @@ Underbarrel.RegisterUnderbarrelAttachment("MyMod.Masterkey_Attachment", "MyMod.M
 })
 ```
 
-### 2. Integrated underbarrel registration
-
-Use this when the weapon has a built-in underbarrel.
+Example with manual spent-round removal and custom swap stats:
 
 ```lua
-Underbarrel.RegisterIntegratedUnderbarrel(weaponType, underbarrelType, swapStats)
+Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_Attachment", "MyMod.M203", true, {
+	"AmmoType",
+	"MaxAmmo",
+	"ClipSize",
+})
 ```
 
-Parameters:
+### 2. Built-in underbarrels
 
-- `weaponType`: one full weapon type or an array of full weapon types.
-- `underbarrelType`: full item type of the underbarrel weapon.
-- `swapStats`: optional array of stat names to swap between the main weapon and the underbarrel weapon.
+Built-in underbarrels use the same attachment registration API.
+Add the permanent part to the weapon's `UnderbarrelIntegrated` slot and
+register that part type with `RegisterUnderbarrelAttachment`.
 
 Example:
 
 ```lua
-Underbarrel.RegisterIntegratedUnderbarrel("MyMod.M4_M203", "MyMod.M203")
-```
-
-```lua
-Underbarrel.RegisterIntegratedUnderbarrel({
-	"MyMod.M4_M203",
-	"MyMod.M16_M203",
-}, "MyMod.M203")
+Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_IntegratedPart", "MyMod.M203")
 ```
 
 ### Complete example
@@ -1887,11 +1888,7 @@ local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 
 Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_Attachment", "MyMod.M203")
 Underbarrel.RegisterUnderbarrelAttachment("MyMod.Masterkey_Attachment", "MyMod.Masterkey")
-
-Underbarrel.RegisterIntegratedUnderbarrel({
-	"MyMod.M4_M203",
-	"MyMod.M16_M203",
-}, "MyMod.M203")
+Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_IntegratedPart", "MyMod.M203")
 ```
 
 # Universal Attachment System
