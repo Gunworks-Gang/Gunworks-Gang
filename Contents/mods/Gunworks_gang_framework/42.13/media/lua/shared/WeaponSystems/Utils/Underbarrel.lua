@@ -14,7 +14,7 @@
 --                   Saved to GW_MainWeaponSavedStats in modData on enter,
 --                   restored on exit or load. All serialisable primitives.
 --   Runtime ammo  — live per-mode state (CurrentAmmoCount, RoundChambered…)
---                   Managed by the keys mechanism (GW_Underbarrel*/GW_IntegratedUnderbarrel*)
+--                   Managed by the keys mechanism (GW_Underbarrel*)
 --                   for the underbarrel side, and GW_MainWeapon* for the main side.
 --   AmmoList      — custom mixed-ammo array, saved/restored per mode separately.
 -------------------------------------------------
@@ -23,12 +23,9 @@ local StatsFactory                   = require("WeaponSystems/Utils/StatsFactory
 local Underbarrel                    = {}
 
 Underbarrel.UnderbarrelAttachments   = {}
-Underbarrel.IntegratedUnderbarrels   = {}
 Underbarrel.MODE_SOURCE_ATTACHMENT   = "attachment"
-Underbarrel.MODE_SOURCE_INTEGRATED   = "integrated"
 
 Underbarrel.ACTION_ENTER_ATTACHMENT  = "enterAttachment"
-Underbarrel.ACTION_ENTER_INTEGRATED  = "enterIntegrated"
 Underbarrel.ACTION_RESTORE           = "restore"
 
 -------------------------------------------------
@@ -46,7 +43,7 @@ Underbarrel.ACTION_RESTORE           = "restore"
 local UNDERBARREL_DEFAULT_SWAP_STATS = {
     "AmmoType",
     "MaxAmmo", "ClipSize",
-    "WeaponReloadType", "FireMode",
+    "WeaponReloadType", "FireMode", "HaveChamber",
     "RackAfterShot",
     "MinDamage", "MaxDamage",
     "MaxRange", "MinRange", "MinRangeRanged",
@@ -103,7 +100,7 @@ local function BuildRuntimeKeys(prefix)
 end
 
 local ATTACHMENT_KEYS = BuildRuntimeKeys("Underbarrel")
-local INTEGRATED_KEYS = BuildRuntimeKeys("IntegratedUnderbarrel")
+local LEGACY_INTEGRATED_KEYS = BuildRuntimeKeys("IntegratedUnderbarrel")
 
 -- modData keys for the main weapon's runtime ammo state.
 -- Written on enter, read+cleared on exit or load.
@@ -131,24 +128,6 @@ function Underbarrel.RegisterUnderbarrelAttachment(attachmentType, underbarrelTy
         type      = underbarrelType,
         swapStats = swapStats or UNDERBARREL_DEFAULT_SWAP_STATS,
     }
-end
-
---- Register a weapon with an integrated (built-in) underbarrel.
----@param weaponType string|string[]  fullType or list of fullTypes e.g. "MWA.M4_M203"
----@param underbarrelType string      fullType of the underbarrel weapon e.g. "MWA.M203"
----@param swapStats string[]|nil      stat names to swap; defaults to UNDERBARREL_DEFAULT_SWAP_STATS
-function Underbarrel.RegisterIntegratedUnderbarrel(weaponType, underbarrelType, swapStats)
-    local entry = {
-        type      = underbarrelType,
-        swapStats = swapStats or UNDERBARREL_DEFAULT_SWAP_STATS,
-    }
-    if type(weaponType) == "table" then
-        for _, wt in ipairs(weaponType) do
-            Underbarrel.IntegratedUnderbarrels[wt] = entry
-        end
-    else
-        Underbarrel.IntegratedUnderbarrels[weaponType] = entry
-    end
 end
 
 -------------------------------------------------
@@ -185,17 +164,6 @@ end
 
 --- Return the active key-set for a weapon currently in underbarrel mode.
 local function GetActiveKeys(weapon)
-    local modData = weapon:getModData()
-    if modData.GW_UnderbarrelModeSource == Underbarrel.MODE_SOURCE_INTEGRATED then
-        return INTEGRATED_KEYS
-    end
-    if modData.GW_UnderbarrelModeSource == Underbarrel.MODE_SOURCE_ATTACHMENT then
-        return ATTACHMENT_KEYS
-    end
-    local entry = Underbarrel.IntegratedUnderbarrels[weapon:getFullType()]
-    if entry and modData.GW_UnderbarrelModeWeaponType == entry.type then
-        return INTEGRATED_KEYS
-    end
     return ATTACHMENT_KEYS
 end
 
@@ -206,40 +174,13 @@ local function GetAttachmentEntry(weapon)
     return Underbarrel.UnderbarrelAttachments[attachment:getFullType()]
 end
 
-local function GetIntegratedEntry(weapon)
-    if not weapon then return nil end
-    return Underbarrel.IntegratedUnderbarrels[weapon:getFullType()]
-end
-
-local function ResolveModeSource(weapon, modeWeaponType)
-    if not weapon then return nil end
-    local modData = weapon:getModData()
-    if modData.GW_UnderbarrelModeSource then
-        return modData.GW_UnderbarrelModeSource
-    end
-    local integratedEntry = GetIntegratedEntry(weapon)
-    if integratedEntry and modeWeaponType == integratedEntry.type then
-        return Underbarrel.MODE_SOURCE_INTEGRATED
-    end
-    return Underbarrel.MODE_SOURCE_ATTACHMENT
-end
-
 local function ResolveModeConfig(weapon, modeSource, underbarrelType)
-    local entry = nil
-    local keys = nil
-
-    if modeSource == Underbarrel.MODE_SOURCE_ATTACHMENT then
-        entry = GetAttachmentEntry(weapon)
-        keys = ATTACHMENT_KEYS
-    elseif modeSource == Underbarrel.MODE_SOURCE_INTEGRATED then
-        entry = GetIntegratedEntry(weapon)
-        keys = INTEGRATED_KEYS
-    end
-
+    if modeSource and modeSource ~= Underbarrel.MODE_SOURCE_ATTACHMENT then return nil end
+    local entry = GetAttachmentEntry(weapon)
     if not entry then return nil end
     if underbarrelType and entry.type ~= underbarrelType then return nil end
 
-    return entry.type, keys, entry.swapStats
+    return entry.type, ATTACHMENT_KEYS, entry.swapStats
 end
 
 local function SendModeRequest(player, weapon, action, underbarrelType, modeSource)
@@ -279,6 +220,38 @@ local function RestoreModeAmmoList(weapon, keys)
     modData.AmmoList = CopyArray(modData[keys.ammoList])
 end
 
+local function MigrateLegacyIntegratedValue(modData, keyName)
+    local currentKey = ATTACHMENT_KEYS[keyName]
+    local legacyKey = LEGACY_INTEGRATED_KEYS[keyName]
+    if modData[currentKey] == nil and modData[legacyKey] ~= nil then
+        modData[currentKey] = modData[legacyKey]
+    end
+    modData[legacyKey] = nil
+end
+
+-- Old integrated-underbarrel registrations used a separate key namespace.
+-- Move any persisted ammo state onto the attachment keys before it is used.
+local function MigrateLegacyIntegratedState(weapon)
+    if not weapon then return end
+    if not weapon:getWeaponPart("UnderbarrelIntegrated") then return end
+
+    local modData = weapon:getModData()
+    MigrateLegacyIntegratedValue(modData, "cacheWeapon")
+    MigrateLegacyIntegratedValue(modData, "ammo")
+    MigrateLegacyIntegratedValue(modData, "ammoList")
+    MigrateLegacyIntegratedValue(modData, "chambered")
+    MigrateLegacyIntegratedValue(modData, "spentRound")
+    MigrateLegacyIntegratedValue(modData, "spentRoundCount")
+    MigrateLegacyIntegratedValue(modData, "jammed")
+    MigrateLegacyIntegratedValue(modData, "containsClip")
+    MigrateLegacyIntegratedValue(modData, "magazineType")
+
+    if modData.GW_UnderbarrelModeSource ~= nil then
+        modData.GW_UnderbarrelModeSource = Underbarrel.MODE_SOURCE_ATTACHMENT
+    end
+    modData.GW_IntegratedUnderbarrelDeployed = nil
+end
+
 -------------------------------------------------
 -- Underbarrel-side runtime ammo (the keys mechanism)
 -------------------------------------------------
@@ -304,6 +277,23 @@ local function ApplySavedRuntimeToUnderbarrel(weapon, underbarrelWeapon, keys)
     -- MagazineType before ContainsClip (Java guard: usesExternalMagazine() && value)
     if modData[keys.magazineType] ~= nil then underbarrelWeapon:setMagazineType(modData[keys.magazineType]) end
     if modData[keys.containsClip] ~= nil then underbarrelWeapon:setContainsClip(modData[keys.containsClip]) end
+
+    if not underbarrelWeapon:haveChamber() then
+        local ammoCount = underbarrelWeapon:getCurrentAmmoCount()
+        local ammoList = modData[keys.ammoList]
+
+        if ammoList and #ammoList > ammoCount then
+            ammoCount = #ammoList
+        end
+
+        if underbarrelWeapon:isRoundChambered() or underbarrelWeapon:isSpentRoundChambered() then
+            ammoCount = math.max(ammoCount, 1)
+        end
+
+        underbarrelWeapon:setCurrentAmmoCount(ammoCount)
+        underbarrelWeapon:setRoundChambered(false)
+        underbarrelWeapon:setSpentRoundChambered(false)
+    end
 end
 
 -------------------------------------------------
@@ -387,6 +377,8 @@ end
 -- The ammo state (primitive keys) persists and is re-applied each time.
 -------------------------------------------------
 local function GetOrCreateCachedUnderbarrelWeapon(weapon, underbarrelType, keys)
+    MigrateLegacyIntegratedState(weapon)
+
     local modData           = weapon:getModData()
     local underbarrelWeapon = modData[keys.cacheWeapon]
 
@@ -496,18 +488,10 @@ function Underbarrel.CanSwapToUnderbarrel(weapon)
     return GetAttachmentEntry(weapon) ~= nil
 end
 
-function Underbarrel.CanSwapToIntegratedUnderbarrel(weapon)
-    if not IsWeaponValid(weapon) then return false end
-    if Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return false end
-    if not Underbarrel.HasIntegratedUnderbarrel(weapon) then return false end
-    return Underbarrel.IsIntegratedUnderbarrelDeployed(weapon)
-end
-
 function Underbarrel.CanToggleUnderbarrel(weapon)
     if not IsWeaponValid(weapon) then return false end
     if Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return true end
-    if Underbarrel.CanSwapToUnderbarrel(weapon) then return true end
-    return Underbarrel.CanSwapToIntegratedUnderbarrel(weapon)
+    return Underbarrel.CanSwapToUnderbarrel(weapon)
 end
 
 function Underbarrel.IsUsingUnderbarrel(player)
@@ -536,7 +520,7 @@ end
 function Underbarrel.GetModeSource(weapon)
     if not weapon then return end
     if not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return end
-    return ResolveModeSource(weapon, weapon:getModData().GW_UnderbarrelModeWeaponType)
+    return Underbarrel.MODE_SOURCE_ATTACHMENT
 end
 
 function Underbarrel.GetModeState(weapon)
@@ -554,16 +538,12 @@ function Underbarrel.GetModeState(weapon)
     return {
         isUnderbarrelMode = isUnderbarrelMode,
         underbarrelType = modData.GW_UnderbarrelModeWeaponType,
-        modeSource = isUnderbarrelMode and ResolveModeSource(weapon, modData.GW_UnderbarrelModeWeaponType) or nil,
+        modeSource = isUnderbarrelMode and Underbarrel.MODE_SOURCE_ATTACHMENT or nil,
     }
 end
 
 function Underbarrel.GetAttachmentEntry(weapon)
     return GetAttachmentEntry(weapon)
-end
-
-function Underbarrel.GetIntegratedEntry(weapon)
-    return GetIntegratedEntry(weapon)
 end
 
 function Underbarrel.ReconcileModeState(weapon, player, isUnderbarrelMode, modeSource, underbarrelType, silent)
@@ -640,32 +620,33 @@ function Underbarrel.ToggleUnderbarrel(weapon, player)
         return true
     end
 
-    if Underbarrel.CanSwapToIntegratedUnderbarrel(weapon) then
-        Underbarrel.SwapToIntegratedUnderbarrel(weapon, player)
-        return true
-    end
-
     return false
 end
 
 --- Called by Init.lua for every ranged weapon at game load time.
 --- If the weapon was saved while in underbarrel mode this forces it back to
 --- main-weapon mode so StatsFactory.ReapplyAllModifiers starts from a clean base.
---- The underbarrel's ammo state (GW_Underbarrel*/GW_IntegratedUnderbarrel*) is
---- intentionally preserved so the next toggle restores it correctly.
+-- The underbarrel's ammo state (GW_Underbarrel*) is intentionally preserved so
+-- the next toggle restores it correctly.
 ---@param weapon HandWeapon
 function Underbarrel.RestoreOnLoad(weapon)
     if not weapon then return end
+    MigrateLegacyIntegratedState(weapon)
     if not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return end
+
+    local keys = GetActiveKeys(weapon)
+    SaveRuntimeFromActiveUnderbarrel(weapon, keys)
+    SaveCurrentModeAmmoList(weapon, keys)
 
     RestoreScriptStatsFromModData(weapon)
     RestoreMainWeaponRuntimeState(weapon)
     RestoreMainAmmoListAfterModeSwitch(weapon)
 
-    local modData                        = weapon:getModData()
-    modData.GW_IsUnderbarrelMode         = nil
-    modData.GW_UnderbarrelModeWeaponType = nil
-    modData.GW_UnderbarrelModeSource     = nil
+    local modData                            = weapon:getModData()
+    modData.GW_IsUnderbarrelMode             = nil
+    modData.GW_UnderbarrelModeWeaponType     = nil
+    modData.GW_UnderbarrelModeSource         = nil
+    modData.GW_IntegratedUnderbarrelDeployed = nil
 end
 
 --- Called by WeaponUpgradeHooks when an underbarrel attachment is removed.
@@ -733,62 +714,27 @@ function Underbarrel.HandleAttachmentRemoval(weapon, removedPart, player)
     end
 
     -- Clear all per-attachment state.
-    modData[ATTACHMENT_KEYS.cacheWeapon]     = nil
-    modData[ATTACHMENT_KEYS.ammo]            = nil
-    modData[ATTACHMENT_KEYS.ammoList]        = nil
-    modData[ATTACHMENT_KEYS.chambered]       = nil
-    modData[ATTACHMENT_KEYS.spentRound]      = nil
-    modData[ATTACHMENT_KEYS.spentRoundCount] = nil
-    modData[ATTACHMENT_KEYS.jammed]          = nil
-    modData[ATTACHMENT_KEYS.containsClip]    = nil
-    modData[ATTACHMENT_KEYS.magazineType]    = nil
-    modData.GW_MainWeaponSavedStats          = nil
-    modData.GW_UnderbarrelModeSource         = nil
-end
-
--------------------------------------------------
--- Integrated Underbarrel Helpers
--------------------------------------------------
-
---- Check if a weapon has an integrated underbarrel registered.
----@param weapon HandWeapon
----@return boolean
-function Underbarrel.HasIntegratedUnderbarrel(weapon)
-    if not weapon then return false end
-    return Underbarrel.IntegratedUnderbarrels[weapon:getFullType()] ~= nil
-end
-
---- Check if the integrated underbarrel is currently deployed.
----@param weapon HandWeapon
----@return boolean
-function Underbarrel.IsIntegratedUnderbarrelDeployed(weapon)
-    if not weapon then return false end
-    return weapon:getModData().GW_IntegratedUnderbarrelDeployed == true
-end
-
---- Toggle the integrated underbarrel between deployed and stowed.
----@param weapon HandWeapon
-function Underbarrel.ToggleIntegratedUnderbarrel(weapon)
-    if not weapon then return end
-    if not Underbarrel.HasIntegratedUnderbarrel(weapon) then return end
-    weapon:getModData().GW_IntegratedUnderbarrelDeployed = not Underbarrel.IsIntegratedUnderbarrelDeployed(weapon)
-end
-
---- Swap to the integrated underbarrel weapon.
----@param weapon HandWeapon
----@param player IsoPlayer
-function Underbarrel.SwapToIntegratedUnderbarrel(weapon, player)
-    if not weapon or not player then return end
-    if not Underbarrel.CanSwapToIntegratedUnderbarrel(weapon) then return end
-
-    local entry = GetIntegratedEntry(weapon)
-    if not entry then return end
-
-    if not Underbarrel.ReconcileModeState(weapon, player, true, Underbarrel.MODE_SOURCE_INTEGRATED, entry.type, false) then
-        return
-    end
-
-    SendModeRequest(player, weapon, Underbarrel.ACTION_ENTER_INTEGRATED, entry.type, Underbarrel.MODE_SOURCE_INTEGRATED)
+    modData[ATTACHMENT_KEYS.cacheWeapon]            = nil
+    modData[ATTACHMENT_KEYS.ammo]                   = nil
+    modData[ATTACHMENT_KEYS.ammoList]               = nil
+    modData[ATTACHMENT_KEYS.chambered]              = nil
+    modData[ATTACHMENT_KEYS.spentRound]             = nil
+    modData[ATTACHMENT_KEYS.spentRoundCount]        = nil
+    modData[ATTACHMENT_KEYS.jammed]                 = nil
+    modData[ATTACHMENT_KEYS.containsClip]           = nil
+    modData[ATTACHMENT_KEYS.magazineType]           = nil
+    modData[LEGACY_INTEGRATED_KEYS.cacheWeapon]     = nil
+    modData[LEGACY_INTEGRATED_KEYS.ammo]            = nil
+    modData[LEGACY_INTEGRATED_KEYS.ammoList]        = nil
+    modData[LEGACY_INTEGRATED_KEYS.chambered]       = nil
+    modData[LEGACY_INTEGRATED_KEYS.spentRound]      = nil
+    modData[LEGACY_INTEGRATED_KEYS.spentRoundCount] = nil
+    modData[LEGACY_INTEGRATED_KEYS.jammed]          = nil
+    modData[LEGACY_INTEGRATED_KEYS.containsClip]    = nil
+    modData[LEGACY_INTEGRATED_KEYS.magazineType]    = nil
+    modData.GW_MainWeaponSavedStats                 = nil
+    modData.GW_UnderbarrelModeSource                = nil
+    modData.GW_IntegratedUnderbarrelDeployed        = nil
 end
 
 return Underbarrel

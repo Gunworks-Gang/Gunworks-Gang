@@ -109,7 +109,6 @@ function Server.OnClientCommand(module, command, player, args)
         if args.StockFolded ~= nil then modData.StockFolded = args.StockFolded end
         if args.BipodDeployed ~= nil then modData.BipodDeployed = args.BipodDeployed end
         if args.GW_BayonetDeployed ~= nil then modData.GW_BayonetDeployed = args.GW_BayonetDeployed end
-        if args.GW_IntegratedUnderbarrelDeployed ~= nil then modData.GW_IntegratedUnderbarrelDeployed = args.GW_IntegratedUnderbarrelDeployed end
         -- Native packet: syncs all WeaponParts + stats + modData, triggers resetEquippedHandsModels on other clients
         syncHandWeaponFields(player, weapon)
         -- Lua broadcast: needed for models-mode sprite changes not covered by the native packet
@@ -148,20 +147,6 @@ function Server.OnClientCommand(module, command, player, args)
                     player,
                     true,
                     Underbarrel.MODE_SOURCE_ATTACHMENT,
-                    entry.type,
-                    true
-                )
-            end
-        elseif args.action == Underbarrel.ACTION_ENTER_INTEGRATED then
-            local entry = Underbarrel.GetIntegratedEntry(weapon)
-            if entry
-                and entry.type == args.underbarrelType
-                and Underbarrel.CanSwapToIntegratedUnderbarrel(weapon) then
-                approved = Underbarrel.ReconcileModeState(
-                    weapon,
-                    player,
-                    true,
-                    Underbarrel.MODE_SOURCE_INTEGRATED,
                     entry.type,
                     true
                 )
