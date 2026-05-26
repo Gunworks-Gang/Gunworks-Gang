@@ -33,6 +33,48 @@ local function CopyConditionState(targetItem, sourceItem)
     return targetItem:getCondition() ~= previousCondition
 end
 
+local function RollAttachedBayonetConditionLoss(bayonetPart, source)
+    if not bayonetPart then return false end
+
+    local previousCondition = bayonetPart:getCondition()
+    if previousCondition <= 0 then
+        return false
+    end
+
+    local roll = random:random(11)
+    if roll < 2 then
+        bayonetPart:setCondition(previousCondition - 1)
+        return true
+    end
+
+    return false
+end
+
+local function ProcessAttachedBayonetHit(character, weapon, source)
+    if not character or not weapon then return false end
+    if Bayonet.HasIntegratedBayonet(weapon) then return false end
+
+    local bayonetPart = Bayonet.GetAttachedBayonetPart(weapon)
+    if not bayonetPart then return false end
+
+    local needsWeaponSync = false
+    if RollAttachedBayonetConditionLoss(bayonetPart, source) then
+        needsWeaponSync = true
+    end
+
+    if bayonetPart:isBroken() then
+        local success, returnedKnife = Bayonet.RemoveBayonet(weapon, character)
+        if success then
+            needsWeaponSync = true
+            if isServer() and returnedKnife then
+                sendAddItemToContainer(character:getInventory(), returnedKnife)
+            end
+        end
+    end
+
+    return needsWeaponSync
+end
+
 local function PrepareTemporaryBayonetWeapon(tempWeapon, sourceItem)
     if not tempWeapon then return end
 
@@ -76,31 +118,8 @@ function Bayonet.ProcessMultiplayerHit(character, weapon)
         needsWeaponSync = true
     end
 
-    if not Bayonet.HasIntegratedBayonet(weapon) then
-        local bayonetPart = Bayonet.GetAttachedBayonetPart(weapon)
-        if bayonetPart then
-            local spearType = Bayonet.GetSpearTypeFromAttachment(bayonetPart:getFullType())
-            if spearType then
-                local tempWeapon = instanceItem(spearType)
-                if tempWeapon then
-                    PrepareTemporaryBayonetWeapon(tempWeapon, bayonetPart)
-                    tempWeapon:damageCheck(0, 1, false)
-                    if CopyConditionState(bayonetPart, tempWeapon) then
-                        needsWeaponSync = true
-                    end
-                end
-            end
-
-            if bayonetPart:isBroken() then
-                local success, returnedKnife = Bayonet.RemoveBayonet(weapon, character)
-                if success then
-                    needsWeaponSync = true
-                    if isServer() and returnedKnife then
-                        sendAddItemToContainer(character:getInventory(), returnedKnife)
-                    end
-                end
-            end
-        end
+    if ProcessAttachedBayonetHit(character, weapon, "ProcessMultiplayerHit") then
+        needsWeaponSync = true
     end
 
     if needsWeaponSync then
@@ -130,10 +149,13 @@ local function ApplyBayonetWeaponWear(character, tempWeapon)
     if not IsAuthoritativeConditionContext() then return false end
     if RollWeaponConditionLoss(character, context.originalWeapon) then
         context.needsWeaponSync = true
-        return true
     end
 
-    return false
+    if ProcessAttachedBayonetHit(character, context.originalWeapon, "ApplyBayonetWeaponWear") then
+        context.needsWeaponSync = true
+    end
+
+    return context.needsWeaponSync
 end
 
 -------------------------------------------------
@@ -373,23 +395,6 @@ function Bayonet.RestoreWeaponAfterBayonet(character, weapon)
     if attackContext and attackContext.originalWeapon == weapon then
         if attackContext.tempWeapon then
             attackContext.tempWeapon:getModData().MWA_BayonetOriginalWeapon = nil
-        end
-
-        if IsAuthoritativeConditionContext() and not attackContext.isIntegrated and attackContext.tempWeapon then
-            local bayonetPart = Bayonet.GetAttachedBayonetPart(weapon)
-            if bayonetPart and CopyConditionState(bayonetPart, attackContext.tempWeapon) then
-                attackContext.needsWeaponSync = true
-            end
-
-            if bayonetPart and bayonetPart:isBroken() then
-                local success, returnedKnife = Bayonet.RemoveBayonet(weapon, character)
-                if success then
-                    attackContext.needsWeaponSync = true
-                    if isServer() and returnedKnife then
-                        sendAddItemToContainer(character:getInventory(), returnedKnife)
-                    end
-                end
-            end
         end
     end
 
