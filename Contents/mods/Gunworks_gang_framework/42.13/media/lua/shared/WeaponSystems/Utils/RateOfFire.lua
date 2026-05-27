@@ -323,17 +323,21 @@ function RateOfFire.CalcRecoilDelayShadow(weapon)
     return shadow:getRecoilDelay()
 end
 
+function RateOfFire.ApplyCurrentFiremodeRecoilDelay(weapon)
+    if not weapon then return end
+    if not weapon:isRanged() then return end
+
+    local mode = weapon:getFireMode()
+    if mode == "RealAuto" or mode == "RealBurst" then
+        weapon:setRecoilDelay(1)
+    end
+end
+
 function RateOfFire.RecoilDelayAdjuster(player, weapon)
     if not weapon or not player then return end
     if not weapon:isRanged() then return end
 
-    local mode = weapon:getFireMode()
-
-    if mode == "RealAuto" or mode == "RealBurst" then
-        weapon:setRecoilDelay(1)
-    elseif mode == "RealSingle" then
-        weapon:setRecoilDelay(RateOfFire.CalcRecoilDelayShadow(weapon))
-    end
+    StatsFactory.ReapplyAllModifiers(weapon)
 end
 
 function RateOfFire.GetWeaponById(player, itemId)
@@ -342,5 +346,9 @@ function RateOfFire.GetWeaponById(player, itemId)
     if item and instanceof(item, "HandWeapon") then return item end
     return nil
 end
+
+StatsFactory.RegisterRestoreHandler("RateOfFire", function(weapon)
+    RateOfFire.ApplyCurrentFiremodeRecoilDelay(weapon)
+end)
 
 return RateOfFire

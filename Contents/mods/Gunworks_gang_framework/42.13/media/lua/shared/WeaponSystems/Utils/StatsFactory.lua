@@ -193,6 +193,34 @@ end
 -- ReapplyAllModifiers only restores stats from active layers.
 -------------------------------------------------
 StatsFactory.ModifierLayers = {}
+StatsFactory.RestoreHandlers = {}
+
+--- Register a handler that runs after ReapplyAllModifiers has restored base stats
+--- and re-applied every active modifier layer.
+---@param id string
+---@param handler fun(weapon:userdata)
+function StatsFactory.RegisterRestoreHandler(id, handler)
+    if not id or type(handler) ~= "function" then return end
+
+    for i = 1, #StatsFactory.RestoreHandlers do
+        local entry = StatsFactory.RestoreHandlers[i]
+        if entry.id == id then
+            entry.handler = handler
+            return
+        end
+    end
+
+    StatsFactory.RestoreHandlers[#StatsFactory.RestoreHandlers + 1] = {
+        id = id,
+        handler = handler,
+    }
+end
+
+function StatsFactory.RunRestoreHandlers(weapon)
+    for i = 1, #StatsFactory.RestoreHandlers do
+        StatsFactory.RestoreHandlers[i].handler(weapon)
+    end
+end
 
 --- Register a modifier layer.
 --- restoreStats: { StatName = true, ... } set of stats this layer may modify.
@@ -233,6 +261,8 @@ function StatsFactory.ReapplyAllModifiers(weapon)
     for _, modifiers in ipairs(activeLayers) do
         StatsFactory.ApplyModifiers(weapon, baseStats, modifiers)
     end
+
+    StatsFactory.RunRestoreHandlers(weapon)
 end
 
 -------------------------------------------------
