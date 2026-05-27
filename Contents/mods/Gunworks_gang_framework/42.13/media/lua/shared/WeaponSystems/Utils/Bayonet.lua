@@ -42,7 +42,7 @@ local function RollAttachedBayonetConditionLoss(bayonetPart, source)
     end
 
     local roll = random:random(15)
-    if roll < 1 then
+    if roll <= 1 then
         bayonetPart:setCondition(previousCondition - 1)
         return true
     end
