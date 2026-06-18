@@ -33,17 +33,17 @@ local function CopyConditionState(targetItem, sourceItem)
     return targetItem:getCondition() ~= previousCondition
 end
 
-local function RollAttachedBayonetConditionLoss(bayonetPart, source)
-    if not bayonetPart then return false end
+local function RollBayonetConditionLoss(targetItem)
+    if not targetItem then return false end
 
-    local previousCondition = bayonetPart:getCondition()
+    local previousCondition = targetItem:getCondition()
     if previousCondition <= 0 then
         return false
     end
 
     local roll = random:random(15)
     if roll <= 1 then
-        bayonetPart:setCondition(previousCondition - 1)
+        targetItem:setCondition(previousCondition - 1)
         return true
     end
 
@@ -52,13 +52,15 @@ end
 
 local function ProcessAttachedBayonetHit(character, weapon, source)
     if not character or not weapon then return false end
-    if Bayonet.HasIntegratedBayonet(weapon) then return false end
+    if Bayonet.HasIntegratedBayonet(weapon) then
+        return RollBayonetConditionLoss(weapon)
+    end
 
     local bayonetPart = Bayonet.GetAttachedBayonetPart(weapon)
     if not bayonetPart then return false end
 
     local needsWeaponSync = false
-    if RollAttachedBayonetConditionLoss(bayonetPart, source) then
+    if RollBayonetConditionLoss(bayonetPart) then
         needsWeaponSync = true
     end
 
