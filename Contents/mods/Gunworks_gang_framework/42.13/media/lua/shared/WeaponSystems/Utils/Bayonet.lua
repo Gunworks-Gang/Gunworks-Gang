@@ -433,6 +433,7 @@ function Bayonet.BayonetAttack(character, chargeDelta, weapon, callback)
     PrepareTemporaryBayonetWeapon(bayonetTempWeapon, bayonetConditionSource)
     bayonetTempWeapon:setWeaponSprite(weapon:getWeaponSprite())
     bayonetTempWeapon:setIcon(weapon:getIcon())
+    bayonetTempWeapon:setBloodLevel(weapon:getBloodLevel())
     bayonetTempWeapon:getModData().MWA_BayonetOriginalWeapon = weapon
 
     local modelParts = weapon:getModelWeaponPart()
