@@ -1,4 +1,5 @@
-[10/May/2026 ]
-B42.17:
-- Fix issue when magazine ammolist was getting transfer to another similar magazine, causing desync in ammo types.
+[22/June/2026 ]
+B42.19:
+- Rework Bayonet condition calculation, this will now take character maintenance level into condideration and will be based on weapon lower chances instead of random factor.
+- Integrated bayonet weapons will also degrade the main weapon when used.
 [ ------ ]
