@@ -33,34 +33,34 @@ local function CopyConditionState(targetItem, sourceItem)
     return targetItem:getCondition() ~= previousCondition
 end
 
-local function RollBayonetConditionLoss(targetItem)
+local function RollConditionLoss(character, targetItem, referenceItem)
     if not targetItem then return false end
+    if targetItem:getCondition() <= 0 then return false end
 
-    local previousCondition = targetItem:getCondition()
-    if previousCondition <= 0 then
-        return false
-    end
+    local ref = referenceItem or targetItem
+    local maintenanceMod = character and ref:getMaintenanceMod(character) or 0
+    local oneIn = math.max(1, ref:getConditionLowerChance() + maintenanceMod)
+    local chance = random:random(oneIn)
+    if chance ~= 1 then return false end
 
-    local roll = random:random(15)
-    if roll <= 1 then
-        targetItem:setCondition(previousCondition - 1)
-        return true
-    end
-
-    return false
+    targetItem:setCondition(targetItem:getCondition() - 1)
+    return true
 end
 
-local function ProcessAttachedBayonetHit(character, weapon, source)
+local function ProcessAttachedBayonetHit(character, weapon)
     if not character or not weapon then return false end
     if Bayonet.HasIntegratedBayonet(weapon) then
-        return RollBayonetConditionLoss(weapon)
+        return RollConditionLoss(character, weapon)
     end
 
     local bayonetPart = Bayonet.GetAttachedBayonetPart(weapon)
     if not bayonetPart then return false end
 
+    local knifeType = Bayonet.GetKnifeTypeFromAttachment(bayonetPart:getFullType())
+    local knifeRef = knifeType and instanceItem(knifeType) or nil
+
     local needsWeaponSync = false
-    if RollBayonetConditionLoss(bayonetPart) then
+    if RollConditionLoss(character, bayonetPart, knifeRef) then
         needsWeaponSync = true
     end
 
@@ -100,27 +100,11 @@ local function ClearPendingAttackContext(character)
     Bayonet.PendingAttackContexts[character] = nil
 end
 
-local function RollWeaponConditionLoss(character, weapon)
-    if not character or not weapon then return false end
-    if weapon:getCondition() <= 0 then return false end
-
-    local maintenanceMod = weapon:getMaintenanceMod(character)
-    local oneIn = math.max(1, weapon:getConditionLowerChance() + maintenanceMod)
-    if random:random(oneIn) ~= 0 then return false end
-
-    weapon:setCondition(weapon:getCondition() - 1)
-    return true
-end
-
 function Bayonet.ProcessMultiplayerHit(character, weapon)
     if not character or not weapon then return false end
 
     local needsWeaponSync = false
-    if RollWeaponConditionLoss(character, weapon) then
-        needsWeaponSync = true
-    end
-
-    if ProcessAttachedBayonetHit(character, weapon, "ProcessMultiplayerHit") then
+    if ProcessAttachedBayonetHit(character, weapon) then
         needsWeaponSync = true
     end
 
@@ -149,11 +133,7 @@ local function ApplyBayonetWeaponWear(character, tempWeapon)
     end
 
     if not IsAuthoritativeConditionContext() then return false end
-    if RollWeaponConditionLoss(character, context.originalWeapon) then
-        context.needsWeaponSync = true
-    end
-
-    if ProcessAttachedBayonetHit(character, context.originalWeapon, "ApplyBayonetWeaponWear") then
+    if ProcessAttachedBayonetHit(character, context.originalWeapon) then
         context.needsWeaponSync = true
     end
 
