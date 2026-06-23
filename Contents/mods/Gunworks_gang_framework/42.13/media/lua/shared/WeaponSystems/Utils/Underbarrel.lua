@@ -788,4 +788,27 @@ function Underbarrel.HandleAttachmentRemoval(weapon, removedPart, player)
     modData.WillRequiredManualRemovalOfAmmo         = nil
 end
 
+--- Temporary solution to this issue
+local _ReapplyAllModifiers_orig         = StatsFactory.ReapplyAllModifiers
+local _GetBaseStatsWithAttachments_orig = StatsFactory.GetBaseStatsWithAttachments
+
+StatsFactory.ReapplyAllModifiers        = function(weapon)
+    if not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then
+        return _ReapplyAllModifiers_orig(weapon)
+    end
+
+    local modData           = weapon:getModData()
+    local underbarrelWeapon = modData[ATTACHMENT_KEYS.cacheWeapon]
+    if not underbarrelWeapon then
+        return _ReapplyAllModifiers_orig(weapon)
+    end
+
+    StatsFactory.GetBaseStatsWithAttachments = function()
+        return underbarrelWeapon
+    end
+    _ReapplyAllModifiers_orig(weapon)
+    StatsFactory.GetBaseStatsWithAttachments = _GetBaseStatsWithAttachments_orig
+end
+
+
 return Underbarrel
