@@ -6,6 +6,7 @@
   "IGUI_AmmoType": "Ammo Type",
   "IGUI_Load": "Load",
   "IGUI_ContextMenu_InsertAltBulletsInMagazine": "Insert %1 %2 in Magazine",
+  "IGUI_SelectMagazine": "Select a Magazine",
   "IGUI_AttachBayonet": "Attach Bayonet",
   "IGUI_AttachBayonetDesc": "Attach a bayonet to the weapon for close quarters melee combat.",
   "IGUI_RemoveBayonet": "Remove Bayonet",
