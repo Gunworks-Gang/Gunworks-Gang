@@ -33,13 +33,22 @@ end
 -------------------------------------------------
 
 --- Register one or more parent attachments required by a child.
---- @param childType string  e.g. "Base.Handguard"
+--- @param childType string|string[]  e.g. "Base.Handguard" or { "Base.Handguard", "Base.RIS" }
 --- @param parentTypes string|string[]|table
 --- string: one required parent
 --- string[]: any-of parents (default behavior for arrays)
 --- table: { all = { ... }, any = { ... } } for explicit mixed rules
 function RequiredAttachment.RegisterRequired(childType, parentTypes)
     if not childType or not parentTypes then return end
+
+    if type(childType) == "table" then
+        for _, childTypeEntry in ipairs(childType) do
+            if childTypeEntry then
+                RequiredAttachment.RegisterRequired(childTypeEntry, parentTypes)
+            end
+        end
+        return
+    end
 
     if not RequiredAttachment.Dependencies[childType] then
         RequiredAttachment.Dependencies[childType] = {}
