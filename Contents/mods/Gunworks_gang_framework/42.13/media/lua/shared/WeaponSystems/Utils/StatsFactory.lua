@@ -1,5 +1,17 @@
 local StatsFactory = {}
 
+local function patchTable(value)
+    if type(value) == "table" then
+        local arrayList = ArrayList.new()
+        for _, fireMode in ipairs(value) do
+            arrayList:add(fireMode)
+        end
+        return arrayList
+    end
+
+    return value
+end
+
 -------------------------------------------------
 -- Unified Registry: getter/setter lookup for all weapon properties.
 -- Systems dynamically declare which stats they need via restore sets.
@@ -154,7 +166,7 @@ end
 function StatsFactory.Set(statName, value)
     local reg = StatsFactory.Registry[statName]
     return function(weapon, base)
-        weapon[reg.set](weapon, value)
+        weapon[reg.set](weapon, patchTable(value))
     end
 end
 
