@@ -348,6 +348,46 @@ function ReloadAnim.hasAttachLocation(character, location)
     return group:indexOf(location) ~= -1
 end
 
+--- Which magazine model to show in the reloading hand. A gun may accept several magazine
+--- types (standard / extended / drum); the hand must show the one actually being loaded or
+--- ejected, not the profile's registered default -- otherwise a gun fed an extended mag
+--- shows the default stick mag in-hand while the extended mag snaps onto the gun model.
+--- Resolution order:
+---   1. action.magazine        -- the real item ISInsertMagazine is inserting (constructor field)
+---   2. action._actualMagType  -- the mag type captured off the gun at ISEjectMagazine:start
+---   3. gun modData.MagazineType -- the mag type Gunworks last saved on the gun
+---   4. handler.magItem         -- the profile default, and the ONLY value for non-mag props
+---                                 (shells / rounds / speedloaders, which have no action.magazine)
+---@param action ISBaseTimedAction
+---@param handler GunworksReloadAnimHandler
+---@nodiscard
+---@return string|nil
+function ReloadAnim.resolveReloadMagItem(action, handler)
+    local mag = action.magazine
+    if mag then
+        local magType = mag:getFullType()
+        if magType and magType ~= "" then
+            return magType
+        end
+    end
+
+    local actual = action._actualMagType
+    if actual and actual ~= "" then
+        return actual
+    end
+
+    local gun = ReloadAnim.resolveActionGun(action, handler, true)
+    if gun then
+        local modData = gun:getModData()
+        local saved = modData and modData.MagazineType
+        if saved and saved ~= "" then
+            return saved
+        end
+    end
+
+    return handler.magItem
+end
+
 ---@param action ISBaseTimedAction
 ---@param handler GunworksReloadAnimHandler|nil
 ---@return nil
@@ -366,8 +406,12 @@ function ReloadAnim.attachReloadMagazine(action, handler)
         return
     end
 
+    -- Show the magazine that is actually going on (or coming off) the gun, not the profile
+    -- default -- so guns that accept multiple mag types render the correct one in-hand.
+    local magItemType = ReloadAnim.resolveReloadMagItem(action, handler)
+
     local inventory = action.character:getInventory()
-    local magazineItem = inventory:AddItem(handler.magItem)
+    local magazineItem = inventory:AddItem(magItemType)
     if not magazineItem then
         return
     end
