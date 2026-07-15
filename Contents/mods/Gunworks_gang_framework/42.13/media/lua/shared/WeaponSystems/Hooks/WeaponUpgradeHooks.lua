@@ -1,8 +1,84 @@
 require("TimedActions/ISUpgradeWeapon")
 require("TimedActions/ISRemoveWeaponUpgrade")
 
-local StatsFactory              = require("WeaponSystems/Utils/StatsFactory")
-local Underbarrel               = require("WeaponSystems/Utils/Underbarrel")
+local StatsFactory                      = require("WeaponSystems/Utils/StatsFactory")
+local Underbarrel                       = require("WeaponSystems/Utils/Underbarrel")
+local RequiredAttachment                = require("WeaponSystems/Utils/RequiredAttachment")
+
+-------------------------------------------------
+-- INSTALLATION/REMOVAL VALIDATION
+-- Prevent invalid parent/child attachment states
+-------------------------------------------------
+
+local _ISUpgradeWeapon_isValid_original = ISUpgradeWeapon.isValid
+function ISUpgradeWeapon:isValid()
+    if not _ISUpgradeWeapon_isValid_original(self) then
+        return false
+    end
+
+    if self.weapon and self.part then
+        local childType = self.part:getFullType()
+        if RequiredAttachment.IsInstallationBlocked(self.weapon, childType) then
+            return false
+        end
+    end
+
+    return true
+end
+
+local _ISUpgradeWeapon_canPerformAction_original = ISUpgradeWeapon.canPerformAction
+function ISUpgradeWeapon:canPerformAction()
+    if not _ISUpgradeWeapon_canPerformAction_original(self) then
+        return false
+    end
+
+    if self.weapon and self.part then
+        local childType = self.part:getFullType()
+        if RequiredAttachment.IsInstallationBlocked(self.weapon, childType) then
+            return false
+        end
+    end
+
+    return true
+end
+
+local _ISRemoveWeaponUpgrade_isValid_original = ISRemoveWeaponUpgrade.isValid
+function ISRemoveWeaponUpgrade:isValid()
+    if not _ISRemoveWeaponUpgrade_isValid_original(self) then
+        return false
+    end
+
+    if self.weapon and self.partType then
+        local parentPart = self.weapon:getWeaponPart(self.partType)
+        if parentPart then
+            local parentType = parentPart:getFullType()
+            if RequiredAttachment.IsRemovalBlocked(self.weapon, parentType) then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
+local _ISRemoveWeaponUpgrade_canPerformAction_original = ISRemoveWeaponUpgrade.canPerformAction
+function ISRemoveWeaponUpgrade:canPerformAction()
+    if not _ISRemoveWeaponUpgrade_canPerformAction_original(self) then
+        return false
+    end
+
+    if self.weapon and self.partType then
+        local parentPart = self.weapon:getWeaponPart(self.partType)
+        if parentPart then
+            local parentType = parentPart:getFullType()
+            if RequiredAttachment.IsRemovalBlocked(self.weapon, parentType) then
+                return false
+            end
+        end
+    end
+
+    return true
+end
 
 -------------------------------------------------
 -- After a weapon part is attached or removed via the

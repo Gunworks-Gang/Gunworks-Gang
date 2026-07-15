@@ -189,6 +189,21 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
     table.insert(ExplosivesSystems.activeOrdnance, ordnanceData)
 end
 
+function ExplosivesSystems.consumeThrowableFromPlayer(player, sourceWeapon)
+    if not player or not sourceWeapon then return false end
+
+    local inventory = player:getInventory()
+    if not inventory then return false end
+
+    local removedItem = inventory:RemoveOneOf(sourceWeapon, true)
+    if not removedItem then
+        return false
+    end
+
+    sendRemoveItemFromContainer(inventory, removedItem)
+    return true
+end
+
 function ExplosivesSystems.randomizeBounces(maxBounces)
     if maxBounces <= 0 then return 1 end
     return ExplosivesSystems.RANDOM:random(1, maxBounces)
@@ -689,6 +704,12 @@ function ExplosivesSystems.onClientCommand(module, command, player, args)
             params = OrdnanceFactory.GetParams(sourceWeapon)
         end
         if not params then return end
+
+        if not isAmmoLaunch then
+            if not ExplosivesSystems.consumeThrowableFromPlayer(player, sourceWeapon) then
+                return
+            end
+        end
 
         local px       = player:getX()
         local py       = player:getY()

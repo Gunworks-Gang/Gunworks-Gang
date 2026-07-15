@@ -13,6 +13,7 @@ local UniversalAttachment = require("WeaponSystems/Utils/UniversalAttachment")
 local PreventRemoval = require("WeaponSystems/Utils/PreventRemovals")
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusives")
+local RequiredAttachment = require("WeaponSystems/Utils/RequiredAttachment")
 
 -------------------------------------------------
 -- Foldable Stock Context Menu
@@ -753,6 +754,74 @@ local function filterExclusiveUpgrades(playerid, context, items)
 end
 
 Events.OnFillInventoryObjectContextMenu.Add(filterExclusiveUpgrades)
+
+-------------------------------------------------
+-- Required Attachment: hide vanilla "Upgrade" options
+-- for child attachments missing required parents
+-------------------------------------------------
+local function filterRequiredAttachmentUpgrades(playerid, context, items)
+    local optionName = getText("ContextMenu_Add_Weapon_Upgrade")
+    local option = context:getOptionFromName(optionName)
+    if not option then return end
+
+    local subMenu = option.subOption and context:getSubMenu(option.subOption)
+    if not subMenu then return end
+
+    for i = #subMenu.options, 0, -1 do
+        local v = subMenu.options[i]
+        if v and v.target and instanceof(v.target, "HandWeapon") and v.param1 then
+            if RequiredAttachment.IsInstallationBlocked(v.target, v.param1:getFullType()) then
+                subMenu:removeOptionByName(v.name)
+            end
+        end
+    end
+
+    if #subMenu.options <= 0 then
+        context:removeOptionByName(optionName)
+    end
+end
+
+Events.OnFillInventoryObjectContextMenu.Add(filterRequiredAttachmentUpgrades)
+
+-------------------------------------------------
+-- Required Attachment: filter removals of parent
+-- attachments that have installed children
+-------------------------------------------------
+local function filterRequiredAttachmentRemovals(playerid, context, items)
+    local optionName = getText("ContextMenu_Remove_Weapon_Upgrade")
+    local option = context:getOptionFromName(optionName)
+    if not option then return end
+
+    local subMenu = option.subOption and context:getSubMenu(option.subOption)
+    if not subMenu then return end
+
+    -- Resolve the weapon from the first submenu entry's target
+    local weapon = nil
+    for i = 0, #subMenu.options do
+        local v = subMenu.options[i]
+        if v and v.target and instanceof(v.target, "HandWeapon") then
+            weapon = v.target
+            break
+        end
+    end
+
+    for i = #subMenu.options, 0, -1 do
+        local v = subMenu.options[i]
+        if v and v.param1 and instanceof(v.param1, "WeaponPart") then
+            local partType = v.param1:getFullType()
+            if weapon and RequiredAttachment.IsRemovalBlocked(weapon, partType) then
+                subMenu:removeOptionByName(v.name)
+            end
+        end
+    end
+
+    if #subMenu.options <= 0 then
+        context:removeOptionByName(optionName)
+    end
+end
+
+Events.OnFillInventoryObjectContextMenu.Add(filterRequiredAttachmentRemovals)
+
 local _onRemoveUpgradeWeapon_Original = ISInventoryPaneContextMenu.onRemoveUpgradeWeapon
 ISInventoryPaneContextMenu.onRemoveUpgradeWeapon = function(weapon, part, player)
     if part and PreventRemoval.IsPermanent(part:getFullType()) then
@@ -766,6 +835,9 @@ ISInventoryPaneContextMenu.onRemoveUpgradeWeapon = function(weapon, part, player
         return
     end
     if weapon and part and UniversalAttachment.IsRegisteredOutcome(weapon, part) then
+        return
+    end
+    if weapon and part and RequiredAttachment.IsRemovalBlocked(weapon, part:getFullType()) then
         return
     end
     _onRemoveUpgradeWeapon_Original(weapon, part, player)
