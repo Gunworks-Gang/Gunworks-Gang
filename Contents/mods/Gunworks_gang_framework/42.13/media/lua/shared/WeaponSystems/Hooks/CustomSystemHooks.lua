@@ -12,6 +12,45 @@ local Bayonet = require("WeaponSystems/Utils/Bayonet")
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local OrdnanceFactory = require("ExplosivesSystems/OrdnanceFactory")
 local RateOfFire = require("WeaponSystems/Utils/RateOfFire")
+local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
+
+-------------------------------------------------
+-- Multi-item reload: a gun whose reload handler declares `consumes` requires those extra items
+-- (a paper powder charge, a percussion cap, ...) once PER ROUND, on top of the valued bullet the
+-- gun's AmmoType names. A normal item is destroyed whole; a DRAINABLE (e.g. a tin of percussion
+-- caps) is drained one use instead, so one pack lasts many reloads. All consumption is
+-- server-authoritative (server/SP only); MP clients never consume here.
+-------------------------------------------------
+local function gwHasAllConsumeItems(character, consumes)
+    local inv = character:getInventory()
+    for i = 1, #consumes do
+        -- getSomeTypeRecurse returns item instances (a drainable pack is one instance, and a
+        -- depleted one has already been removed), so a non-empty result = a usable item on hand.
+        local items = inv:getSomeTypeRecurse(consumes[i], 1)
+        if not items or items:isEmpty() then
+            return false
+        end
+    end
+    return true
+end
+
+local function gwConsumeReloadItems(character, consumes)
+    local inv = character:getInventory()
+    for i = 1, #consumes do
+        local items = inv:getSomeTypeRecurse(consumes[i], 1)
+        if items and not items:isEmpty() then
+            local item = items:get(0)
+            if instanceof(item, "DrainableComboItem") then
+                -- A tin/pack (e.g. percussion caps): drain a single use rather than destroying the
+                -- whole pack. Use() decrements the pack and auto-removes it once depleted.
+                item:Use(false, false, isServer())
+            else
+                inv:Remove(item)
+                sendRemoveItemFromContainer(inv, item)
+            end
+        end
+    end
+end
 
 -------------------------------------------------
 -- BeginAutomaticReload (MagazineProfile + SpeedLoader support)
@@ -112,6 +151,34 @@ ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
         return
     end
 
+    -- Multi-item reload: guns that consume extra items per round (powder charge, cap) must run
+    -- through the AmmoList override path so per-round consumption + capping happen in loadAmmo.
+    -- Route them here regardless of whether the chosen bullet matches the currently-loaded type.
+    local gwConsume = ReloadAnim.GetConsumeItemsForGun(gun)
+    if gwConsume then
+        if gun:getCurrentAmmoCount() >= gun:getMaxAmmo() or gun:isJammed() then
+            return
+        end
+        if not gwHasAllConsumeItems(playerObj, gwConsume) then
+            return
+        end
+        local reloadAmmoType = Ammo.GetAutomaticReloadAmmoType(playerObj, gun)
+        if not reloadAmmoType then
+            local at = gun:getAmmoType()
+            reloadAmmoType = at and at:getItemKey()
+        end
+        if not reloadAmmoType then
+            return
+        end
+        local ammoCount = ISInventoryPaneContextMenu.transferBullets(
+            playerObj, reloadAmmoType, gun:getCurrentAmmoCount(), gun:getMaxAmmo())
+        if ammoCount == 0 then
+            return
+        end
+        ISTimedActionQueue.add(ISReloadWeaponAction:new(playerObj, gun, nil, reloadAmmoType))
+        return
+    end
+
     local currentAmmoType = gun and gun:getAmmoType()
     local currentItemKey = currentAmmoType and currentAmmoType:getItemKey()
     local reloadAmmoType = Ammo.GetAutomaticReloadAmmoType(playerObj, gun)
@@ -157,9 +224,14 @@ function ISRackFirearm:removeBullet()
             self.gun:getModData().AmmoList = nil
         end
         Ammo.SyncAmmoListToClient(self.character, self.gun)
-    else
+    elseif self.gun:getAmmoType() then
         ISRackFirearm_removeBullet_original(self)
     end
+    -- else: no AmmoList and no current ammo type. Vanilla removeBullet dereferences
+    -- self.gun:getAmmoType():getItemKey(), so calling it with a nil ammo type (e.g. a
+    -- chamber-less belt-fed gun racking right after a reload, before the ammo type is set)
+    -- throws and aborts the rack mid-animEvent, leaving the character stuck in the raised-arms
+    -- fallback pose. Skipping the give-back when there is no ammo type avoids that crash.
 end
 
 -------------------------------------------------
@@ -546,6 +618,14 @@ function ISReloadWeaponAction:loadAmmo()
         return
     end
 
+    -- Multi-item reload: gate this round on the extra items (powder charge / percussion cap) the
+    -- gun's reload handler declares. When they run out, emptying self.bullets makes the termination
+    -- block below finish the reload, so the round count can never exceed the powder/caps loaded.
+    local gwConsume = ReloadAnim.GetConsumeItemsForGun(self.gun)
+    if gwConsume and (not isClient()) and not gwHasAllConsumeItems(self.character, gwConsume) then
+        self.bullets:clear()
+    end
+
     if not self.bullets:isEmpty() and self.gun:getCurrentAmmoCount() < self.gun:getMaxAmmo() then
         local bullet = self.bullets:get(0)
         self.bullets:remove(bullet)
@@ -567,6 +647,9 @@ function ISReloadWeaponAction:loadAmmo()
         end
 
         self.gun:setCurrentAmmoCount(self.gun:getCurrentAmmoCount() + 1)
+        if gwConsume and (not isClient()) then
+            gwConsumeReloadItems(self.character, gwConsume)
+        end
         sendRemoveItemFromContainer(self.character:getInventory(), bullet)
         syncHandWeaponFields(self.character, self.gun)
         Ammo.SyncAmmoListToClient(self.character, self.gun)

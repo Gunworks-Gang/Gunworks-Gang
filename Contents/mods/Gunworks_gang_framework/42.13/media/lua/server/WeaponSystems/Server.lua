@@ -4,6 +4,9 @@ local Ammo = require("WeaponSystems/Utils/Ammo")
 local Bayonet = require("WeaponSystems/Utils/Bayonet")
 local RateOfFire = require('WeaponSystems/Utils/RateOfFire')
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
+local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
+require("WeaponSystems/ReloadAnim/Props")
+require("WeaponSystems/ReloadAnim/PartSwap")
 
 function Server.getWeaponById(player, itemId)
     if not player or not itemId then return nil end
@@ -115,6 +118,128 @@ function Server.OnClientCommand(module, command, player, args)
         local onlinePlayers = getOnlinePlayers()
         for i = 0, onlinePlayers:size() - 1 do
             sendServerCommand(onlinePlayers:get(i), "SWMG", "syncWeapon", args)
+        end
+    elseif command == "reloadSprite" then
+        -- Reload-animation framework: a client swapped a weapon sprite mid-reload; apply
+        -- it on the server (so syncHandWeaponFields broadcasts it) and relay to observers.
+        local weapon = player:getInventory():getItemWithIDRecursiv(args.itemId)
+        if not weapon or not instanceof(weapon, "HandWeapon") then return end
+        if not args.sprite or args.sprite == "" then return end
+        weapon:setWeaponSprite(args.sprite)
+        player:resetEquippedHandsModels()
+        syncHandWeaponFields(player, weapon)
+        local onlinePlayers = getOnlinePlayers()
+        for i = 0, onlinePlayers:size() - 1 do
+            sendServerCommand(onlinePlayers:get(i), "SWMG", "reloadSprite", {
+                onlineID = player:getOnlineID(),
+                itemId = weapon:getID(),
+                sprite = args.sprite,
+            })
+        end
+    elseif command == "reloadProp" then
+        -- Reload-animation framework: a reloading client hit a prop / part-transfer marker. The prop
+        -- is a real item, so only we may create it; the client is trusted for nothing but the intent.
+        if not ReloadAnim.isPropEvent(args.event) then return end
+
+        -- NB: PerformingAction is NOT synced to the dedicated server for a remote player (its
+        -- IsoPlayer.update returns before the variable-carrying path), so we cannot gate on an active
+        -- reload here. Security instead rests on: the player holds the named registered gun, and the
+        -- value is in that gun's whitelist. The props are cosmetic, so "any time while holding the
+        -- gun" is an acceptable window.
+        if args.event == ReloadAnim.PROP_SET_EVENT and (not args.value or args.value == "") then
+            ReloadAnim.applyPropEvent(player, nil, args.event, "")
+            -- The engine's attached-item packet is a no-op on the local player, so the reloader must
+            -- attach/clear it themselves (the server's item is already synced to their inventory).
+            sendServerCommand(player, "SWMG", "attachOwnerProp", {})
+            -- Observers attach the off-hand prop via the reloadProp relay (the engine packet is
+            -- proximity-limited), so relay the clear to them too or a distant observer keeps it.
+            local onlinePlayers = getOnlinePlayers()
+            for i = 0, onlinePlayers:size() - 1 do
+                sendServerCommand(onlinePlayers:get(i), "SWMG", "reloadProp", {
+                    onlineID = player:getOnlineID(),
+                    itemId = 0,
+                    event = args.event,
+                    value = "",
+                })
+            end
+            return
+        end
+
+        local gun = player:getPrimaryHandItem()
+        if not instanceof(gun, "HandWeapon") then return end
+        if args.gunId and gun:getID() ~= args.gunId then return end
+
+        local handler = ReloadAnim.GetHandlerForGun(gun)
+        if not handler then return end
+        if not ReloadAnim.isAllowedPropValue(handler, args.value) then return end
+
+        ReloadAnim.applyPropEvent(player, gun, args.event, args.value)
+
+        -- The engine's attached-item packet (GameCharacterAttachedItemPacket.processClient) ignores the
+        -- local player, so tell the reloader to attach the prop itself; the item the server created is
+        -- already synced to their inventory. Resolve the slot the event drove (right-hand vs off-hand).
+        local propLocation = (args.event == ReloadAnim.PROP_SET_HAND_EVENT)
+            and ReloadAnim.RELOAD_HAND_ATTACH_LOCATION
+            or ReloadAnim.RELOAD_MAGAZINE_ATTACH_LOCATION
+        local propItem = player:getAttachedItem(propLocation)
+        sendServerCommand(player, "SWMG", "attachOwnerProp",
+            { itemId = propItem and propItem:getID() or nil, location = propLocation })
+
+        -- syncHandWeaponFields only reaches the weapon's owner, so relay the part side to everyone.
+        local onlinePlayers = getOnlinePlayers()
+        for i = 0, onlinePlayers:size() - 1 do
+            sendServerCommand(onlinePlayers:get(i), "SWMG", "reloadProp", {
+                onlineID = player:getOnlineID(),
+                itemId = gun:getID(),
+                event = args.event,
+                value = args.value,
+            })
+        end
+    elseif command == "gwSetPart" then
+        -- Reload-animation framework: a reloading client hit a gwSetPart marker (a gun-side cosmetic
+        -- part swap). Same trust model as reloadProp: the swap is cosmetic (no item is created), so
+        -- security rests on the player holding the named gun and the value resolving to a WeaponPart.
+        local gun = player:getPrimaryHandItem()
+        if not instanceof(gun, "HandWeapon") then return end
+        if args.gunId and gun:getID() ~= args.gunId then return end
+        if not ReloadAnim.isAllowedPartValue(gun, args.partType, args.value) then return end
+
+        ReloadAnim.applyPartSwapEvent(player, gun, args.partType, args.value)
+
+        -- syncHandWeaponFields only reaches the weapon's owner, so relay the swap to everyone.
+        local onlinePlayers = getOnlinePlayers()
+        for i = 0, onlinePlayers:size() - 1 do
+            sendServerCommand(onlinePlayers:get(i), "SWMG", "gwSetPart", {
+                onlineID = player:getOnlineID(),
+                itemId = gun:getID(),
+                partType = args.partType,
+                value = args.value,
+            })
+        end
+    elseif command == "reconcileParts" then
+        -- Reload-animation framework: a client asks the server to reconcile its gun's persistent
+        -- cosmetic parts. The dedicated server has no per-player tick to self-reconcile, so the client
+        -- is the trigger; the server recomputes the desired parts from its OWN ammo count (never trusts
+        -- a client part list), applies them, syncs to the owner, and relays to observers.
+        if player:getVariableString("PerformingAction") == "Reload" then return end
+
+        local gun = player:getPrimaryHandItem()
+        if not instanceof(gun, "HandWeapon") then return end
+        if args.gunId and gun:getID() ~= args.gunId then return end
+
+        local applied = ReloadAnim.reconcileServerParts(player, gun)
+        if not applied then return end
+
+        syncHandWeaponFields(player, gun)
+
+        local onlinePlayers = getOnlinePlayers()
+        for i = 0, onlinePlayers:size() - 1 do
+            sendServerCommand(onlinePlayers:get(i), "SWMG", "syncParts", {
+                onlineID = player:getOnlineID(),
+                itemId = gun:getID(),
+                ammoParts = applied.ammoParts,
+                ensure = applied.ensure,
+            })
         end
     elseif command == "bayonetHit" then
         local weapon = Server.getRecursiveWeaponById(player, args.itemId)
