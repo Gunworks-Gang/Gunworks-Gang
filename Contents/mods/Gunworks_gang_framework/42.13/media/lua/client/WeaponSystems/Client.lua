@@ -2,6 +2,9 @@ local Ammo = require("WeaponSystems/Utils/Ammo")
 local Animations = require("WeaponSystems/Utils/Animations")
 local RateOfFire = require('WeaponSystems/Utils/RateOfFire')
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
+local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
+require("WeaponSystems/ReloadAnim/Props")
+require("WeaponSystems/ReloadAnim/PartSwap")
 local Client = {}
 
 function Client.getFiremodeMenuKey(firemode)
@@ -103,6 +106,63 @@ function Client.OnServerCommand(module, command, args)
             if args.firemode then item:setFireMode(args.firemode) end
             if args.recoilDelay then item:setRecoilDelay(args.recoilDelay) end
         end
+    elseif command == "reloadSprite" then
+        -- Reload-animation framework: apply a reloading player's mid-reload sprite swap
+        -- on this observer client.
+        local targetPlayer = getPlayerByOnlineID(args.onlineID)
+        if not targetPlayer then return end
+        local weapon = targetPlayer:getInventory():getItemWithIDRecursiv(args.itemId)
+        if not weapon or not instanceof(weapon, "HandWeapon") then return end
+        if not args.sprite or args.sprite == "" then return end
+        weapon:setWeaponSprite(args.sprite)
+        targetPlayer:resetEquippedHandsModels()
+    elseif command == "reloadProp" then
+        -- Reload-animation framework: mirror a reloading player's mid-reload prop / part transfer on
+        -- this observer. The hand/off-hand ITEM props are attached here too (not just via the engine
+        -- packet), because that packet is proximity-limited and a distant observer never gets it.
+        local targetPlayer = getPlayerByOnlineID(args.onlineID)
+        if not targetPlayer then return end
+        -- An observer has the remote player's EQUIPPED weapon but not necessarily their whole
+        -- inventory, so prefer the primary hand item and fall back to a recursive lookup. Item props
+        -- don't need the weapon (they attach to the character), so a nil weapon is fine for those;
+        -- part transfers require it and applyRemotePropEvent guards on that.
+        local weapon = targetPlayer:getPrimaryHandItem()
+        if not instanceof(weapon, "HandWeapon") or weapon:getID() ~= args.itemId then
+            weapon = targetPlayer:getInventory():getItemWithIDRecursiv(args.itemId)
+        end
+        if not instanceof(weapon, "HandWeapon") then
+            weapon = nil
+        end
+        ReloadAnim.applyRemotePropEvent(targetPlayer, weapon, args.event, args.value)
+    elseif command == "gwSetPart" then
+        -- Reload-animation framework: mirror a reloading player's mid-reload gun-part swap on this
+        -- observer client (gun-side only; no item involved).
+        local targetPlayer = getPlayerByOnlineID(args.onlineID)
+        if not targetPlayer then return end
+        local weapon = targetPlayer:getPrimaryHandItem()
+        if not instanceof(weapon, "HandWeapon") or weapon:getID() ~= args.itemId then
+            weapon = targetPlayer:getInventory():getItemWithIDRecursiv(args.itemId)
+        end
+        if not weapon or not instanceof(weapon, "HandWeapon") then return end
+        ReloadAnim.applyRemotePartSwapEvent(targetPlayer, weapon, args.partType, args.value)
+    elseif command == "syncParts" then
+        -- Reload-animation framework: mirror a player's reconciled steady-state parts (ensured parts
+        -- like the ramrod + the ammo-keyed parts like flint/hammer) on this machine's copy of them.
+        -- Reaches observers and the reloader alike.
+        local targetPlayer = getPlayerByOnlineID(args.onlineID)
+        if not targetPlayer then return end
+        local weapon = targetPlayer:getPrimaryHandItem()
+        if not instanceof(weapon, "HandWeapon") or weapon:getID() ~= args.itemId then
+            weapon = targetPlayer:getInventory():getItemWithIDRecursiv(args.itemId)
+        end
+        if not weapon or not instanceof(weapon, "HandWeapon") then return end
+        ReloadAnim.applyRemotePartState(targetPlayer, weapon, args.ammoParts, args.ensure)
+    elseif command == "attachOwnerProp" then
+        -- Reload-animation framework: the reloader attaches its own off-hand prop. The server cannot
+        -- push an attached item to the local player, so it created + synced the item and told us its id.
+        local playerObj = getSpecificPlayer(0)
+        if not playerObj then return end
+        ReloadAnim.applyOwnerProp(playerObj, args.itemId, args.location)
     end
 end
 
