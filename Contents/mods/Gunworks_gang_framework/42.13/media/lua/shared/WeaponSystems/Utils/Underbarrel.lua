@@ -41,10 +41,67 @@ Underbarrel.ACTION_RESTORE           = "restore"
 --   Jammed, ContainsClip, MagazineType  (runtime ammo — managed by keys)
 -------------------------------------------------
 local UNDERBARREL_DEFAULT_SWAP_STATS = {
-    "AmmoType", "MaxAmmo", "ClipSize", "WeaponReloadType", "FireMode", "HaveChamber", "RackAfterShot", "MinDamage", "MaxDamage", "MaxRange", "MinRange", "MinRangeRanged", "MaxSightRange", "MinSightRange", "MaxAngle", "MinAngle", "ReloadTime", "AimingTime", "JamGunChance", "RecoilDelay",
-    "ProjectileCount", "ProjectileSpread", "ProjectileWeightCenter", "SoundRadius", "SoundVolume", "SoundGain", "SwingSound", "ClickSound", "RackSound", "BreakSound", "ShellFallSound", "ImpactSound", "DoorHitSound", "HitFloorSound", "BulletOutSound", "MuzzleFlashModelKey", "HitChance",
-    "ToHitModifier", "CriticalChance", "CritDmgMultiplier", "PiercingBullets", "PushBackMod", "KnockdownMod", "KnockBackOnNoDeath", "SplatNumber", "SplatBloodOnNoDeath", "MultipleHitConditionAffected", "RangeFalloff", "AngleFalloff", "ConditionLowerChanceOneIn", "ConditionMax", "MaxHitCount",
-    "AimingPerkCritModifier", "AimingPerkHitChanceModifier", "AimingPerkMinAngleModifier", "AimingPerkRangeModifier", "DoorDamage", "TreeDamage", "BaseSpeed", "SwingTime", "EnduranceMod",
+    "AmmoType",
+    "MaxAmmo",
+    "ClipSize",
+    "WeaponReloadType",
+    "FireMode",
+    "HaveChamber",
+    "RackAfterShot",
+    "MinDamage",
+    "MaxDamage",
+    "MaxRange",
+    "MinRange",
+    "MinRangeRanged",
+    "MaxSightRange",
+    "MinSightRange",
+    "MaxAngle",
+    "MinAngle",
+    "ReloadTime",
+    "AimingTime",
+    "JamGunChance",
+    "RecoilDelay",
+    "ProjectileCount",
+    "ProjectileSpread",
+    "ProjectileWeightCenter",
+    "SoundRadius",
+    "SoundVolume",
+    "SoundGain",
+    "SwingSound",
+    "ClickSound",
+    "RackSound",
+    "BreakSound",
+    "ShellFallSound",
+    "ImpactSound",
+    "DoorHitSound",
+    "HitFloorSound",
+    "BulletOutSound",
+    "MuzzleFlashModelKey",
+    "HitChance",
+    "ToHitModifier",
+    "CriticalChance",
+    "CritDmgMultiplier",
+    "PiercingBullets",
+    "PushBackMod",
+    "KnockdownMod",
+    "KnockBackOnNoDeath",
+    "SplatNumber",
+    "SplatBloodOnNoDeath",
+    "MultipleHitConditionAffected",
+    "RangeFalloff",
+    "AngleFalloff",
+    "ConditionLowerChanceOneIn",
+    "ConditionMax",
+    "MaxHitCount",
+    "AimingPerkCritModifier",
+    "AimingPerkHitChanceModifier",
+    "AimingPerkMinAngleModifier",
+    "AimingPerkRangeModifier",
+    "DoorDamage",
+    "TreeDamage",
+    "BaseSpeed",
+    "SwingTime",
+    "EnduranceMod",
 }
 
 -- Runtime ammo stats applied from the cached underbarrel weapon when entering mode.
@@ -730,5 +787,28 @@ function Underbarrel.HandleAttachmentRemoval(weapon, removedPart, player)
     modData.GW_IntegratedUnderbarrelDeployed        = nil
     modData.WillRequiredManualRemovalOfAmmo         = nil
 end
+
+--- Temporary solution to this issue
+local _ReapplyAllModifiers_orig         = StatsFactory.ReapplyAllModifiers
+local _GetBaseStatsWithAttachments_orig = StatsFactory.GetBaseStatsWithAttachments
+
+StatsFactory.ReapplyAllModifiers        = function(weapon)
+    if not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then
+        return _ReapplyAllModifiers_orig(weapon)
+    end
+
+    local modData           = weapon:getModData()
+    local underbarrelWeapon = modData[ATTACHMENT_KEYS.cacheWeapon]
+    if not underbarrelWeapon then
+        return _ReapplyAllModifiers_orig(weapon)
+    end
+
+    StatsFactory.GetBaseStatsWithAttachments = function()
+        return underbarrelWeapon
+    end
+    _ReapplyAllModifiers_orig(weapon)
+    StatsFactory.GetBaseStatsWithAttachments = _GetBaseStatsWithAttachments_orig
+end
+
 
 return Underbarrel
