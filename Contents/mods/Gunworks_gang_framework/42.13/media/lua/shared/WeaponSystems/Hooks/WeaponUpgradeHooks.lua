@@ -4,6 +4,7 @@ require("TimedActions/ISRemoveWeaponUpgrade")
 local StatsFactory                      = require("WeaponSystems/Utils/StatsFactory")
 local Underbarrel                       = require("WeaponSystems/Utils/Underbarrel")
 local RequiredAttachment                = require("WeaponSystems/Utils/RequiredAttachment")
+local UniversalAttachment               = require("WeaponSystems/Utils/UniversalAttachment")
 
 -------------------------------------------------
 -- INSTALLATION/REMOVAL VALIDATION
@@ -12,6 +13,19 @@ local RequiredAttachment                = require("WeaponSystems/Utils/RequiredA
 
 local _ISUpgradeWeapon_isValid_original = ISUpgradeWeapon.isValid
 function ISUpgradeWeapon:isValid()
+    if self.universalOutcomeFullType then
+        if not self.weapon or not self.part then return false end
+        if not UniversalAttachment.CanInstallOutcome(self.weapon, self.universalOutcomeFullType, self.character) then
+            return false
+        end
+
+        if isClient() and self.part and self.weapon then
+            return self.character:getInventory():containsID(self.part:getID()) and self.character:getInventory():containsID(self.weapon:getID())
+        end
+
+        return self.character:getInventory():contains(self.part) and self.character:getInventory():contains(self.weapon)
+    end
+
     if not _ISUpgradeWeapon_isValid_original(self) then
         return false
     end
@@ -28,6 +42,10 @@ end
 
 local _ISUpgradeWeapon_canPerformAction_original = ISUpgradeWeapon.canPerformAction
 function ISUpgradeWeapon:canPerformAction()
+    if self.universalOutcomeFullType then
+        return self:isValid()
+    end
+
     if not _ISUpgradeWeapon_canPerformAction_original(self) then
         return false
     end
@@ -89,10 +107,26 @@ end
 
 local _ISUpgradeWeapon_complete = ISUpgradeWeapon.complete
 function ISUpgradeWeapon:complete()
-    _ISUpgradeWeapon_complete(self)
+    if self.universalOutcomeFullType then
+        local outcomePart = instanceItem(self.universalOutcomeFullType)
+        if not outcomePart or not instanceof(outcomePart, "WeaponPart") then
+            return false
+        end
+
+        self.weapon:attachWeaponPart(self.character, outcomePart)
+        syncHandWeaponFields(self.character, self.weapon)
+        self.character:getInventory():Remove(self.part)
+        sendRemoveItemFromContainer(self.character:getInventory(), self.part)
+        self.character:setSecondaryHandItem(nil)
+    else
+        _ISUpgradeWeapon_complete(self)
+    end
+
     if self.weapon and instanceof(self.weapon, "HandWeapon") then
         StatsFactory.ReapplyAllModifiers(self.weapon)
     end
+
+    return true
 end
 
 local _ISRemoveWeaponUpgrade_complete = ISRemoveWeaponUpgrade.complete
@@ -100,6 +134,30 @@ function ISRemoveWeaponUpgrade:complete()
     local removedPart = nil
     if self.weapon and instanceof(self.weapon, "HandWeapon") and self.partType then
         removedPart = self.weapon:getWeaponPart(self.partType)
+    end
+
+    local universalRefundType = nil
+    if removedPart and self.weapon and UniversalAttachment.IsRegisteredOutcome(self.weapon, removedPart) then
+        universalRefundType = UniversalAttachment.GetGenericItemTypeForOutcome(self.weapon, removedPart)
+    end
+
+    if universalRefundType then
+        self.weapon:detachWeaponPart(self.character, removedPart)
+        syncHandWeaponFields(self.character, self.weapon)
+
+        local refundedItem = self.character:getInventory():AddItem(universalRefundType)
+        if refundedItem then
+            sendAddItemToContainer(self.character:getInventory(), refundedItem)
+        end
+
+        if self.weapon and instanceof(self.weapon, "HandWeapon") then
+            if removedPart then
+                Underbarrel.HandleAttachmentRemoval(self.weapon, removedPart, self.character)
+            end
+            StatsFactory.ReapplyAllModifiers(self.weapon)
+        end
+
+        return true
     end
 
     _ISRemoveWeaponUpgrade_complete(self)

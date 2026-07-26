@@ -112,7 +112,7 @@ function UniversalAttachment.IsRegisteredOutcome(weaponOrWeaponType, partOrOutco
     return UniversalAttachment.GetGenericItemTypeForOutcome(weaponOrWeaponType, partOrOutcomeType) ~= nil
 end
 
-function UniversalAttachment.CanInstallOutcome(weapon, outcomeType)
+function UniversalAttachment.CanInstallOutcome(weapon, outcomeType, character)
     if not weapon or not outcomeType then return false end
     if not UniversalAttachment.IsRegisteredOutcome(weapon, outcomeType) then return false end
 
@@ -122,6 +122,8 @@ function UniversalAttachment.CanInstallOutcome(weapon, outcomeType)
     local partType = outcomePart:getPartType()
     if not partType then return false end
 
+    if character and not outcomePart:canAttach(character, weapon) then return false end
+
     if weapon:getWeaponPart(partType) ~= nil then return false end
 
     if RequiredAttachment.IsInstallationBlocked(weapon, outcomeType) then return false end
@@ -129,7 +131,7 @@ function UniversalAttachment.CanInstallOutcome(weapon, outcomeType)
     return true
 end
 
-function UniversalAttachment.GetAvailableOutcomes(weapon, genericItemType)
+function UniversalAttachment.GetAvailableOutcomes(weapon, genericItemType, character)
     if not weapon or not genericItemType then return nil end
 
     local outcomes = UniversalAttachment.GetOutcomes(weapon, genericItemType)
@@ -137,7 +139,7 @@ function UniversalAttachment.GetAvailableOutcomes(weapon, genericItemType)
 
     local availableOutcomes = {}
     for _, outcomeType in ipairs(outcomes) do
-        if UniversalAttachment.CanInstallOutcome(weapon, outcomeType) then
+        if UniversalAttachment.CanInstallOutcome(weapon, outcomeType, character) then
             table.insert(availableOutcomes, outcomeType)
         end
     end

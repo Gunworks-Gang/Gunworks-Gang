@@ -1,6 +1,7 @@
 require("ISUI/ISInventoryPaneContextMenu")
 require("TimedActions/ISTimedActionQueue")
-require("WeaponSystems/TimedActions/ISUniversalAttachment")
+require("TimedActions/ISUpgradeWeapon")
+require("TimedActions/ISRemoveWeaponUpgrade")
 
 local FoldingStock = require("WeaponSystems/Utils/FoldingStock")
 local FoldingBipod = require("WeaponSystems/Utils/FoldingBipod")
@@ -488,20 +489,17 @@ UniversalAttachmentContext.installOutcome = function(weapon, outcomePart, generi
 
     ISInventoryPaneContextMenu.transferIfNeeded(player, weapon)
     ISInventoryPaneContextMenu.transferIfNeeded(player, genericItem)
-    if player:getPrimaryHandItem() ~= weapon then
-        ISTimedActionQueue.add(ISEquipWeaponAction:new(player, weapon, 50, true, true))
-    end
-    ISTimedActionQueue.add(ISUniversalAttachmentInstall:new(player, weapon, genericItem, outcomeFullType))
+
+    local action = ISUpgradeWeapon:new(player, weapon, genericItem)
+    action.universalOutcomeFullType = outcomeFullType
+    ISTimedActionQueue.add(action)
 end
 
 UniversalAttachmentContext.removeOutcome = function(player, weapon, partType, genericItemType)
     if not player or not weapon or not partType then return end
 
     ISInventoryPaneContextMenu.transferIfNeeded(player, weapon)
-    if player:getPrimaryHandItem() ~= weapon then
-        ISTimedActionQueue.add(ISEquipWeaponAction:new(player, weapon, 50, true, true))
-    end
-    ISTimedActionQueue.add(ISUniversalAttachmentRemove:new(player, weapon, partType, genericItemType))
+    ISTimedActionQueue.add(ISRemoveWeaponUpgrade:new(player, weapon, partType))
 end
 
 -- Fetch the vanilla "Add Weapon Upgrade" submenu if it already exists this
@@ -563,7 +561,7 @@ local function injectUniversalAttachmentInstallOptions(playerObj, item, context,
     for _, genericItemType in ipairs(genericItemTypes) do
         local genericItem = playerObj:getInventory():getFirstTypeRecurse(genericItemType)
         if genericItem then
-            local availableOutcomes = UniversalAttachment.GetAvailableOutcomes(item, genericItemType)
+            local availableOutcomes = UniversalAttachment.GetAvailableOutcomes(item, genericItemType, playerObj)
             if availableOutcomes then
                 sortFullTypesByDisplayName(availableOutcomes)
 
@@ -784,9 +782,6 @@ ISInventoryPaneContextMenu.onRemoveUpgradeWeapon = function(weapon, part, player
         if not UniversalAttachment.CanRemoveInstalledPart(weapon, part) then
             return
         end
-        local genericItemType = UniversalAttachment.GetGenericItemTypeForOutcome(weapon, part)
-        UniversalAttachmentContext.removeOutcome(player, weapon, part:getPartType(), genericItemType)
-        return
     end
     _onRemoveUpgradeWeapon_Original(weapon, part, player)
 end
