@@ -1,5 +1,6 @@
 local Railing = require("WeaponSystems/Utils/Railing")
 local RequiredAttachment = require("WeaponSystems/Utils/RequiredAttachment")
+local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusives")
 
 local UniversalAttachment = {}
 
@@ -127,6 +128,8 @@ function UniversalAttachment.CanInstallOutcome(weapon, outcomeType, character)
     if weapon:getWeaponPart(partType) ~= nil then return false end
 
     if RequiredAttachment.IsInstallationBlocked(weapon, outcomeType) then return false end
+
+    if UpgradeExclusives.IsBlockedByExclusive(weapon, outcomeType) then return false end
 
     return true
 end
