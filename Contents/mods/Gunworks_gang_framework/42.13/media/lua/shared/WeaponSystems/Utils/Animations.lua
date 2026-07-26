@@ -8,6 +8,8 @@ Animations.WeaponsWithAnimatedParts = {}
 --- Register a single weapon with animated moving parts.
 ---@param fullType string  fullType e.g. "Base.M16A3"
 ---@param entry table      { attachments = { open = "Part.Open", locked = "Part.Locked" } }
+---                     OR { MultipleAttachments = { Slide = { open = "Part.Open", locked = "Part.Locked" } } }
+---                     OR { MultipleAttachments = { Slide = { partType = "Slide", variants = { ["Part.A"] = { open = "Part.OpenA", locked = "Part.LockedA" }, ["Part.B"] = { open = "Part.OpenB", locked = "Part.LockedB" } } } } }
 ---                     OR { models     = { open = "Sprite_Open", locked = "Sprite_Locked" } }
 function Animations.RegisterWeaponWithAnimatedParts(fullType, entry)
     Animations.WeaponsWithAnimatedParts[fullType] = entry
@@ -43,6 +45,33 @@ function Animations.CallSyncHandWeaponFields(player, weapon)
     player:resetEquippedHandsModels()
 end
 
+local function ApplyAttachmentState(weapon, attachmentState, key)
+    if not weapon or not attachmentState then return end
+    local stateValue = attachmentState[key]
+    if not stateValue then return end
+    weapon:attachWeaponPart(instanceItem(stateValue), true)
+end
+
+local function ApplyMultipleAttachmentState(weapon, attachmentState, key)
+    if not weapon or not attachmentState then return end
+
+    local partType = attachmentState.partType
+    local currentPart = partType and weapon:getWeaponPart(partType)
+    if not currentPart then return end
+
+    local variants = attachmentState.variants
+    if not variants then
+        ApplyAttachmentState(weapon, attachmentState, key)
+        return
+    end
+
+    local currentFullType = currentPart:getFullType()
+    local selectedVariant = variants[currentFullType]
+    if not selectedVariant then return end
+
+    ApplyAttachmentState(weapon, selectedVariant, key)
+end
+
 function Animations.CallAnimationFunction(weapon, open)
     local entry = Animations.WeaponsWithAnimatedParts[weapon:getFullType()]
     if not entry then return end
@@ -51,7 +80,12 @@ function Animations.CallAnimationFunction(weapon, open)
         weapon:setWeaponSprite(entry.models[key])
     end
     if entry.attachments then
-        weapon:attachWeaponPart(instanceItem(entry.attachments[key]), true)
+        ApplyAttachmentState(weapon, entry.attachments, key)
+    end
+    if entry.MultipleAttachments then
+        for _, attachmentState in pairs(entry.MultipleAttachments) do
+            ApplyMultipleAttachmentState(weapon, attachmentState, key)
+        end
     end
 end
 
