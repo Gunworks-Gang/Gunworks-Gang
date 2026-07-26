@@ -1,4 +1,5 @@
 local Railing = require("WeaponSystems/Utils/Railing")
+local RequiredAttachment = require("WeaponSystems/Utils/RequiredAttachment")
 
 local UniversalAttachment = {}
 
@@ -121,7 +122,11 @@ function UniversalAttachment.CanInstallOutcome(weapon, outcomeType)
     local partType = outcomePart:getPartType()
     if not partType then return false end
 
-    return weapon:getWeaponPart(partType) == nil
+    if weapon:getWeaponPart(partType) ~= nil then return false end
+
+    if RequiredAttachment.IsInstallationBlocked(weapon, outcomeType) then return false end
+
+    return true
 end
 
 function UniversalAttachment.GetAvailableOutcomes(weapon, genericItemType)
@@ -190,6 +195,10 @@ function UniversalAttachment.CanRemoveInstalledPart(weapon, part)
     end
 
     if Railing.HasMountedAccessoryOnRailing(weapon, installedPart) then
+        return false
+    end
+
+    if RequiredAttachment.IsRemovalBlocked(weapon, installedPart:getFullType()) then
         return false
     end
 
