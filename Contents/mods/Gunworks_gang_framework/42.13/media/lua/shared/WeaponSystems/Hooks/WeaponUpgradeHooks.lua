@@ -40,48 +40,9 @@ function ISUpgradeWeapon:isValid()
     return true
 end
 
-local _ISUpgradeWeapon_canPerformAction_original = ISUpgradeWeapon.canPerformAction
-function ISUpgradeWeapon:canPerformAction()
-    if self.universalOutcomeFullType then
-        return self:isValid()
-    end
-
-    if not _ISUpgradeWeapon_canPerformAction_original(self) then
-        return false
-    end
-
-    if self.weapon and self.part then
-        local childType = self.part:getFullType()
-        if RequiredAttachment.IsInstallationBlocked(self.weapon, childType) then
-            return false
-        end
-    end
-
-    return true
-end
-
 local _ISRemoveWeaponUpgrade_isValid_original = ISRemoveWeaponUpgrade.isValid
 function ISRemoveWeaponUpgrade:isValid()
     if not _ISRemoveWeaponUpgrade_isValid_original(self) then
-        return false
-    end
-
-    if self.weapon and self.partType then
-        local parentPart = self.weapon:getWeaponPart(self.partType)
-        if parentPart then
-            local parentType = parentPart:getFullType()
-            if RequiredAttachment.IsRemovalBlocked(self.weapon, parentType) then
-                return false
-            end
-        end
-    end
-
-    return true
-end
-
-local _ISRemoveWeaponUpgrade_canPerformAction_original = ISRemoveWeaponUpgrade.canPerformAction
-function ISRemoveWeaponUpgrade:canPerformAction()
-    if not _ISRemoveWeaponUpgrade_canPerformAction_original(self) then
         return false
     end
 
@@ -104,6 +65,13 @@ end
 -- so custom-stats attachments take effect immediately.
 -- NOTE: Need to double check if I really still needs. We reaply modifiers on equip and unequip, so it might be redundant. will see UPDATE: it's not redundant lmao
 -------------------------------------------------
+
+local _ISUpgradeWeapon_new = ISUpgradeWeapon.new
+function ISUpgradeWeapon:new(character, weapon, part, outcomeFullType)
+    local o = _ISUpgradeWeapon_new(self, character, weapon, part)
+    o.universalOutcomeFullType = outcomeFullType
+    return o
+end
 
 local _ISUpgradeWeapon_complete = ISUpgradeWeapon.complete
 function ISUpgradeWeapon:complete()

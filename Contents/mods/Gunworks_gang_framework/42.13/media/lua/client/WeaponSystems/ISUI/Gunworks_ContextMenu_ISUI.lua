@@ -490,8 +490,7 @@ UniversalAttachmentContext.installOutcome = function(weapon, outcomePart, generi
     ISInventoryPaneContextMenu.transferIfNeeded(player, weapon)
     ISInventoryPaneContextMenu.transferIfNeeded(player, genericItem)
 
-    local action = ISUpgradeWeapon:new(player, weapon, genericItem)
-    action.universalOutcomeFullType = outcomeFullType
+    local action = ISUpgradeWeapon:new(player, weapon, genericItem, outcomeFullType)
     ISTimedActionQueue.add(action)
 end
 
