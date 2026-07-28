@@ -13,9 +13,9 @@ local UniversalAttachment               = require("WeaponSystems/Utils/Universal
 
 local _ISUpgradeWeapon_isValid_original = ISUpgradeWeapon.isValid
 function ISUpgradeWeapon:isValid()
-    if self.universalOutcomeFullType then
+    if self.outcomeFullType then
         if not self.weapon or not self.part then return false end
-        if not UniversalAttachment.CanInstallOutcome(self.weapon, self.universalOutcomeFullType, self.character) then
+        if not UniversalAttachment.CanInstallOutcome(self.weapon, self.outcomeFullType, self.character) then
             return false
         end
 
@@ -69,14 +69,14 @@ end
 local _ISUpgradeWeapon_new = ISUpgradeWeapon.new
 function ISUpgradeWeapon:new(character, weapon, part, outcomeFullType)
     local o = _ISUpgradeWeapon_new(self, character, weapon, part)
-    o.universalOutcomeFullType = outcomeFullType
+    o.outcomeFullType = outcomeFullType
     return o
 end
 
 local _ISUpgradeWeapon_complete = ISUpgradeWeapon.complete
 function ISUpgradeWeapon:complete()
-    if self.universalOutcomeFullType then
-        local outcomePart = instanceItem(self.universalOutcomeFullType)
+    if self.outcomeFullType then
+        local outcomePart = instanceItem(self.outcomeFullType)
         if not outcomePart or not instanceof(outcomePart, "WeaponPart") then
             return false
         end
