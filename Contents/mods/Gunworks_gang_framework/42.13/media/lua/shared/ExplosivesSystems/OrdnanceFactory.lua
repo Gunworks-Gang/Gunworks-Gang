@@ -15,6 +15,7 @@ OrdnanceFactory.Defaults     = {
     throwSpeed          = 12,   -- flight speed in cells/sec (guided phase)
     arcFactor           = 0.12, -- arc height = distance * arcFactor
     maxArc              = 1.5,  -- maximum arc height in cells
+    aimOffset           = 1.5,  -- world-space cursor correction, applied before the target Z probe
     soundThrow          = nil,  -- sound on throw
     soundBounce         = nil,  -- sound on bounce
     detonateOnImpact    = false,
@@ -37,6 +38,16 @@ OrdnanceFactory.Registry     = {}
 --- of vanilla bullets.
 --------------------------------------------------------------------
 OrdnanceFactory.AmmoRegistry = {}
+
+--------------------------------------------------------------------
+--- Defaults that differ for ammo-launched ordnance.
+--- Applied on top of Defaults, beneath the caller's own overrides.
+--- Launched rounds are aimed down the barrel, not by cursor, so they
+--- take no cursor correction.
+--------------------------------------------------------------------
+OrdnanceFactory.AmmoDefaultOverrides = {
+    aimOffset = 0,
+}
 
 --------------------------------------------------------------------
 --- Internal: merge a defaults table with an overrides table
@@ -104,7 +115,8 @@ end
 --------------------------------------------------------------------
 function OrdnanceFactory.RegisterAmmo(bulletFullType, overrides)
     if not bulletFullType then return end
-    local params = mergeDefaults(OrdnanceFactory.Defaults, overrides)
+    local base   = mergeDefaults(OrdnanceFactory.Defaults, OrdnanceFactory.AmmoDefaultOverrides)
+    local params = mergeDefaults(base, overrides)
     OrdnanceFactory.AmmoRegistry[bulletFullType] = params
 end
 
