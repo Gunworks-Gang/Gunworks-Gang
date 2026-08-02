@@ -19,6 +19,14 @@ ExplosivesSystems.EDGE_TOL                = 0.15
 ExplosivesSystems.LOW_WALL_Z_THRESHOLD    = 0.25
 ExplosivesSystems.MIN_WORLD_Z             = -32
 
+-- The real world-space gravity implied by GRAVITY/Z_STEP under the tick integrator below
+-- (continuous-time limit; empirically confirmed to within ~4% at 60fps via the
+-- semi-implicit Euler step this loop uses). Launch-velocity estimates MUST derive from
+-- this, not from an independently-chosen flight duration -- using a mismatched implied
+-- gravity is what caused short throws to wildly overshoot in an earlier version of this
+-- seeding formula.
+ExplosivesSystems.GRAVITY_WORLD_Z         = ExplosivesSystems.GRAVITY * ExplosivesSystems.Z_STEP * 3600
+
 --- Find the floor an ordnance would land on in a given tile column.
 --- Scans downward from startZ and returns the first square that has a floor.
 ---
@@ -158,12 +166,38 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
     local throwSpeed = math.max(1, params.throwSpeed or 12)
     local arcFactor  = params.arcFactor or 0.12
     local maxArc     = params.maxArc or 1.5
-
-    local flightTime = math.max(0.02, distance / throwSpeed)
     local arcHeight  = math.min(maxArc, distance * arcFactor)
 
     local dirX       = (distance > 0.01) and (dx / distance) or 0
     local dirY       = (distance > 0.01) and (dy / distance) or 0
+
+    -- Seed a launch velocity that WOULD (ignoring drag, under the SAME gravity the tick
+    -- integrator actually simulates) peak at `arcHeight` and cover `distance`, then hand
+    -- the whole flight to the ballistic integrator in updateOrdnance below -- exactly
+    -- like a Hot Brass casing. destX/destY/distance only ever inform this one-time
+    -- estimate; nothing afterward tries to force the ordnance to actually reach that
+    -- point. Gravity, drag and the terrain under the real arc decide where it lands.
+    -- There is no scripted "guided" phase and therefore no handoff for it to glitch on.
+    --
+    -- vz0 is solved from arcHeight via the REAL simulated gravity (GRAVITY_WORLD_Z), not
+    -- from an assumed flight duration -- an earlier version derived vz0 from distance/
+    -- throwSpeed instead, which implies whatever gravity makes that duration work out,
+    -- almost never matching the simulator's actual gravity. For a short throw that
+    -- implied gravity was many times weaker than reality, so the "estimate" flew several
+    -- tiles high and several tiles long before the real gravity ever caught up with it.
+    local XY_CONV    = ExplosivesSystems.XY_STEP * 60
+    local Z_CONV     = ExplosivesSystems.Z_STEP * 60
+    local gWorld     = ExplosivesSystems.GRAVITY_WORLD_Z
+    local vz0World   = math.sqrt(math.max(0, 2.0 * gWorld * arcHeight))
+    local hangTime   = (vz0World > 0) and (2.0 * vz0World / gWorld) or 0
+    -- throwSpeed caps the horizontal estimate rather than setting it outright: a distant
+    -- throw at max arc height naturally needs more horizontal speed to cover the ground
+    -- in the same hang time, and throwSpeed is the per-ordnance ceiling on that.
+    local hSpeedWorld = (hangTime > 0.001) and math.min(distance / hangTime, throwSpeed) or throwSpeed
+
+    local seedVelX = dirX * hSpeedWorld / XY_CONV
+    local seedVelY = dirY * hSpeedWorld / XY_CONV
+    local seedVelZ = vz0World / Z_CONV
 
     local sq         = getCell():getGridSquare(math.floor(originX), math.floor(originY), math.floor(originZ))
     if not sq then
@@ -201,25 +235,10 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         hasHitFloor      = false,
         atRest           = false,
         remainingBounces = ExplosivesSystems.randomizeBounces(params.floorBounces or 1),
-        flightMode       = "guided",
-        elapsed          = 0,
-        flightTime       = flightTime,
-        arcHeight        = arcHeight,
-        originWorldX     = originX,
-        originWorldY     = originY,
-        originWorldZ     = originZ,
-        destWorldX       = destX,
-        destWorldY       = destY,
-        -- The arc always targets the THROWER's own tier -- never a guessed lower one.
-        -- Mid-flight, the per-tick floor scan below (mirroring Hot Brass's casing drop)
-        -- detects any actual terrain drop and lands early; there is nothing to predict.
-        destWorldZ       = sq:getZ(),
         prevWorldZ       = originZ,
-        guidedDirX       = dirX,
-        guidedDirY       = dirY,
-        velocityX        = 0,
-        velocityY        = 0,
-        velocityZ        = 0,
+        velocityX        = seedVelX,
+        velocityY        = seedVelY,
+        velocityZ        = seedVelZ,
     }
 
     table.insert(ExplosivesSystems.activeOrdnance, ordnanceData)
@@ -259,260 +278,6 @@ function ExplosivesSystems.forceDetonate(ord, index)
     ord.active = false
     table.remove(ExplosivesSystems.activeOrdnance, index)
     return true
-end
-
-function ExplosivesSystems.guidedToPhysics(ord, t)
-    if ord.flightMode ~= "guided" then return end
-    ord.flightMode    = "physics"
-
-    local dist        = math.sqrt(
-        (ord.destWorldX - ord.originWorldX) * (ord.destWorldX - ord.originWorldX) +
-        (ord.destWorldY - ord.originWorldY) * (ord.destWorldY - ord.originWorldY)
-    )
-    local hSpeedWorld = (ord.flightTime > 0) and (dist / ord.flightTime) or 0
-    local XY_CONV     = ExplosivesSystems.XY_STEP * 60
-    local Z_CONV      = ExplosivesSystems.Z_STEP * 60
-
-    local residual    = 0.5
-    ord.velocityX     = ord.guidedDirX * hSpeedWorld * residual / XY_CONV
-    ord.velocityY     = ord.guidedDirY * hSpeedWorld * residual / XY_CONV
-
-    -- Analytic derivative of the world-Z arc:
-    --   worldZ(t) = originWorldZ + dz*t + 4*arcHeight*t*(1-t)
-    local dzdt        = (ord.destWorldZ - ord.originWorldZ) + ord.arcHeight * 4.0 * (1.0 - 2.0 * t)
-    local zSpeedWorld = (ord.flightTime > 0) and (dzdt / ord.flightTime) or 0
-    local zVel        = zSpeedWorld / Z_CONV
-
-    zVel              = math.max(zVel, -1.5)
-    zVel              = math.min(zVel, 1.5)
-    ord.velocityZ     = zVel
-end
-
-function ExplosivesSystems.updateGuidedFlight(ord, index, scale, shouldRender)
-    local dt = ExplosivesSystems.GT():getTimeDelta()
-
-    ord.elapsed = ord.elapsed + dt
-    local t = ord.elapsed / ord.flightTime
-    local arrived = t >= 1.0
-    if arrived then t = 1.0 end
-
-    local oldEdgeX   = ord.x
-    local oldEdgeY   = ord.y
-
-    local prevWorldZ = ord.prevWorldZ or ord.originWorldZ
-
-    -- The arc lives in ABSOLUTE world space. worldZ is authoritative; ord.z is derived
-    -- from it once the parent square is known. Doing it the other way round is what made
-    -- the old code cut: the per-tick reparent rebased ord.z correctly, then the next
-    -- tick recomputed ord.z from scratch in the new frame and threw the rebase away.
-    --
-    -- dz*t + 4*arc*t*(1-t) has a constant second derivative (-8*arc), so this is the
-    -- exact constant-gravity path from originWorldZ to destWorldZ. Descent accelerates.
-    local worldX     = ord.originWorldX + (ord.destWorldX - ord.originWorldX) * t
-    local worldY     = ord.originWorldY + (ord.destWorldY - ord.originWorldY) * t
-    local dz         = ord.destWorldZ - ord.originWorldZ
-    local worldZ     = ord.originWorldZ + dz * t + ord.arcHeight * 4.0 * t * (1.0 - t)
-
-    local sx         = ord.square:getX()
-    local sy         = ord.square:getY()
-    local sz         = ord.square:getZ()
-
-    -- Keep the square-local coords coherent so the wall/edge checks below read correctly.
-    ord.x            = worldX - sx
-    ord.y            = worldY - sy
-    ord.z            = worldZ - sz
-
-    local EDGE_TOL = ExplosivesSystems.EDGE_TOL
-    local blockX   = false
-    local blockY   = false
-
-    local effVelX  = ord.destWorldX - ord.originWorldX
-    local effVelY  = ord.destWorldY - ord.originWorldY
-
-    if effVelX > 0 and oldEdgeX < (1.0 - EDGE_TOL) and ord.x >= (1.0 - EDGE_TOL) then
-        local neighbor = getCell():getGridSquare(sx + 1, sy, sz)
-        if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
-                ord.square, neighbor, IsoDirections.E, ord.z) then
-            blockX = true
-        end
-    elseif effVelX < 0 and oldEdgeX > EDGE_TOL and ord.x <= EDGE_TOL then
-        local neighbor = getCell():getGridSquare(sx - 1, sy, sz)
-        if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
-                ord.square, neighbor, IsoDirections.W, ord.z) then
-            blockX = true
-        end
-    end
-
-    if effVelY > 0 and oldEdgeY < (1.0 - EDGE_TOL) and ord.y >= (1.0 - EDGE_TOL) then
-        local neighbor = getCell():getGridSquare(sx, sy + 1, sz)
-        if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
-                ord.square, neighbor, IsoDirections.S, ord.z) then
-            blockY = true
-        end
-    elseif effVelY < 0 and oldEdgeY > EDGE_TOL and ord.y <= EDGE_TOL then
-        local neighbor = getCell():getGridSquare(sx, sy - 1, sz)
-        if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
-                ord.square, neighbor, IsoDirections.N, ord.z) then
-            blockY = true
-        end
-    end
-
-    if blockX or blockY then
-        ExplosivesSystems.guidedToPhysics(ord, t)
-
-        if blockX then
-            ord.velocityX = -ord.velocityX * ExplosivesSystems.BOUNCE_RESTITUTION_WALL
-            ord.x = ord.x + (ord.velocityX * ExplosivesSystems.BOUNCE_POSITION_CORRECT)
-            if math.abs(ord.velocityX) < ExplosivesSystems.BOUNCE_MIN_VELOCITY then
-                ord.velocityX = 0
-            end
-            if ord.params.detonateOnImpact then
-                return ExplosivesSystems.forceDetonate(ord, index)
-            end
-        end
-
-        if blockY then
-            ord.velocityY = -ord.velocityY * ExplosivesSystems.BOUNCE_RESTITUTION_WALL
-            ord.y = ord.y + (ord.velocityY * ExplosivesSystems.BOUNCE_POSITION_CORRECT)
-            if math.abs(ord.velocityY) < ExplosivesSystems.BOUNCE_MIN_VELOCITY then
-                ord.velocityY = 0
-            end
-            if ord.params.detonateOnImpact then
-                return ExplosivesSystems.forceDetonate(ord, index)
-            end
-        end
-    end
-
-    worldX = ord.square:getX() + ord.x
-    worldY = ord.square:getY() + ord.y
-    local targetTileX = math.floor(worldX)
-    local targetTileY = math.floor(worldY)
-
-    -- Ceiling: test the level worldZ is actually in, not the level of the parent square.
-    -- Those two diverge the moment the ordnance is reparented mid-flight.
-    -- Gated on RISING only: worldZ also passes through a X.95 fractional value while
-    -- falling through a tier boundary from above, and a descending ordnance is not
-    -- hitting a ceiling, it's passing the floor of the tier it's leaving.
-    local rising = worldZ > prevWorldZ
-    local zi = math.floor(worldZ)
-    if rising and (worldZ - zi) >= 0.95 then
-        local aboveSq = getCell():getGridSquare(targetTileX, targetTileY, zi + 1)
-        if aboveSq and aboveSq:TreatAsSolidFloor() then
-            if ord.flightMode == "guided" then
-                ExplosivesSystems.guidedToPhysics(ord, t)
-            end
-            ord.velocityZ = -math.abs(ord.velocityZ) * ExplosivesSystems.BOUNCE_RESTITUTION_CEIL
-            worldZ = zi + 0.95
-        end
-    end
-
-    -- Scan from the PREVIOUS worldZ, not the current one: a fast ordnance can cross more
-    -- than one level in a tick, and scanning from the new Z would let it tunnel straight
-    -- through a floor it should have hit.
-    local targetSquare, landZ =
-        ExplosivesSystems.resolveFloorColumn(targetTileX, targetTileY, math.floor(prevWorldZ))
-
-    if not targetSquare then
-        targetSquare = ord.square
-        landZ        = nil
-    end
-
-    ord.square = targetSquare
-    ord.x      = worldX - targetSquare:getX()
-    ord.y      = worldY - targetSquare:getY()
-    ord.z      = worldZ - targetSquare:getZ()
-
-    -- Land whenever we are descending and have reached the resolved floor. This is NOT
-    -- gated on arrival any more: an ordnance thrown off a ledge onto nearby ground meets
-    -- its floor well before t reaches 1.
-    local descending = (dz + ord.arcHeight * 4.0 * (1.0 - 2.0 * t)) <= 0
-    local landed     = (landZ ~= nil) and descending and (worldZ <= landZ + 0.01)
-
-    if landed then
-        if ord.flightMode == "guided" then
-            ExplosivesSystems.guidedToPhysics(ord, t)
-        end
-
-        ord.z = 0
-
-        if not ord.hasHitFloor then
-            ord.hasHitFloor = true
-            if ord.params.detonateOnImpact then
-                return ExplosivesSystems.forceDetonate(ord, index)
-            end
-        end
-
-        if ord.remainingBounces > 0 then
-            ord.remainingBounces = ord.remainingBounces - 1
-            ord.z = 0.01
-            local restitution = ord.params.bounceEnergy or 0.45
-            ord.velocityZ = math.abs(ord.velocityZ) * restitution
-            ord.velocityX = ord.velocityX * 0.6
-            ord.velocityY = ord.velocityY * 0.6
-
-            local bounceSound = ord.params.soundBounce
-            if bounceSound and ord.player then
-                if isServer() then
-                    sendServerCommand(ord.player, ExplosivesSystems.MODULE_NAME, "playSound", {
-                        sound = bounceSound
-                    })
-                elseif ord.player.getEmitter then
-                    ord.player:getEmitter():playSound(bounceSound)
-                end
-            end
-
-            worldZ = targetSquare:getZ() + ord.z
-        else
-            ord.atRest    = true
-            ord.velocityX = 0
-            ord.velocityY = 0
-            ord.velocityZ = 0
-            ord.z         = 0
-
-            if shouldRender then
-                ExplosivesSystems.removeWorldItem(ord)
-                ord.worldItem = ord.square:AddWorldInventoryItem(
-                    ord.params.worldModel or ord.sourceWeapon,
-                    PZMath.clamp_01(ord.x), PZMath.clamp_01(ord.y), 0
-                )
-            end
-
-            ord.prevWorldZ = targetSquare:getZ()
-
-            if ord.params.detonateOnImpact or (ord.params.detonationDelay or 0) > 0 then
-                if ord.detonationTimer <= 0 then
-                    return ExplosivesSystems.forceDetonate(ord, index)
-                end
-                return false
-            end
-
-            Payloads.ResolveImpact(ord)
-            ord.active = false
-            table.remove(ExplosivesSystems.activeOrdnance, index)
-            return true
-        end
-    elseif arrived and ord.flightMode == "guided" then
-        -- Flight time is spent but we are still airborne: the target Z was wrong, the
-        -- floor was destroyed mid-flight, or the throw sailed past a ledge. Hand off to
-        -- the ballistic integrator, which handles multi-level descent correctly. It can
-        -- never hang in mid-air the way a truncated guided arc would.
-        ExplosivesSystems.guidedToPhysics(ord, 1.0)
-    end
-
-    ord.prevWorldZ = worldZ
-
-    ord.x = PZMath.clamp_01(ord.x)
-    ord.y = PZMath.clamp_01(ord.y)
-
-    if shouldRender then
-        ExplosivesSystems.removeWorldItem(ord)
-        ord.worldItem = ord.square:AddWorldInventoryItem(
-            ord.params.worldModel or ord.sourceWeapon,
-            ord.x, ord.y, ord.z
-        )
-    end
-
-    return false
 end
 
 function ExplosivesSystems.update()
@@ -561,11 +326,9 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
         return false
     end
 
-    if ord.flightMode == "guided" then
-        return ExplosivesSystems.updateGuidedFlight(ord, index, scale, shouldRender)
-    end
+    -- Captured before this tick's integration, for the ceiling-check "rising" gate below.
+    local prevWorldZ = ord.prevWorldZ or (ord.square:getZ() + ord.z)
 
-    local prevZ    = ord.z
     ord.velocityZ  = ord.velocityZ - (ExplosivesSystems.GRAVITY * scale)
 
     local oldEdgeX = ord.x
@@ -644,15 +407,21 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
     local targetTileX = math.floor(worldX)
     local targetTileY = math.floor(worldY)
 
-    if ord.z >= 1.0 then
+    local worldZ = sz + ord.z
+
+    -- Gated on RISING only: after a multi-tier drop the floor-scan rebase below can push
+    -- local z above 1.0 purely from the reparent math (new parent tier is several levels
+    -- lower), even though the ordnance is clearly still falling. Testing that as "hit a
+    -- ceiling" would bounce it back up mid-fall -- a phantom bounce, not a real one.
+    local rising = worldZ > prevWorldZ
+    if rising and ord.z >= 1.0 then
         local aboveSq = getCell():getGridSquare(targetTileX, targetTileY, sz + 1)
         if aboveSq and aboveSq:TreatAsSolidFloor() then
             ord.velocityZ = -math.abs(ord.velocityZ) * ExplosivesSystems.BOUNCE_RESTITUTION_CEIL
             ord.z = 0.95
+            worldZ = sz + ord.z
         end
     end
-
-    local worldZ = sz + ord.z
 
     local targetSquare = ExplosivesSystems.resolveFloorColumn(targetTileX, targetTileY, sz)
 

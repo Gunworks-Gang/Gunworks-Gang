@@ -12,10 +12,10 @@ OrdnanceFactory.Defaults     = {
     heightOffset        = 0.55, -- spawn height offset
     floorBounces        = 0,    -- bounces before settling (0 = no bounce)
     bounceEnergy        = 0.45, -- energy retained per floor bounce
-    throwSpeed          = 12,   -- flight speed in cells/sec (guided phase)
+    throwSpeed          = 12,   -- cap on the estimated launch speed in cells/sec (see doSpawnOrdnance)
     arcFactor           = 0.12, -- arc height = distance * arcFactor
     maxArc              = 1.5,  -- maximum arc height in cells
-    aimOffset           = 1.5,  -- world-space cursor correction, applied before the target Z probe
+    aimOffset           = 1.5,  -- world-space cursor correction applied to the throw target
     soundThrow          = nil,  -- sound on throw
     soundBounce         = nil,  -- sound on bounce
     detonateOnImpact    = false,
