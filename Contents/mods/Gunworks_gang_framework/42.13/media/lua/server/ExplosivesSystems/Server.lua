@@ -28,19 +28,28 @@ ExplosivesSystems.MIN_WORLD_Z             = -32
 ExplosivesSystems.GRAVITY_WORLD_Z         = ExplosivesSystems.GRAVITY * ExplosivesSystems.Z_STEP * 3600
 
 --- Predict how far a UNIT horizontal internal velocity would carry a projectile, by the
---- time it returns to z=0, launched with vertical internal velocity `vzInternal` -- using
---- the exact same per-tick formulas as updateOrdnance, at a nominal 60fps tick rate.
+--- time it reaches z<=0, launched with vertical internal velocity `vzInternal` from local
+--- height `startZ` -- using the exact same per-tick formulas as updateOrdnance, at a
+--- nominal 60fps tick rate.
+---
+--- startZ MUST match the real spawn height (originZ - destZ, i.e. heightOffset for a
+--- same-tier throw). The real flight spawns heightOffset above the floor and has to fall
+--- that far before updateOrdnance calls it landed -- it does NOT just return to its own
+--- launch height. Leaving startZ at 0 makes this prediction land early, so the real
+--- ballistic flight -- still carrying residual (drag-decayed) horizontal velocity while it
+--- covers that extra drop -- travels further than `distance` and overshoots past the
+--- intended landing point.
 ---
 --- Horizontal and vertical motion never interact in that integrator: nothing in the x/y
 --- update reads velocityZ or z, and the landing test only reads z. So landing TIME
---- depends only on vzInternal, and for that fixed time, horizontal distance is exactly
---- linear in horizontal velocity (pure geometric drag decay + linear accumulation, no
---- cross terms). That linearity is what makes a single simulation an EXACT correction
+--- depends only on vzInternal and startZ, and for that fixed time, horizontal distance is
+--- exactly linear in horizontal velocity (pure geometric drag decay + linear accumulation,
+--- no cross terms). That linearity is what makes a single simulation an EXACT correction
 --- factor rather than an approximation -- see its use in doSpawnOrdnance.
-function ExplosivesSystems.predictUnitHorizontalRange(vzInternal)
+function ExplosivesSystems.predictUnitHorizontalRange(vzInternal, startZ)
     local velocityX = 1.0
     local velocityZ = vzInternal
-    local x, z = 0, 0
+    local x, z = 0, startZ or 0
     for _ = 1, 1200 do
         velocityZ = velocityZ - ExplosivesSystems.GRAVITY
         x         = x + velocityX * ExplosivesSystems.XY_STEP
@@ -228,7 +237,12 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
     local vz0World   = math.sqrt(math.max(0, 2.0 * gWorld * arcHeight))
     local vz0Internal = vz0World / Z_CONV
 
-    local unitRange  = ExplosivesSystems.predictUnitHorizontalRange(vz0Internal)
+    -- Real spawn height above the landing plane -- see predictUnitHorizontalRange's
+    -- docstring. Clamped to 0 for throws aimed at/above origin height (destZ >= originZ):
+    -- that uphill case isn't modelled here, so this just keeps prior (unfixed) behaviour
+    -- for it rather than guessing.
+    local startZLocal = math.max(0, originZ - destZ)
+    local unitRange  = ExplosivesSystems.predictUnitHorizontalRange(vz0Internal, startZLocal)
     local hSpeedNeeded
     if unitRange > 0.001 then
         hSpeedNeeded = (distance / unitRange) * XY_CONV
