@@ -60,42 +60,18 @@ function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
     local playerIndex = player:getPlayerNum()
     local mx          = getMouseX()
     local my          = getMouseY()
-    local mouseX      = screenToIsoX(playerIndex, mx, my, player:getZ())
-    local mouseY      = screenToIsoY(playerIndex, mx, my, player:getZ())
-    local destZ       = player:getZ()
+    local pz          = player:getZ()
+    local aimOffset   = params.aimOffset or 0
 
-    -- Resolve the true floor Z at the target position.
-    -- The mouse gives no Z info; screenToIsoX/Y projects onto the player's current
-    -- floor plane. If the visual target is a floor below (e.g. a balcony), the
-    -- projected square has no floor and the ordnance desync-teleports downward.
-    -- Walk Z down from the player's level until we find a square with a floor,
-    -- then re-project X/Y at that Z so the isometric offset is also corrected.
-    -- this shit is not perfect but whatever. I will work it out later.
-    -- TODO let me leave this here.
-    do
-        local ix     = math.floor(mouseX)
-        local iy     = math.floor(mouseY)
-        local checkZ = destZ
-        local minZ   = math.max(0, destZ - 5)
-        while checkZ >= minZ do
-            local sq = getCell():getGridSquare(ix, iy, checkZ)
-            if sq and sq:getFloor() then
-                if checkZ ~= destZ then
-                    mouseX = screenToIsoX(playerIndex, mx, my, checkZ)
-                    mouseY = screenToIsoY(playerIndex, mx, my, checkZ)
-                    destZ  = checkZ
-                end
-                break
-            end
-            checkZ = checkZ - 1
-        end
-    end
-
-    if not isAmmoLaunch then
-        local aimOffset = 1.5
-        mouseX          = mouseX + aimOffset
-        mouseY          = mouseY + aimOffset
-    end
+    -- Target is resolved on the THROWER's own plane, same as vanilla mouse targeting.
+    -- We do not try to guess a lower destination tier here: guessing from the cursor
+    -- alone is fragile (the projected pixel drifts at every Z candidate, and a wrong
+    -- guess fights the real terrain mid-flight). The server-side flight instead detects
+    -- any actual drop in the terrain tick-by-tick as it travels, the same way Hot Brass
+    -- casings do.
+    local mouseX = screenToIsoX(playerIndex, mx, my, pz) + aimOffset
+    local mouseY = screenToIsoY(playerIndex, mx, my, pz) + aimOffset
+    local destZ  = pz
 
     if isClient() then
         sendClientCommand(player, ExplosivesSystems.MODULE_NAME, "throwOrdnance", {

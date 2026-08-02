@@ -17,6 +17,38 @@ ExplosivesSystems.BOUNCE_POSITION_CORRECT = 0.12
 ExplosivesSystems.BOUNCE_MIN_VELOCITY     = 0.004
 ExplosivesSystems.EDGE_TOL                = 0.15
 ExplosivesSystems.LOW_WALL_Z_THRESHOLD    = 0.25
+ExplosivesSystems.MIN_WORLD_Z             = -32
+ExplosivesSystems.GRAVITY_WORLD_Z         = ExplosivesSystems.GRAVITY * ExplosivesSystems.Z_STEP * 3600
+
+function ExplosivesSystems.predictUnitHorizontalRange(vzInternal, startZ)
+    local velocityX = 1.0
+    local velocityZ = vzInternal
+    local x, z = 0, startZ or 0
+    for _ = 1, 1200 do
+        velocityZ = velocityZ - ExplosivesSystems.GRAVITY
+        x         = x + velocityX * ExplosivesSystems.XY_STEP
+        z         = z + velocityZ * ExplosivesSystems.Z_STEP
+        velocityX = velocityX * ExplosivesSystems.DRAG_XY
+        velocityZ = velocityZ * ExplosivesSystems.DRAG_Z
+        if z <= 0 then return x end
+    end
+    return x
+end
+
+function ExplosivesSystems.resolveFloorColumn(tileX, tileY, startZ)
+    local minZ = (getMinimumWorldLevel and getMinimumWorldLevel()) or ExplosivesSystems.MIN_WORLD_Z
+    local maxZ = (getMaximumWorldLevel and getMaximumWorldLevel()) or 8
+    local checkZ = math.min(startZ, maxZ)
+
+    while checkZ >= minZ do
+        local sq = getCell():getGridSquare(tileX, tileY, checkZ)
+        if not sq then return nil, nil end
+        if sq:getFloor() then return sq, checkZ end
+        checkZ = checkZ - 1
+    end
+
+    return nil, nil
+end
 
 function ExplosivesSystems.isLowWall(wall)
     if not wall then return false end
@@ -126,21 +158,51 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         local ratio = maxDist / distance
         destX       = originX + dx * ratio
         destY       = originY + dy * ratio
+        -- dx/dy MUST be rescaled too: dirX/dirY below divide by the now-clamped
+        -- `distance`, so leaving dx/dy at their raw (pre-clamp) magnitude turns
+        -- dirX/dirY into a vector far longer than 1 -- e.g. aiming at 40 tiles with a
+        -- 15-tile cap gives |dir| = 40/15 = 2.67, silently multiplying the launch speed
+        -- by that factor and bypassing maxThrowDist entirely the farther over-range the
+        -- cursor is aimed.
+        dx          = dx * ratio
+        dy          = dy * ratio
         distance    = maxDist
     end
 
-    local throwSpeed = math.max(1, params.throwSpeed or 12)
-    local arcFactor  = params.arcFactor or 0.12
-    local maxArc     = params.maxArc or 1.5
+    local throwSpeed  = math.max(1, params.throwSpeed or 12)
+    local arcFactor   = params.arcFactor or 0.12
+    local maxArc      = params.maxArc or 1.5
+    local arcHeight   = math.min(maxArc, distance * arcFactor)
 
-    local flightTime = math.max(0.02, distance / throwSpeed)
-    local arcHeight  = math.min(maxArc, distance * arcFactor)
+    local dirX        = (distance > 0.01) and (dx / distance) or 0
+    local dirY        = (distance > 0.01) and (dy / distance) or 0
 
-    local dirX       = (distance > 0.01) and (dx / distance) or 0
-    local dirY       = (distance > 0.01) and (dy / distance) or 0
+    local XY_CONV     = ExplosivesSystems.XY_STEP * 60
+    local Z_CONV      = ExplosivesSystems.Z_STEP * 60
+    local gWorld      = ExplosivesSystems.GRAVITY_WORLD_Z
+    local vz0World    = math.sqrt(math.max(0, 2.0 * gWorld * arcHeight))
+    local vz0Internal = vz0World / Z_CONV
 
-    local sq         = getCell():getGridSquare(math.floor(originX), math.floor(originY), math.floor(originZ))
-    if not sq then return end
+    local startZLocal = math.max(0, originZ - destZ)
+    local unitRange   = ExplosivesSystems.predictUnitHorizontalRange(vz0Internal, startZLocal)
+    local hSpeedNeeded
+    if unitRange > 0.001 then
+        hSpeedNeeded = (distance / unitRange) * XY_CONV
+    else
+        hSpeedNeeded = distance / 0.02
+    end
+    local hSpeedWorld = math.min(hSpeedNeeded, throwSpeed)
+    local forceMul    = (params.throwForce or 8) / 8
+
+    local seedVelX    = dirX * hSpeedWorld / XY_CONV * forceMul
+    local seedVelY    = dirY * hSpeedWorld / XY_CONV * forceMul
+    local seedVelZ    = vz0World / Z_CONV * forceMul
+
+    local sq          = getCell():getGridSquare(math.floor(originX), math.floor(originY), math.floor(originZ))
+    if not sq then
+        sq = player and player:getCurrentSquare() or nil
+        if not sq then return end
+    end
 
     local modelType = params.worldModel or sourceWeapon
 
@@ -170,20 +232,10 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         hasHitFloor      = false,
         atRest           = false,
         remainingBounces = ExplosivesSystems.randomizeBounces(params.floorBounces or 1),
-        flightMode       = "guided",
-        elapsed          = 0,
-        flightTime       = flightTime,
-        arcHeight        = arcHeight,
-        originWorldX     = originX,
-        originWorldY     = originY,
-        originZLocal     = localZ,
-        destWorldX       = destX,
-        destWorldY       = destY,
-        guidedDirX       = dirX,
-        guidedDirY       = dirY,
-        velocityX        = 0,
-        velocityY        = 0,
-        velocityZ        = 0,
+        prevWorldZ       = originZ,
+        velocityX        = seedVelX,
+        velocityY        = seedVelY,
+        velocityZ        = seedVelZ,
     }
 
     table.insert(ExplosivesSystems.activeOrdnance, ordnanceData)
@@ -223,232 +275,6 @@ function ExplosivesSystems.forceDetonate(ord, index)
     ord.active = false
     table.remove(ExplosivesSystems.activeOrdnance, index)
     return true
-end
-
-function ExplosivesSystems.guidedToPhysics(ord, t)
-    if ord.flightMode ~= "guided" then return end
-    ord.flightMode    = "physics"
-
-    local dist        = math.sqrt(
-        (ord.destWorldX - ord.originWorldX) * (ord.destWorldX - ord.originWorldX) +
-        (ord.destWorldY - ord.originWorldY) * (ord.destWorldY - ord.originWorldY)
-    )
-    local hSpeedWorld = (ord.flightTime > 0) and (dist / ord.flightTime) or 0
-    local XY_CONV     = ExplosivesSystems.XY_STEP * 60
-    local Z_CONV      = ExplosivesSystems.Z_STEP * 60
-
-    local residual    = 0.5
-    ord.velocityX     = ord.guidedDirX * hSpeedWorld * residual / XY_CONV
-    ord.velocityY     = ord.guidedDirY * hSpeedWorld * residual / XY_CONV
-
-    local dzdt        = -ord.originZLocal + ord.arcHeight * 4.0 * (1.0 - 2.0 * t)
-    local zSpeedWorld = (ord.flightTime > 0) and (dzdt / ord.flightTime) or 0
-    local zVel        = zSpeedWorld / Z_CONV
-
-    zVel              = math.max(zVel, -1.5)
-    zVel              = math.min(zVel, 1.5)
-    ord.velocityZ     = zVel
-end
-
-function ExplosivesSystems.updateGuidedFlight(ord, index, scale, shouldRender)
-    local dt = ExplosivesSystems.GT():getTimeDelta()
-
-    ord.elapsed = ord.elapsed + dt
-    local t = ord.elapsed / ord.flightTime
-    local arrived = t >= 1.0
-    if arrived then t = 1.0 end
-
-    local oldEdgeX = ord.x
-    local oldEdgeY = ord.y
-
-    local worldX   = ord.originWorldX + (ord.destWorldX - ord.originWorldX) * t
-    local worldY   = ord.originWorldY + (ord.destWorldY - ord.originWorldY) * t
-
-    ord.z          = ord.originZLocal * (1.0 - t) + ord.arcHeight * 4.0 * t * (1.0 - t)
-
-    local sx       = ord.square:getX()
-    local sy       = ord.square:getY()
-    local sz       = ord.square:getZ()
-    ord.x          = worldX - sx
-    ord.y          = worldY - sy
-
-    local EDGE_TOL = ExplosivesSystems.EDGE_TOL
-    local blockX   = false
-    local blockY   = false
-
-    local effVelX  = ord.destWorldX - ord.originWorldX
-    local effVelY  = ord.destWorldY - ord.originWorldY
-
-    if effVelX > 0 and oldEdgeX < (1.0 - EDGE_TOL) and ord.x >= (1.0 - EDGE_TOL) then
-        local neighbor = getCell():getGridSquare(sx + 1, sy, sz)
-        if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
-                ord.square, neighbor, IsoDirections.E, ord.z) then
-            blockX = true
-        end
-    elseif effVelX < 0 and oldEdgeX > EDGE_TOL and ord.x <= EDGE_TOL then
-        local neighbor = getCell():getGridSquare(sx - 1, sy, sz)
-        if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
-                ord.square, neighbor, IsoDirections.W, ord.z) then
-            blockX = true
-        end
-    end
-
-    if effVelY > 0 and oldEdgeY < (1.0 - EDGE_TOL) and ord.y >= (1.0 - EDGE_TOL) then
-        local neighbor = getCell():getGridSquare(sx, sy + 1, sz)
-        if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
-                ord.square, neighbor, IsoDirections.S, ord.z) then
-            blockY = true
-        end
-    elseif effVelY < 0 and oldEdgeY > EDGE_TOL and ord.y <= EDGE_TOL then
-        local neighbor = getCell():getGridSquare(sx, sy - 1, sz)
-        if neighbor and ExplosivesSystems.isBlockedBetweenSquares(
-                ord.square, neighbor, IsoDirections.N, ord.z) then
-            blockY = true
-        end
-    end
-
-    if blockX or blockY then
-        ExplosivesSystems.guidedToPhysics(ord, t)
-
-        if blockX then
-            ord.velocityX = -ord.velocityX * ExplosivesSystems.BOUNCE_RESTITUTION_WALL
-            ord.x = ord.x + (ord.velocityX * ExplosivesSystems.BOUNCE_POSITION_CORRECT)
-            if math.abs(ord.velocityX) < ExplosivesSystems.BOUNCE_MIN_VELOCITY then
-                ord.velocityX = 0
-            end
-            if ord.params.detonateOnImpact then
-                return ExplosivesSystems.forceDetonate(ord, index)
-            end
-        end
-
-        if blockY then
-            ord.velocityY = -ord.velocityY * ExplosivesSystems.BOUNCE_RESTITUTION_WALL
-            ord.y = ord.y + (ord.velocityY * ExplosivesSystems.BOUNCE_POSITION_CORRECT)
-            if math.abs(ord.velocityY) < ExplosivesSystems.BOUNCE_MIN_VELOCITY then
-                ord.velocityY = 0
-            end
-            if ord.params.detonateOnImpact then
-                return ExplosivesSystems.forceDetonate(ord, index)
-            end
-        end
-    end
-
-    worldX = ord.square:getX() + ord.x
-    worldY = ord.square:getY() + ord.y
-    local targetTileX = math.floor(worldX)
-    local targetTileY = math.floor(worldY)
-
-    if ord.z >= 1.0 then
-        local aboveSq = getCell():getGridSquare(targetTileX, targetTileY, sz + 1)
-        if aboveSq and aboveSq:TreatAsSolidFloor() then
-            if ord.flightMode == "guided" then
-                ExplosivesSystems.guidedToPhysics(ord, t)
-            end
-            ord.velocityZ = -math.abs(ord.velocityZ) * ExplosivesSystems.BOUNCE_RESTITUTION_CEIL
-            ord.z = 0.95
-        end
-    end
-
-    local worldZ = sz + ord.z
-    local targetSquare = nil
-    local checkZ = sz
-    while checkZ >= 0 do
-        local sq = getCell():getGridSquare(targetTileX, targetTileY, checkZ)
-        if not sq then break end
-        if sq:getFloor() then
-            targetSquare = sq
-            break
-        end
-        checkZ = checkZ - 1
-    end
-
-    if targetSquare then
-        ord.z = worldZ - targetSquare:getZ()
-    else
-        targetSquare = ord.square
-    end
-
-    if targetSquare ~= ord.square then
-        ord.square = targetSquare
-    end
-
-    ord.x = worldX - ord.square:getX()
-    ord.y = worldY - ord.square:getY()
-
-    if arrived and ord.flightMode == "guided" then
-        ExplosivesSystems.guidedToPhysics(ord, 1.0)
-
-        if ord.z <= 0.01 then
-            ord.z = 0
-
-            if not ord.hasHitFloor then
-                ord.hasHitFloor = true
-                if ord.params.detonateOnImpact then
-                    return ExplosivesSystems.forceDetonate(ord, index)
-                end
-            end
-
-            if ord.remainingBounces > 0 then
-                ord.remainingBounces = ord.remainingBounces - 1
-                ord.z = 0.01
-                local restitution = ord.params.bounceEnergy or 0.45
-                ord.velocityZ = math.abs(ord.velocityZ) * restitution
-                ord.velocityX = ord.velocityX * 0.6
-                ord.velocityY = ord.velocityY * 0.6
-
-                local bounceSound = ord.params.soundBounce
-                if bounceSound and ord.player then
-                    if isServer() then
-                        sendServerCommand(ord.player, ExplosivesSystems.MODULE_NAME, "playSound", {
-                            sound = bounceSound
-                        })
-                    elseif ord.player.getEmitter then
-                        ord.player:getEmitter():playSound(bounceSound)
-                    end
-                end
-            else
-                ord.atRest    = true
-                ord.velocityX = 0
-                ord.velocityY = 0
-                ord.velocityZ = 0
-                ord.z         = 0
-
-                if shouldRender then
-                    ExplosivesSystems.removeWorldItem(ord)
-                    ord.worldItem = ord.square:AddWorldInventoryItem(
-                        ord.params.worldModel or ord.sourceWeapon,
-                        PZMath.clamp_01(ord.x), PZMath.clamp_01(ord.y), 0
-                    )
-                end
-
-                if ord.params.detonateOnImpact or (ord.params.detonationDelay or 0) > 0 then
-                    if ord.detonationTimer <= 0 then
-                        return ExplosivesSystems.forceDetonate(ord, index)
-                    end
-                    return false
-                end
-
-                Payloads.ResolveImpact(ord)
-                ord.active = false
-                table.remove(ExplosivesSystems.activeOrdnance, index)
-                return true
-            end
-        end
-    end
-
-    ord.x = PZMath.clamp_01(ord.x)
-    ord.y = PZMath.clamp_01(ord.y)
-    ord.z = math.max(0, ord.z)
-
-    if shouldRender then
-        ExplosivesSystems.removeWorldItem(ord)
-        ord.worldItem = ord.square:AddWorldInventoryItem(
-            ord.params.worldModel or ord.sourceWeapon,
-            ord.x, ord.y, ord.z
-        )
-    end
-
-    return false
 end
 
 function ExplosivesSystems.update()
@@ -497,33 +323,30 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
         return false
     end
 
-    if ord.flightMode == "guided" then
-        return ExplosivesSystems.updateGuidedFlight(ord, index, scale, shouldRender)
-    end
+    local prevWorldZ = ord.prevWorldZ or (ord.square:getZ() + ord.z)
 
-    local prevZ    = ord.z
-    ord.velocityZ  = ord.velocityZ - (ExplosivesSystems.GRAVITY * scale)
+    ord.velocityZ    = ord.velocityZ - (ExplosivesSystems.GRAVITY * scale)
 
-    local oldEdgeX = ord.x
-    local oldEdgeY = ord.y
+    local oldEdgeX   = ord.x
+    local oldEdgeY   = ord.y
 
-    ord.x          = ord.x + (ord.velocityX * ExplosivesSystems.XY_STEP * scale)
-    ord.y          = ord.y + (ord.velocityY * ExplosivesSystems.XY_STEP * scale)
-    ord.z          = ord.z + (ord.velocityZ * ExplosivesSystems.Z_STEP * scale)
+    ord.x            = ord.x + (ord.velocityX * ExplosivesSystems.XY_STEP * scale)
+    ord.y            = ord.y + (ord.velocityY * ExplosivesSystems.XY_STEP * scale)
+    ord.z            = ord.z + (ord.velocityZ * ExplosivesSystems.Z_STEP * scale)
 
-    local dragXY   = math.pow(ExplosivesSystems.DRAG_XY, scale)
-    local dragZ    = math.pow(ExplosivesSystems.DRAG_Z, scale)
-    ord.velocityX  = ord.velocityX * dragXY
-    ord.velocityY  = ord.velocityY * dragXY
-    ord.velocityZ  = ord.velocityZ * dragZ
+    local dragXY     = math.pow(ExplosivesSystems.DRAG_XY, scale)
+    local dragZ      = math.pow(ExplosivesSystems.DRAG_Z, scale)
+    ord.velocityX    = ord.velocityX * dragXY
+    ord.velocityY    = ord.velocityY * dragXY
+    ord.velocityZ    = ord.velocityZ * dragZ
 
-    local sx       = ord.square:getX()
-    local sy       = ord.square:getY()
-    local sz       = ord.square:getZ()
-    local EDGE_TOL = ExplosivesSystems.EDGE_TOL
+    local sx         = ord.square:getX()
+    local sy         = ord.square:getY()
+    local sz         = ord.square:getZ()
+    local EDGE_TOL   = ExplosivesSystems.EDGE_TOL
 
-    local blockX   = false
-    local blockY   = false
+    local blockX     = false
+    local blockY     = false
 
     if ord.velocityX > 0 and oldEdgeX < (1.0 - EDGE_TOL) and ord.x >= (1.0 - EDGE_TOL) then
         local neighbor = getCell():getGridSquare(sx + 1, sy, sz)
@@ -580,27 +403,19 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
     local targetTileX = math.floor(worldX)
     local targetTileY = math.floor(worldY)
 
-    if ord.z >= 1.0 then
+    local worldZ = sz + ord.z
+
+    local rising = worldZ > prevWorldZ
+    if rising and ord.z >= 1.0 then
         local aboveSq = getCell():getGridSquare(targetTileX, targetTileY, sz + 1)
         if aboveSq and aboveSq:TreatAsSolidFloor() then
             ord.velocityZ = -math.abs(ord.velocityZ) * ExplosivesSystems.BOUNCE_RESTITUTION_CEIL
             ord.z = 0.95
+            worldZ = sz + ord.z
         end
     end
 
-    local worldZ = sz + ord.z
-
-    local targetSquare = nil
-    local checkZ = sz
-    while checkZ >= 0 do
-        local sq = getCell():getGridSquare(targetTileX, targetTileY, checkZ)
-        if not sq then break end
-        if sq:getFloor() then
-            targetSquare = sq
-            break
-        end
-        checkZ = checkZ - 1
-    end
+    local targetSquare = ExplosivesSystems.resolveFloorColumn(targetTileX, targetTileY, sz)
 
     if targetSquare then
         ord.z = worldZ - targetSquare:getZ()
@@ -614,6 +429,8 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
 
     ord.x = worldX - ord.square:getX()
     ord.y = worldY - ord.square:getY()
+
+    ord.prevWorldZ = ord.square:getZ() + ord.z
 
     if ord.z <= 0 then
         ord.z = 0

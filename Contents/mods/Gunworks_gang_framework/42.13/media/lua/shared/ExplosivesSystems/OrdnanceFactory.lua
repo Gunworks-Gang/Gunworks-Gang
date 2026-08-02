@@ -1,20 +1,21 @@
-local OrdnanceFactory        = {}
+local OrdnanceFactory                = {}
 
 --------------------------------------------------------------------
 --- Default ordnance parameters – merged throw + explosive config
 --------------------------------------------------------------------
-OrdnanceFactory.Defaults     = {
+OrdnanceFactory.Defaults             = {
     -- Throw / flight
-    throwForce          = 8,    -- initial velocity multiplier (scales hSpeed)
+    throwForce          = 8,    -- overall launch speed multiplier, 8 = neutral (1.0x); see doSpawnOrdnance
     maxThrowDist        = 20,   -- max throw / launch distance in cells
     worldModel          = nil,  -- world item shown in flight (nil = use weapon fullType)
     forwardOffset       = 0.50, -- spawn origin offset from player facing
     heightOffset        = 0.55, -- spawn height offset
     floorBounces        = 0,    -- bounces before settling (0 = no bounce)
     bounceEnergy        = 0.45, -- energy retained per floor bounce
-    throwSpeed          = 12,   -- flight speed in cells/sec (guided phase)
+    throwSpeed          = 12,   -- cap on the estimated launch speed in cells/sec (see doSpawnOrdnance)
     arcFactor           = 0.12, -- arc height = distance * arcFactor
     maxArc              = 1.5,  -- maximum arc height in cells
+    aimOffset           = 1.5,  -- world-space cursor correction applied to the throw target
     soundThrow          = nil,  -- sound on throw
     soundBounce         = nil,  -- sound on bounce
     detonateOnImpact    = false,
@@ -28,7 +29,7 @@ OrdnanceFactory.Defaults     = {
 --------------------------------------------------------------------
 --- Single registry: weaponFullType → merged params table
 --------------------------------------------------------------------
-OrdnanceFactory.Registry     = {}
+OrdnanceFactory.Registry             = {}
 
 --------------------------------------------------------------------
 --- Ammo registry: bulletFullType → merged params table
@@ -36,7 +37,17 @@ OrdnanceFactory.Registry     = {}
 --- from a ranged weapon and spawned as ordnance projectiles instead
 --- of vanilla bullets.
 --------------------------------------------------------------------
-OrdnanceFactory.AmmoRegistry = {}
+OrdnanceFactory.AmmoRegistry         = {}
+
+--------------------------------------------------------------------
+--- Defaults that differ for ammo-launched ordnance.
+--- Applied on top of Defaults, beneath the caller's own overrides.
+--- Launched rounds are aimed down the barrel, not by cursor, so they
+--- take no cursor correction.
+--------------------------------------------------------------------
+OrdnanceFactory.AmmoDefaultOverrides = {
+    aimOffset = 0,
+}
 
 --------------------------------------------------------------------
 --- Internal: merge a defaults table with an overrides table
@@ -104,7 +115,8 @@ end
 --------------------------------------------------------------------
 function OrdnanceFactory.RegisterAmmo(bulletFullType, overrides)
     if not bulletFullType then return end
-    local params = mergeDefaults(OrdnanceFactory.Defaults, overrides)
+    local base                                   = mergeDefaults(OrdnanceFactory.Defaults, OrdnanceFactory.AmmoDefaultOverrides)
+    local params                                 = mergeDefaults(base, overrides)
     OrdnanceFactory.AmmoRegistry[bulletFullType] = params
 end
 
