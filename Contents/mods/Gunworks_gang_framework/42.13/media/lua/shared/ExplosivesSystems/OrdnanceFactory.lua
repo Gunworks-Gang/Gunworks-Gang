@@ -1,9 +1,9 @@
-local OrdnanceFactory        = {}
+local OrdnanceFactory                = {}
 
 --------------------------------------------------------------------
 --- Default ordnance parameters – merged throw + explosive config
 --------------------------------------------------------------------
-OrdnanceFactory.Defaults     = {
+OrdnanceFactory.Defaults             = {
     -- Throw / flight
     throwForce          = 8,    -- overall launch speed multiplier, 8 = neutral (1.0x); see doSpawnOrdnance
     maxThrowDist        = 20,   -- max throw / launch distance in cells
@@ -29,7 +29,7 @@ OrdnanceFactory.Defaults     = {
 --------------------------------------------------------------------
 --- Single registry: weaponFullType → merged params table
 --------------------------------------------------------------------
-OrdnanceFactory.Registry     = {}
+OrdnanceFactory.Registry             = {}
 
 --------------------------------------------------------------------
 --- Ammo registry: bulletFullType → merged params table
@@ -37,7 +37,7 @@ OrdnanceFactory.Registry     = {}
 --- from a ranged weapon and spawned as ordnance projectiles instead
 --- of vanilla bullets.
 --------------------------------------------------------------------
-OrdnanceFactory.AmmoRegistry = {}
+OrdnanceFactory.AmmoRegistry         = {}
 
 --------------------------------------------------------------------
 --- Defaults that differ for ammo-launched ordnance.
@@ -115,8 +115,8 @@ end
 --------------------------------------------------------------------
 function OrdnanceFactory.RegisterAmmo(bulletFullType, overrides)
     if not bulletFullType then return end
-    local base   = mergeDefaults(OrdnanceFactory.Defaults, OrdnanceFactory.AmmoDefaultOverrides)
-    local params = mergeDefaults(base, overrides)
+    local base                                   = mergeDefaults(OrdnanceFactory.Defaults, OrdnanceFactory.AmmoDefaultOverrides)
+    local params                                 = mergeDefaults(base, overrides)
     OrdnanceFactory.AmmoRegistry[bulletFullType] = params
 end
 

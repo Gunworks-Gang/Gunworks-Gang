@@ -18,34 +18,8 @@ ExplosivesSystems.BOUNCE_MIN_VELOCITY     = 0.004
 ExplosivesSystems.EDGE_TOL                = 0.15
 ExplosivesSystems.LOW_WALL_Z_THRESHOLD    = 0.25
 ExplosivesSystems.MIN_WORLD_Z             = -32
-
--- The real world-space gravity implied by GRAVITY/Z_STEP under the tick integrator below
--- (continuous-time limit; empirically confirmed to within ~4% at 60fps via the
--- semi-implicit Euler step this loop uses). Launch-velocity estimates MUST derive from
--- this, not from an independently-chosen flight duration -- using a mismatched implied
--- gravity is what caused short throws to wildly overshoot in an earlier version of this
--- seeding formula.
 ExplosivesSystems.GRAVITY_WORLD_Z         = ExplosivesSystems.GRAVITY * ExplosivesSystems.Z_STEP * 3600
 
---- Predict how far a UNIT horizontal internal velocity would carry a projectile, by the
---- time it reaches z<=0, launched with vertical internal velocity `vzInternal` from local
---- height `startZ` -- using the exact same per-tick formulas as updateOrdnance, at a
---- nominal 60fps tick rate.
----
---- startZ MUST match the real spawn height (originZ - destZ, i.e. heightOffset for a
---- same-tier throw). The real flight spawns heightOffset above the floor and has to fall
---- that far before updateOrdnance calls it landed -- it does NOT just return to its own
---- launch height. Leaving startZ at 0 makes this prediction land early, so the real
---- ballistic flight -- still carrying residual (drag-decayed) horizontal velocity while it
---- covers that extra drop -- travels further than `distance` and overshoots past the
---- intended landing point.
----
---- Horizontal and vertical motion never interact in that integrator: nothing in the x/y
---- update reads velocityZ or z, and the landing test only reads z. So landing TIME
---- depends only on vzInternal and startZ, and for that fixed time, horizontal distance is
---- exactly linear in horizontal velocity (pure geometric drag decay + linear accumulation,
---- no cross terms). That linearity is what makes a single simulation an EXACT correction
---- factor rather than an approximation -- see its use in doSpawnOrdnance.
 function ExplosivesSystems.predictUnitHorizontalRange(vzInternal, startZ)
     local velocityX = 1.0
     local velocityZ = vzInternal
@@ -61,19 +35,9 @@ function ExplosivesSystems.predictUnitHorizontalRange(vzInternal, startZ)
     return x
 end
 
---- Find the floor an ordnance would land on in a given tile column.
---- Scans downward from startZ and returns the first square that has a floor.
----
---- A nil square means the chunk is not loaded, NOT that there is no floor -- bail out
---- rather than descending through it, or ordnance falls into the void at chunk edges.
----
---- Returns square, floorZ  (or nil, nil if nothing was found).
 function ExplosivesSystems.resolveFloorColumn(tileX, tileY, startZ)
     local minZ = (getMinimumWorldLevel and getMinimumWorldLevel()) or ExplosivesSystems.MIN_WORLD_Z
     local maxZ = (getMaximumWorldLevel and getMaximumWorldLevel()) or 8
-
-    -- A tall arc can peak above the top of the world. Starting the scan up there would
-    -- hit the nil bail below and abandon a perfectly good floor further down.
     local checkZ = math.min(startZ, maxZ)
 
     while checkZ >= minZ do
@@ -205,75 +169,37 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         distance    = maxDist
     end
 
-    local throwSpeed = math.max(1, params.throwSpeed or 12)
-    local arcFactor  = params.arcFactor or 0.12
-    local maxArc     = params.maxArc or 1.5
-    local arcHeight  = math.min(maxArc, distance * arcFactor)
+    local throwSpeed  = math.max(1, params.throwSpeed or 12)
+    local arcFactor   = params.arcFactor or 0.12
+    local maxArc      = params.maxArc or 1.5
+    local arcHeight   = math.min(maxArc, distance * arcFactor)
 
-    local dirX       = (distance > 0.01) and (dx / distance) or 0
-    local dirY       = (distance > 0.01) and (dy / distance) or 0
+    local dirX        = (distance > 0.01) and (dx / distance) or 0
+    local dirY        = (distance > 0.01) and (dy / distance) or 0
 
-    -- Seed a launch velocity that lands EXACTLY on `distance` (drag included, not just
-    -- an idealized no-drag estimate), peaking at `arcHeight`, then hand the whole flight
-    -- to the ballistic integrator in updateOrdnance below -- exactly like a Hot Brass
-    -- casing. destX/destY/distance only ever inform this one-time launch estimate;
-    -- nothing afterward keeps steering the ordnance toward that point. There is no
-    -- scripted "guided" phase and therefore no handoff for it to glitch on.
-    --
-    -- vz0 is solved from arcHeight via the REAL simulated gravity (GRAVITY_WORLD_Z), not
-    -- from an assumed flight duration -- deriving it from distance/throwSpeed instead
-    -- implies whatever gravity makes that duration work out, almost never matching the
-    -- simulator's actual gravity.
-    --
-    -- hSpeed is then solved EXACTLY against drag: predictUnitHorizontalRange simulates a
-    -- unit horizontal launch at this same vz0 and reports how far it travels before
-    -- landing. Because horizontal and vertical motion never interact in the integrator,
-    -- that one simulation gives the precise scale factor needed to land on `distance` --
-    -- not an approximation, so there is no residual over/undershoot to compensate for
-    -- with a fudge factor.
-    local XY_CONV    = ExplosivesSystems.XY_STEP * 60
-    local Z_CONV     = ExplosivesSystems.Z_STEP * 60
-    local gWorld     = ExplosivesSystems.GRAVITY_WORLD_Z
-    local vz0World   = math.sqrt(math.max(0, 2.0 * gWorld * arcHeight))
+    local XY_CONV     = ExplosivesSystems.XY_STEP * 60
+    local Z_CONV      = ExplosivesSystems.Z_STEP * 60
+    local gWorld      = ExplosivesSystems.GRAVITY_WORLD_Z
+    local vz0World    = math.sqrt(math.max(0, 2.0 * gWorld * arcHeight))
     local vz0Internal = vz0World / Z_CONV
 
-    -- Real spawn height above the landing plane -- see predictUnitHorizontalRange's
-    -- docstring. Clamped to 0 for throws aimed at/above origin height (destZ >= originZ):
-    -- that uphill case isn't modelled here, so this just keeps prior (unfixed) behaviour
-    -- for it rather than guessing.
     local startZLocal = math.max(0, originZ - destZ)
-    local unitRange  = ExplosivesSystems.predictUnitHorizontalRange(vz0Internal, startZLocal)
+    local unitRange   = ExplosivesSystems.predictUnitHorizontalRange(vz0Internal, startZLocal)
     local hSpeedNeeded
     if unitRange > 0.001 then
         hSpeedNeeded = (distance / unitRange) * XY_CONV
     else
-        -- vz0 is ~0 (point-blank / zero-arc throw): it lands within a tick regardless of
-        -- horizontal speed, so there's nothing meaningful to solve against. Fall back to
-        -- a direct speed request.
         hSpeedNeeded = distance / 0.02
     end
-    -- throwSpeed still caps the result: if reaching `distance` at this arc height would
-    -- need more horizontal speed than this weapon can muster, it falls short rather than
-    -- being forced there regardless of the registered throwSpeed.
     local hSpeedWorld = math.min(hSpeedNeeded, throwSpeed)
+    local forceMul    = (params.throwForce or 8) / 8
 
-    -- throwForce is an overall launch-power multiplier, applied uniformly to horizontal
-    -- AND vertical speed after the arc shape (arcHeight/hSpeedWorld) is solved -- it
-    -- scales how hard the throw is without changing the arc's shape. 8 is neutral (1.0x):
-    -- every current registration explicitly sets throwForce=8, so wiring this up changes
-    -- nothing until a registration's throwForce is tuned away from that baseline. Unlike
-    -- throwSpeed (a cap on the aim-precision estimate), this can push the actual speed
-    -- above throwSpeed -- that's intentional, force and aim-speed are different knobs.
-    local forceMul = (params.throwForce or 8) / 8
+    local seedVelX    = dirX * hSpeedWorld / XY_CONV * forceMul
+    local seedVelY    = dirY * hSpeedWorld / XY_CONV * forceMul
+    local seedVelZ    = vz0World / Z_CONV * forceMul
 
-    local seedVelX = dirX * hSpeedWorld / XY_CONV * forceMul
-    local seedVelY = dirY * hSpeedWorld / XY_CONV * forceMul
-    local seedVelZ = vz0World / Z_CONV * forceMul
-
-    local sq         = getCell():getGridSquare(math.floor(originX), math.floor(originY), math.floor(originZ))
+    local sq          = getCell():getGridSquare(math.floor(originX), math.floor(originY), math.floor(originZ))
     if not sq then
-        -- Fractional originZ on a staircase, or a forward offset that pushed the origin
-        -- into an unloaded tile. Fall back to the thrower's own square before giving up.
         sq = player and player:getCurrentSquare() or nil
         if not sq then return end
     end
@@ -397,31 +323,30 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
         return false
     end
 
-    -- Captured before this tick's integration, for the ceiling-check "rising" gate below.
     local prevWorldZ = ord.prevWorldZ or (ord.square:getZ() + ord.z)
 
-    ord.velocityZ  = ord.velocityZ - (ExplosivesSystems.GRAVITY * scale)
+    ord.velocityZ    = ord.velocityZ - (ExplosivesSystems.GRAVITY * scale)
 
-    local oldEdgeX = ord.x
-    local oldEdgeY = ord.y
+    local oldEdgeX   = ord.x
+    local oldEdgeY   = ord.y
 
-    ord.x          = ord.x + (ord.velocityX * ExplosivesSystems.XY_STEP * scale)
-    ord.y          = ord.y + (ord.velocityY * ExplosivesSystems.XY_STEP * scale)
-    ord.z          = ord.z + (ord.velocityZ * ExplosivesSystems.Z_STEP * scale)
+    ord.x            = ord.x + (ord.velocityX * ExplosivesSystems.XY_STEP * scale)
+    ord.y            = ord.y + (ord.velocityY * ExplosivesSystems.XY_STEP * scale)
+    ord.z            = ord.z + (ord.velocityZ * ExplosivesSystems.Z_STEP * scale)
 
-    local dragXY   = math.pow(ExplosivesSystems.DRAG_XY, scale)
-    local dragZ    = math.pow(ExplosivesSystems.DRAG_Z, scale)
-    ord.velocityX  = ord.velocityX * dragXY
-    ord.velocityY  = ord.velocityY * dragXY
-    ord.velocityZ  = ord.velocityZ * dragZ
+    local dragXY     = math.pow(ExplosivesSystems.DRAG_XY, scale)
+    local dragZ      = math.pow(ExplosivesSystems.DRAG_Z, scale)
+    ord.velocityX    = ord.velocityX * dragXY
+    ord.velocityY    = ord.velocityY * dragXY
+    ord.velocityZ    = ord.velocityZ * dragZ
 
-    local sx       = ord.square:getX()
-    local sy       = ord.square:getY()
-    local sz       = ord.square:getZ()
-    local EDGE_TOL = ExplosivesSystems.EDGE_TOL
+    local sx         = ord.square:getX()
+    local sy         = ord.square:getY()
+    local sz         = ord.square:getZ()
+    local EDGE_TOL   = ExplosivesSystems.EDGE_TOL
 
-    local blockX   = false
-    local blockY   = false
+    local blockX     = false
+    local blockY     = false
 
     if ord.velocityX > 0 and oldEdgeX < (1.0 - EDGE_TOL) and ord.x >= (1.0 - EDGE_TOL) then
         local neighbor = getCell():getGridSquare(sx + 1, sy, sz)
@@ -480,10 +405,6 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
 
     local worldZ = sz + ord.z
 
-    -- Gated on RISING only: after a multi-tier drop the floor-scan rebase below can push
-    -- local z above 1.0 purely from the reparent math (new parent tier is several levels
-    -- lower), even though the ordnance is clearly still falling. Testing that as "hit a
-    -- ceiling" would bounce it back up mid-fall -- a phantom bounce, not a real one.
     local rising = worldZ > prevWorldZ
     if rising and ord.z >= 1.0 then
         local aboveSq = getCell():getGridSquare(targetTileX, targetTileY, sz + 1)
