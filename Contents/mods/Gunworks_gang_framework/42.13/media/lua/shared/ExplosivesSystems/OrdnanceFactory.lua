@@ -5,7 +5,7 @@ local OrdnanceFactory        = {}
 --------------------------------------------------------------------
 OrdnanceFactory.Defaults     = {
     -- Throw / flight
-    throwForce          = 8,    -- initial velocity multiplier (scales hSpeed)
+    throwForce          = 8,    -- overall launch speed multiplier, 8 = neutral (1.0x); see doSpawnOrdnance
     maxThrowDist        = 20,   -- max throw / launch distance in cells
     worldModel          = nil,  -- world item shown in flight (nil = use weapon fullType)
     forwardOffset       = 0.50, -- spawn origin offset from player facing
