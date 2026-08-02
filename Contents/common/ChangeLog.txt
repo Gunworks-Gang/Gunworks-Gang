@@ -1,5 +1,4 @@
 [22/June/2026 ]
 B42.19:
-- Rework Bayonet condition calculation, this will now take character maintenance level into condideration and will be based on weapon lower chances instead of random factor.
-- Integrated bayonet weapons will also degrade the main weapon when used.
+- Rework the arcing of grenades and not it takes into account Z levels
 [ ------ ]
