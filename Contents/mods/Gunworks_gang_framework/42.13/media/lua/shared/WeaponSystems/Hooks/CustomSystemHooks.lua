@@ -798,7 +798,7 @@ Events.OnGameStart.Add(function()
     local Original_Attack_Hook = ISReloadWeaponAction.attackHook
 
     ISReloadWeaponAction.RAFattackHook = function(character, chargeDelta, weapon)
-        if weapon:isRanged() and not character:isDoShove() then
+        if weapon:isRanged() and not character:isDoShove() and RateOfFire.IsWeaponRegistered(weapon) then
             local canFire, intervalMs = RateOfFire.canFire(character, weapon)
             if not canFire then return end
 

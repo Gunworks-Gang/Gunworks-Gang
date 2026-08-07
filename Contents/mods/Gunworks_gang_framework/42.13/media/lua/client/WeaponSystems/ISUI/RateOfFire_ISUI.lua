@@ -1,6 +1,7 @@
 require('ISUI/ISInventoryPaneContextMenu')
 local GunworksKeybinds = require('WeaponSystems/ISUI/GunworksKeybinds')
 local RateOfFire_ClientSide = require('WeaponSystems/Client')
+local RateOfFire = require('WeaponSystems/Utils/RateOfFire')
 local RateOfFire_ISUI = {}
 
 local KEYBIND_SWITCH_FIRERATE = "Gunworks_SwitchFirerate"
@@ -10,25 +11,30 @@ local function DisplayMessage(character, message)
     character:Say(message, 0.55, 0.55, 0.55, UIFont.Dialogue, 0, "default")
 end
 
-function RateOfFire_ISUI.NormalizeFiremode(firemode)
+--- Normalizes a raw fire mode to its "Real" variant, but only for weapons registered with the
+--- RPM system. Unregistered weapons stay on vanilla fire modes entirely (opt-out).
+---@param firemode string
+---@param weapon HandWeapon
+function RateOfFire_ISUI.NormalizeFiremode(firemode, weapon)
     if not firemode then return nil end
+    if not RateOfFire.IsWeaponRegistered(weapon) then return firemode end
     if RateOfFire_ClientSide.isFiremodeStandard(firemode) then
         return "Real" .. firemode
     end
     return firemode
 end
 
+--- Expects an already-normalized firemode (see NormalizeFiremode).
 function RateOfFire_ISUI.GetFiremodeLabel(firemode)
-    local normalized = RateOfFire_ISUI.NormalizeFiremode(firemode)
-    if not normalized then return nil end
+    if not firemode then return nil end
 
-    local translated = getTextOrNull("ContextMenu_FireMode_" .. normalized)
+    local translated = getTextOrNull("ContextMenu_FireMode_" .. firemode)
     if translated then
         return translated
     end
 
-    local modeKey = RateOfFire_ClientSide.getFiremodeMenuKey(normalized)
-    return getTextOrNull("ContextMenu_FireMode_" .. modeKey) or modeKey or normalized
+    local modeKey = RateOfFire_ClientSide.getFiremodeMenuKey(firemode)
+    return getTextOrNull("ContextMenu_FireMode_" .. modeKey) or modeKey or firemode
 end
 
 function RateOfFire_ISUI.GetFiremodeEntries(weapon)
@@ -42,12 +48,12 @@ function RateOfFire_ISUI.GetFiremodeEntries(weapon)
         return entries
     end
 
-    local currentMode = RateOfFire_ISUI.NormalizeFiremode(weapon:getFireMode())
+    local currentMode = RateOfFire_ISUI.NormalizeFiremode(weapon:getFireMode(), weapon)
     local currentModeKey = currentMode and RateOfFire_ClientSide.getFiremodeMenuKey(currentMode) or nil
     local seen = {}
 
     for i = 0, possibilities:size() - 1 do
-        local firemode = RateOfFire_ISUI.NormalizeFiremode(possibilities:get(i))
+        local firemode = RateOfFire_ISUI.NormalizeFiremode(possibilities:get(i), weapon)
         local modeKey = firemode and RateOfFire_ClientSide.getFiremodeMenuKey(firemode) or nil
 
         if firemode and modeKey and not seen[modeKey] then
@@ -83,7 +89,7 @@ function RateOfFire_ISUI.ApplyFiremode(playerObj, weapon, newfiremode)
         return false
     end
 
-    newfiremode = RateOfFire_ISUI.NormalizeFiremode(newfiremode)
+    newfiremode = RateOfFire_ISUI.NormalizeFiremode(newfiremode, weapon)
     if weapon:getFireMode() == newfiremode then
         return false
     end
@@ -106,7 +112,7 @@ function RateOfFire_ISUI.CycleFiremode(playerObj, weapon)
         return false
     end
 
-    local currentMode = RateOfFire_ISUI.NormalizeFiremode(weapon:getFireMode())
+    local currentMode = RateOfFire_ISUI.NormalizeFiremode(weapon:getFireMode(), weapon)
     local currentModeKey = currentMode and RateOfFire_ClientSide.getFiremodeMenuKey(currentMode) or nil
     local nextEntry = entries[1]
 

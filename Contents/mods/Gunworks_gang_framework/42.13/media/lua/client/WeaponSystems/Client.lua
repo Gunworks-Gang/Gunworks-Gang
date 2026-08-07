@@ -35,6 +35,7 @@ end
 
 function Client.FiremodeSwitchCheck(playerObj, weapon)
     if not playerObj or not weapon or not instanceof(weapon, "HandWeapon") or not weapon:isRanged() then return end
+    if not RateOfFire.IsWeaponRegistered(weapon) then return end
     local newfiremode = weapon:getFireMode()
     if Client.isFiremodeStandard(newfiremode) then
         newfiremode = "Real" .. newfiremode

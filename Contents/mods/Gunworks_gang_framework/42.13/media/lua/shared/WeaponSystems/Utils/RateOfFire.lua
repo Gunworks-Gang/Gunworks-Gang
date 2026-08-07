@@ -88,6 +88,15 @@ end
 -- Query helpers
 -------------------------------------------------
 
+--- Whether a weapon has been registered with the RPM system.
+--- Unregistered weapons are left on vanilla fire mode/timing entirely (opt-out).
+---@param weapon HandWeapon
+---@return boolean
+function RateOfFire.IsWeaponRegistered(weapon)
+    if not weapon then return false end
+    return RateOfFire.WeaponProfiles[weapon:getFullType()] ~= nil
+end
+
 --- Returns the spread profile for the weapon, or nil if spread is not enabled.
 ---@return table|nil  { initialSpread, sustainedSpread, maxSpread }
 function RateOfFire.getSpreadProfile(weapon)
