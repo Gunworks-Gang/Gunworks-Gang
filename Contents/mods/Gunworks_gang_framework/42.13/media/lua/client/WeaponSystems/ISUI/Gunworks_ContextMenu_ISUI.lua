@@ -499,14 +499,17 @@ UniversalAttachmentContext.installOutcome = function(weapon, outcomePart, generi
         ISInventoryPaneContextMenu.equipWeapon(screwdriver, true, false, player:getPlayerNum())
     end
 
-    local action = ISUpgradeWeapon:new(player, weapon, genericItem, outcomeFullType)
-    ISTimedActionQueue.add(action)
+    ISTimedActionQueue.add(ISUpgradeWeapon:new(player, weapon, genericItem, outcomeFullType))
 end
 
 UniversalAttachmentContext.removeOutcome = function(player, weapon, partType, genericItemType)
     if not player or not weapon or not partType then return end
 
     ISInventoryPaneContextMenu.transferIfNeeded(player, weapon)
+    local screwdriver = player:getInventory():getFirstTagEvalRecurse(ItemTag.SCREWDRIVER, predicateNotBroken)
+    if screwdriver then
+        ISInventoryPaneContextMenu.equipWeapon(screwdriver, true, false, player:getPlayerNum())
+    end
     ISTimedActionQueue.add(ISRemoveWeaponUpgrade:new(player, weapon, partType))
 end
 
