@@ -214,6 +214,18 @@ function Magazine.ClearMagazineType(gun)
     modData.MagazineType = nil
 end
 
+---@param weapon HandWeapon
+function Magazine.RestoreMagazineType(weapon)
+    if not weapon then return end
+    local magType = Magazine.GetMagazineType(weapon)
+    if not magType or magType == "" then return end
+    if weapon:getMagazineType() ~= magType then
+        local mag = instanceItem(magType)
+        weapon:setMagazineType(magType)
+        weapon:setMaxAmmo(mag:getMaxAmmo())
+    end
+end
+
 ---------------------------------------------------------------
 -- Visual Magazine System
 --
@@ -233,7 +245,7 @@ function Magazine.manageMagazineAttachment(weapon, magTypeOverride)
     if not magType or magType == "" then return end
 
     if weapon:isContainsClip() then
-        local currentClip = weapon:getWeaponPart("Clip")
+        local currentClip = weapon:getWeaponPart("Clip") or weapon:getWeaponPart("Magazine")
         if currentClip and currentClip:getFullType() ~= magType then
             weapon:detachWeaponPart(currentClip)
             currentClip = nil
@@ -245,7 +257,7 @@ function Magazine.manageMagazineAttachment(weapon, magTypeOverride)
             end
         end
     else
-        local clipPart = weapon:getWeaponPart("Clip")
+        local clipPart = weapon:getWeaponPart("Clip") or weapon:getWeaponPart("Magazine")
         if clipPart then
             weapon:detachWeaponPart(clipPart)
         end
@@ -257,7 +269,7 @@ function Magazine.attachMagazineVisual(weapon, magTypeOverride)
     if not weapon then return end
     local magType = magTypeOverride or weapon:getMagazineType()
     if not magType or magType == "" then return end
-    local currentClip = weapon:getWeaponPart("Clip")
+    local currentClip = weapon:getWeaponPart("Clip") or weapon:getWeaponPart("Magazine")
     if currentClip and currentClip:getFullType() ~= magType then
         weapon:detachWeaponPart(currentClip)
         currentClip = nil
@@ -272,7 +284,7 @@ end
 -- Force-detach the visual Clip part from the weapon model (ignores clip state).
 function Magazine.detachMagazineVisual(weapon)
     if not weapon then return end
-    local clipPart = weapon:getWeaponPart("Clip")
+    local clipPart = weapon:getWeaponPart("Clip") or weapon:getWeaponPart("Magazine")
     if clipPart then
         weapon:detachWeaponPart(clipPart)
     end

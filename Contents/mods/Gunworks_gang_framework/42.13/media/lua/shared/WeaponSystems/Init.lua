@@ -3,6 +3,7 @@ require("WeaponSystems/Utils/CustomStatsAttachments")
 local Bayonet      = require("WeaponSystems/Utils/Bayonet")
 local FoldingStock = require("WeaponSystems/Utils/FoldingStock")
 local FoldingBipod = require("WeaponSystems/Utils/FoldingBipod")
+local Magazine     = require("WeaponSystems/Utils/Magazine")
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 local Underbarrel  = require("WeaponSystems/Utils/Underbarrel")
 
@@ -13,6 +14,7 @@ local function restoreContainer(container)
         local item = items:get(i)
 
         if instanceof(item, "HandWeapon") and item:isRanged() then
+            Magazine.RestoreMagazineType(item)
             Underbarrel.RestoreOnLoad(item)
             FoldingStock.RestoreFoldedStockState(item)
             FoldingBipod.RestoreDeployedBipodState(item)
@@ -53,6 +55,7 @@ local function restoreEquippedWeapon(playerObj, weapon)
     if not playerObj or not weapon then return end
     if instanceof(weapon, "HandWeapon") and weapon:isRanged() then
         if consumeSyncEquipRestoreSkip(weapon) then return end
+        Magazine.RestoreMagazineType(weapon)
         Underbarrel.RestoreOnLoad(weapon)
         FoldingStock.RestoreFoldedStockState(weapon)
         FoldingBipod.RestoreDeployedBipodState(weapon)
