@@ -16,6 +16,10 @@ local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusives")
 local RequiredAttachment = require("WeaponSystems/Utils/RequiredAttachment")
 
+local function predicateNotBroken(item)
+    return not item:isBroken()
+end
+
 -------------------------------------------------
 -- Foldable Stock Context Menu
 -------------------------------------------------
@@ -489,6 +493,12 @@ UniversalAttachmentContext.installOutcome = function(weapon, outcomePart, generi
 
     ISInventoryPaneContextMenu.transferIfNeeded(player, weapon)
     ISInventoryPaneContextMenu.transferIfNeeded(player, genericItem)
+
+    ISInventoryPaneContextMenu.equipWeapon(genericItem, false, false, player:getPlayerNum())
+    local screwdriver = player:getInventory():getFirstTagEvalRecurse(ItemTag.SCREWDRIVER, predicateNotBroken)
+    if screwdriver then
+        ISInventoryPaneContextMenu.equipWeapon(screwdriver, true, false, player:getPlayerNum())
+    end
 
     local action = ISUpgradeWeapon:new(player, weapon, genericItem, outcomeFullType)
     ISTimedActionQueue.add(action)
