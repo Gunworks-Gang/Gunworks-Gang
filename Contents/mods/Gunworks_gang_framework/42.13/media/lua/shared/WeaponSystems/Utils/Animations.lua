@@ -5,12 +5,26 @@ local Animations = {}
 -------------------------------------------------
 Animations.WeaponsWithAnimatedParts = {}
 
+-------------------------------------------------
+-- Cycle timing (how long the action stays racked open before it auto-closes)
+-------------------------------------------------
+local TICKS_PER_SECOND = 60
+Animations.DEFAULT_CYCLE_TICKS = 10 -- default: 10/60 seconds, matches previous hardcoded behavior
+
+local function GetCycleSeconds(fullType)
+    local entry = Animations.WeaponsWithAnimatedParts[fullType]
+    local ticks = (entry and entry.cycleTicks) or Animations.DEFAULT_CYCLE_TICKS
+    return ticks / TICKS_PER_SECOND
+end
+
 --- Register a single weapon with animated moving parts.
 ---@param fullType string  fullType e.g. "Base.M16A3"
 ---@param entry table      { attachments = { open = "Part.Open", locked = "Part.Locked" } }
 ---                     OR { MultipleAttachments = { Slide = { open = "Part.Open", locked = "Part.Locked" } } }
 ---                     OR { MultipleAttachments = { Slide = { partType = "Slide", variants = { ["Part.A"] = { open = "Part.OpenA", locked = "Part.LockedA" }, ["Part.B"] = { open = "Part.OpenB", locked = "Part.LockedB" } } } } }
 ---                     OR { models     = { open = "Sprite_Open", locked = "Sprite_Locked" } }
+---                     Optional: `cycleTicks` (number of ticks at 60 ticks/second) controls how long the
+---                     action stays racked open before auto-closing. Defaults to Animations.DEFAULT_CYCLE_TICKS (10, i.e. 10/60 seconds).
 function Animations.RegisterWeaponWithAnimatedParts(fullType, entry)
     Animations.WeaponsWithAnimatedParts[fullType] = entry
 end
@@ -128,7 +142,7 @@ function Animations.lockActionOpen(player, weapon)
     if not weapon:isRoundChambered() then return end
 
     Animations.CallAnimate(player, weapon, true)
-    local seconds = 10 / 60
+    local seconds = GetCycleSeconds(weapon:getFullType())
     Animations.scheduleActionClose(seconds, Animations.releaseActionLock, player, weapon)
 end
 

@@ -237,6 +237,20 @@ Parameters:
 - `entry`: table that describes the two visual states. Use either `attachments` or `models`.
 - `entriesTable`: table in the form `{ [fullType] = entry }`.
 
+Optional field:
+
+- `cycleTicks`: how long, in ticks (60 ticks = 1 second), the action stays racked open before it auto-closes. Defaults to `Animations.DEFAULT_CYCLE_TICKS` (`10`, i.e. 10/60 seconds) when omitted.
+
+```lua
+{
+	attachments = {
+		open = "MyMod.Slide_Open",
+		locked = "MyMod.Slide_Locked",
+	},
+	cycleTicks = 15, -- optional, defaults to 10 (10/60s)
+}
+```
+
 Attachment shape:
 
 ```lua
