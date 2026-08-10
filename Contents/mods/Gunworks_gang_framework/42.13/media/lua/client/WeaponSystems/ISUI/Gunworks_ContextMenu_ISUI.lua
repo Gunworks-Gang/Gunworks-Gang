@@ -246,7 +246,6 @@ local function addSwapAttachmentOption(playerObj, item, context)
     local partnerType, _, currentPart = DynamicAttachment.GetSwappableAttachment(item)
     if not partnerType or not currentPart then return end
 
-    -- Build a display name from the partner item's script
     local partnerScript = ScriptManager.instance:getItem(partnerType)
     local partnerName = partnerScript and partnerScript:getDisplayName() or partnerType
     local actionString = getText("IGUI_SwapAttachment", partnerName)
@@ -511,10 +510,6 @@ UniversalAttachmentContext.removeOutcome = function(player, weapon, partType, ge
     ISTimedActionQueue.add(ISRemoveWeaponUpgrade:new(player, weapon, partType))
 end
 
--- Fetch the vanilla "Add Weapon Upgrade" submenu if it already exists this
--- menu-build pass, otherwise build it the same way vanilla does. Only called
--- once we know we have at least one outcome to add, so an empty heading is
--- never created.
 local function getOrCreateAddWeaponUpgradeSubMenu(context, items)
     local optionName = getText("ContextMenu_Add_Weapon_Upgrade")
     local option = context:getOptionFromName(optionName)
@@ -903,7 +898,6 @@ ISInventoryPaneContextMenu.doBulletMenu = function(playerObj, weapon, context)
         local typeList = Ammo.GetBulletTypesForFamily(Ammo.ItemAmmoFamily[weapon:getFullType()])
         local freeSpace = weapon:getMaxAmmo() - weapon:getCurrentAmmoCount()
 
-        -- Build entries and count how many have ammo available
         local entries = {}
         local availableCount = 0
         for _, typeName in ipairs(typeList) do
