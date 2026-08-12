@@ -19,7 +19,7 @@ function Client.isFiremodeStandard(firemode)
     end
 end
 
-function Client.OnPlayerUpdateFiremode(playerObj, weapon, newfiremode)
+function Client.OnPlayerUpdateFiremode(playerObj, weapon, newfiremode, rpmStage)
     if not isClient() then
         RateOfFire.RecoilDelayAdjuster(playerObj, weapon)
         return
@@ -29,7 +29,8 @@ function Client.OnPlayerUpdateFiremode(playerObj, weapon, newfiremode)
 
     sendClientCommand(playerObj, "SWMG", "firemode", {
         itemId = weapon:getID(),
-        firemode = newfiremode
+        firemode = newfiremode,
+        rpmStage = rpmStage
     })
 end
 
@@ -106,6 +107,7 @@ function Client.OnServerCommand(module, command, args)
         if item and instanceof(item, "HandWeapon") then
             if args.firemode then item:setFireMode(args.firemode) end
             if args.recoilDelay then item:setRecoilDelay(args.recoilDelay) end
+            if args.rpmStage then RateOfFire.SetRpmStageIndex(item, args.rpmStage) end
         end
     elseif command == "reloadSprite" then
         -- Reload-animation framework: apply a reloading player's mid-reload sprite swap

@@ -12,6 +12,8 @@ RateOfFire.BURST_DELAY_MS           = 500
 RateOfFire.burstState               = {}
 RateOfFire.burstCooldown            = {}
 
+RateOfFire.RPM_STAGE_MODDATA_KEY    = "GW_RpmStage"
+
 RateOfFire.spreadState              = {}
 RateOfFire.SPREAD_INITIAL_DEFAULT   = 0.0
 RateOfFire.SPREAD_SUSTAINED_DEFAULT = 0.1
@@ -88,17 +90,11 @@ end
 -- Query helpers
 -------------------------------------------------
 
---- Whether a weapon has been registered with the RPM system.
---- Unregistered weapons are left on vanilla fire mode/timing entirely (opt-out).
----@param weapon HandWeapon
----@return boolean
 function RateOfFire.IsWeaponRegistered(weapon)
     if not weapon then return false end
     return RateOfFire.WeaponProfiles[weapon:getFullType()] ~= nil
 end
 
---- Returns the spread profile for the weapon, or nil if spread is not enabled.
----@return table|nil  { initialSpread, sustainedSpread, maxSpread }
 function RateOfFire.getSpreadProfile(weapon)
     if not weapon then return nil end
     local profile = RateOfFire.WeaponProfiles[weapon:getFullType()]
@@ -141,11 +137,6 @@ function RateOfFire.getSpreadProfile(weapon)
     return sp
 end
 
---- Returns the combined spread multiplier from ENDURANCE and TIRED moodles.
---- Both moodles stack multiplicatively (mirrors vanilla melee damage penalty).
---- initialSpread is intentionally unaffected — only sustainedSpread and maxSpread are scaled.
----@param player any  player object
----@return number     multiplier >= 1.0
 function RateOfFire.getMoodleSpreadMult(player)
     if not player then return 1.0 end
     local moodles = player:getMoodles()
@@ -155,13 +146,55 @@ function RateOfFire.getMoodleSpreadMult(player)
     return enduranceMult * tiredMult
 end
 
+function RateOfFire.GetRpmStages(weapon)
+    if not weapon then return nil end
+    local profile = RateOfFire.WeaponProfiles[weapon:getFullType()]
+    if not profile or type(profile.rpm) ~= "table" then return nil end
+    return profile.rpm
+end
+
+function RateOfFire.HasRpmStages(weapon)
+    local stages = RateOfFire.GetRpmStages(weapon)
+    return stages ~= nil and #stages > 1
+end
+
+function RateOfFire.GetRpmStageIndex(weapon)
+    local stages = RateOfFire.GetRpmStages(weapon)
+    if not stages or #stages == 0 then return 1 end
+
+    local index = weapon:getModData()[RateOfFire.RPM_STAGE_MODDATA_KEY]
+    if type(index) ~= "number" or index < 1 or index > #stages then
+        return 1
+    end
+    return index
+end
+
+function RateOfFire.SetRpmStageIndex(weapon, index)
+    if not weapon or not index then return end
+    local stages = RateOfFire.GetRpmStages(weapon)
+    if not stages or #stages == 0 then return end
+
+    index = math.max(1, math.min(index, #stages))
+    weapon:getModData()[RateOfFire.RPM_STAGE_MODDATA_KEY] = index
+end
+
+function RateOfFire.GetRpmForStage(weapon, stageIndex)
+    local stages = RateOfFire.GetRpmStages(weapon)
+    if not stages then return nil end
+    return stages[stageIndex]
+end
+
 function RateOfFire.getWeaponRPM(weapon)
     if not weapon then return RateOfFire.DEFAULT_RPM end
 
     local profile = RateOfFire.WeaponProfiles[weapon:getFullType()]
-    if profile and profile.rpm then return profile.rpm end
+    if not profile or not profile.rpm then return RateOfFire.DEFAULT_RPM end
 
-    return RateOfFire.DEFAULT_RPM
+    if type(profile.rpm) == "table" then
+        return profile.rpm[RateOfFire.GetRpmStageIndex(weapon)] or RateOfFire.DEFAULT_RPM
+    end
+
+    return profile.rpm
 end
 
 function RateOfFire.canFire(player, weapon)
