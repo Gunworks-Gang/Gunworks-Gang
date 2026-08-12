@@ -24,17 +24,20 @@ function RateOfFire_ISUI.NormalizeFiremode(firemode, weapon)
     return firemode
 end
 
---- Expects an already-normalized firemode (see NormalizeFiremode).
-function RateOfFire_ISUI.GetFiremodeLabel(firemode)
+function RateOfFire_ISUI.GetFiremodeLabel(firemode, rpm)
     if not firemode then return nil end
 
-    local translated = getTextOrNull("ContextMenu_FireMode_" .. firemode)
-    if translated then
-        return translated
+    local label = getTextOrNull("ContextMenu_FireMode_" .. firemode)
+    if not label then
+        local modeKey = RateOfFire_ClientSide.getFiremodeMenuKey(firemode)
+        label = getTextOrNull("ContextMenu_FireMode_" .. modeKey) or modeKey or firemode
     end
 
-    local modeKey = RateOfFire_ClientSide.getFiremodeMenuKey(firemode)
-    return getTextOrNull("ContextMenu_FireMode_" .. modeKey) or modeKey or firemode
+    if rpm then
+        label = label .. " (" .. rpm .. " RPM)"
+    end
+
+    return label
 end
 
 function RateOfFire_ISUI.GetFiremodeEntries(weapon)
@@ -49,21 +52,39 @@ function RateOfFire_ISUI.GetFiremodeEntries(weapon)
     end
 
     local currentMode = RateOfFire_ISUI.NormalizeFiremode(weapon:getFireMode(), weapon)
-    local currentModeKey = currentMode and RateOfFire_ClientSide.getFiremodeMenuKey(currentMode) or nil
+    local currentRpmStage = RateOfFire.GetRpmStageIndex(weapon)
     local seen = {}
 
     for i = 0, possibilities:size() - 1 do
         local firemode = RateOfFire_ISUI.NormalizeFiremode(possibilities:get(i), weapon)
         local modeKey = firemode and RateOfFire_ClientSide.getFiremodeMenuKey(firemode) or nil
 
-        if firemode and modeKey and not seen[modeKey] then
-            seen[modeKey] = true
-            entries[#entries + 1] = {
-                mode = firemode,
-                modeKey = modeKey,
-                label = RateOfFire_ISUI.GetFiremodeLabel(firemode),
-                isCurrent = modeKey == currentModeKey,
-            }
+        if firemode and modeKey then
+            local rpmStages = firemode == "RealAuto" and RateOfFire.GetRpmStages(weapon) or nil
+
+            if rpmStages and #rpmStages > 1 then
+                for stageIndex, rpm in ipairs(rpmStages) do
+                    local seenKey = modeKey .. "#" .. stageIndex
+                    if not seen[seenKey] then
+                        seen[seenKey] = true
+                        entries[#entries + 1] = {
+                            mode = firemode,
+                            modeKey = modeKey,
+                            rpmStage = stageIndex,
+                            label = RateOfFire_ISUI.GetFiremodeLabel(firemode, rpm),
+                            isCurrent = firemode == currentMode and stageIndex == currentRpmStage,
+                        }
+                    end
+                end
+            elseif not seen[modeKey] then
+                seen[modeKey] = true
+                entries[#entries + 1] = {
+                    mode = firemode,
+                    modeKey = modeKey,
+                    label = RateOfFire_ISUI.GetFiremodeLabel(firemode),
+                    isCurrent = firemode == currentMode,
+                }
+            end
         end
     end
 
@@ -84,21 +105,28 @@ function RateOfFire_ISUI.HasMultipleFiremodes(weapon)
     return #RateOfFire_ISUI.GetFiremodeEntries(weapon) > 1
 end
 
-function RateOfFire_ISUI.ApplyFiremode(playerObj, weapon, newfiremode)
+function RateOfFire_ISUI.ApplyFiremode(playerObj, weapon, newfiremode, rpmStage)
     if not playerObj or not weapon or not newfiremode then
         return false
     end
 
     newfiremode = RateOfFire_ISUI.NormalizeFiremode(newfiremode, weapon)
-    if weapon:getFireMode() == newfiremode then
+
+    local firemodeChanged = weapon:getFireMode() ~= newfiremode
+    local rpmStageChanged = rpmStage ~= nil and RateOfFire.GetRpmStageIndex(weapon) ~= rpmStage
+    if not firemodeChanged and not rpmStageChanged then
         return false
     end
 
     weapon:setFireMode(newfiremode)
     playerObj:setFireMode(newfiremode)
-    RateOfFire_ClientSide.OnPlayerUpdateFiremode(playerObj, weapon, newfiremode)
+    if rpmStage then
+        RateOfFire.SetRpmStageIndex(weapon, rpmStage)
+    end
+    RateOfFire_ClientSide.OnPlayerUpdateFiremode(playerObj, weapon, newfiremode, rpmStage)
 
-    local label = RateOfFire_ISUI.GetFiremodeLabel(newfiremode)
+    local rpm = rpmStage and RateOfFire.GetRpmForStage(weapon, rpmStage) or nil
+    local label = RateOfFire_ISUI.GetFiremodeLabel(newfiremode, rpm)
     if label then
         DisplayMessage(playerObj, getText("ContextMenu_ChangeFireMode") .. ": " .. label)
     end
@@ -112,22 +140,20 @@ function RateOfFire_ISUI.CycleFiremode(playerObj, weapon)
         return false
     end
 
-    local currentMode = RateOfFire_ISUI.NormalizeFiremode(weapon:getFireMode(), weapon)
-    local currentModeKey = currentMode and RateOfFire_ClientSide.getFiremodeMenuKey(currentMode) or nil
-    local nextEntry = entries[1]
-
+    local currentIndex = 1
     for index, entry in ipairs(entries) do
-        if entry.modeKey == currentModeKey then
-            nextEntry = entries[(index % #entries) + 1]
+        if entry.isCurrent then
+            currentIndex = index
             break
         end
     end
 
-    return RateOfFire_ISUI.ApplyFiremode(playerObj, weapon, nextEntry.mode)
+    local nextEntry = entries[(currentIndex % #entries) + 1]
+    return RateOfFire_ISUI.ApplyFiremode(playerObj, weapon, nextEntry.mode, nextEntry.rpmStage)
 end
 
-ISInventoryPaneContextMenu.onChangefiremode = function(playerObj, weapon, newfiremode)
-    return RateOfFire_ISUI.ApplyFiremode(playerObj, weapon, newfiremode)
+ISInventoryPaneContextMenu.onChangefiremode = function(playerObj, weapon, newfiremode, rpmStage)
+    return RateOfFire_ISUI.ApplyFiremode(playerObj, weapon, newfiremode, rpmStage)
 end
 
 ISInventoryPaneContextMenu.doChangeFireModeMenu = function(playerObj, weapon, context)
@@ -140,7 +166,7 @@ ISInventoryPaneContextMenu.doChangeFireModeMenu = function(playerObj, weapon, co
 
     for _, entry in ipairs(entries) do
         subMenuFiremode:addOption(entry.label,
-            playerObj, ISInventoryPaneContextMenu.onChangefiremode, weapon, entry.mode)
+            playerObj, ISInventoryPaneContextMenu.onChangefiremode, weapon, entry.mode, entry.rpmStage)
     end
 end
 

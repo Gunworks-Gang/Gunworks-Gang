@@ -390,8 +390,8 @@ local function getFiremodeRadialTexture(entry)
         or getTexture("media/ui/GunworksRadial_ChangeFireMode.png")
 end
 
-local function onFiremodeSelected(character, weapon, firemode)
-    RateOfFireUI.ApplyFiremode(character, weapon, firemode)
+local function onFiremodeSelected(character, weapon, firemode, rpmStage)
+    RateOfFireUI.ApplyFiremode(character, weapon, firemode, rpmStage)
 end
 
 -------------------------------------------------
@@ -458,7 +458,7 @@ function CChangeFireMode:invoke()
 
     for _, entry in ipairs(entries) do
         menu:addSlice(entry.label, getFiremodeRadialTexture(entry),
-            onFiremodeSelected, self.character, weapon, entry.mode)
+            onFiremodeSelected, self.character, weapon, entry.mode, entry.rpmStage)
     end
 
     displaySubRadial(playerNum)

@@ -41,6 +41,14 @@ local prevEjectStart = ISEjectMagazine.start
 function ISEjectMagazine:start()
     local handler = ReloadAnim.getHandlerForAction(self)
     prevEjectStart(self)
+    -- Vanilla start() just set WeaponReloadType to the gun's engine reload type. A registered
+    -- gun's custom node is gated on GunworksReloadAnim (or, for a "none"-style profile authored
+    -- the old way, on WeaponReloadType directly), so overwrite WeaponReloadType with animId here
+    -- too so no vanilla/unrelated node can win the tie - same fix as the ISReloadWeaponAction
+    -- override below, extended to the magazine chain (Eject/Insert/Rack all had this gap).
+    if handler and handler.animId then
+        self:setAnimVariable("WeaponReloadType", handler.animId)
+    end
     if handler and handler.onEjectStart then
         if handler.onEjectStart(self) then
             return
@@ -122,6 +130,13 @@ function ISInsertMagazine:start()
     end
 
     prevInsertStart(self)
+
+    -- Must run AFTER prevInsertStart: vanilla's own start() (inside prev) re-sets
+    -- WeaponReloadType from the gun's engine reload type, so an override placed before prev
+    -- would just get clobbered. See the matching ISEjectMagazine comment above.
+    if handler and handler.animId then
+        self:setAnimVariable("WeaponReloadType", handler.animId)
+    end
 
     if handler then
         if self.shouldShortRackAfterInsert and ReloadAnim.shouldQueueShortRackAfterInsert(self) then
@@ -239,6 +254,13 @@ function ISRackFirearm:start()
     end
 
     prevRackStart(self)
+    -- Same override as Eject/Insert above, run after prev for the same reason. Racking chambers
+    -- the first round after EITHER a magazine reload or a non-mag one (ISReloadWeaponAction
+    -- queues an ISRackFirearm when the gun needs a chambered round), so this also covers a
+    -- non-mag gun's rack-to-chamber stage, which previously had no override at all.
+    if handler and handler.animId then
+        self:setAnimVariable("WeaponReloadType", handler.animId)
+    end
 end
 
 -- Gunworks does not wrap Rack.serverStart, so prev is vanilla. Registered guns get a

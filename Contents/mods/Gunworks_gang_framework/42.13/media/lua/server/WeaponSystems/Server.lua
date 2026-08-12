@@ -310,12 +310,14 @@ function Server.OnClientCommand(module, command, player, args)
         if not weapon then return end
 
         if args.firemode then weapon:setFireMode(args.firemode) end
+        if args.rpmStage then RateOfFire.SetRpmStageIndex(weapon, args.rpmStage) end
         RateOfFire.RecoilDelayAdjuster(player, weapon)
 
         sendServerCommand(player, "SWMG", "applyWeapon", {
             itemId = weapon:getID(),
             firemode = weapon:getFireMode(),
-            recoilDelay = weapon:getRecoilDelay()
+            recoilDelay = weapon:getRecoilDelay(),
+            rpmStage = RateOfFire.GetRpmStageIndex(weapon)
         })
     end
 end
