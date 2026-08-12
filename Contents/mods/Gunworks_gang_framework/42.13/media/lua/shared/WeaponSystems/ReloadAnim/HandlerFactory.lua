@@ -74,13 +74,21 @@ function ReloadAnim.normalizeWeaponReloadOptions(fullType, options)
 
     -- Magazine guns default to a whole-sprite swap; non-magazine guns default to no model
     -- swap at all (most pumps/revolvers just animate the arms over the static gun), but may
-    -- opt into "sprite"/"attachment" if they have an open/closed or break-action model.
+    -- opt into "sprite"/"attachment" if they have an open/closed or break-action model. A
+    -- magazine gun with no separate texture and no part swap can opt OUT of the sprite default
+    -- by setting style = "none" explicitly (see createSimpleReloadHandler).
     if not normalized.style then
         normalized.style = ReloadAnim.isNonMagArchetype(normalized.archetype) and "none" or "sprite"
     end
     -- Accept both "attachment" and "attachments" for the part-swap style.
     if normalized.style == "attachment" then
         normalized.style = "attachments"
+    end
+    -- "simple" is the friendlier spelling of a bare, animation-only magazine profile - the
+    -- magazine-archetype counterpart to a non-mag profile's "none" default (see
+    -- createSimpleReloadHandler below).
+    if normalized.style == "simple" then
+        normalized.style = "none"
     end
 
     return normalized
@@ -286,6 +294,109 @@ function ReloadAnim.createSpriteReloadHandler(options)
             if handled then
                 ReloadAnim.detachReloadMagazine(action)
             end
+            return false
+        end,
+        onInsertStop = function(action)
+            ReloadAnim.detachReloadMagazine(action)
+            ReloadAnim.setShortRackAfterInsert(action, false)
+        end,
+        onInsertLoadAmmo = function(action)
+            if options.shortRackAfterInsert and not isServer() and not isClient() then
+                if ReloadAnim.shouldQueueShortRackAfterInsert(action) then
+                    ReloadAnim.setShortRackPending(action)
+                end
+            end
+        end,
+        onInsertPerform = function(action)
+            ReloadAnim.detachReloadMagazine(action)
+            ReloadAnim.setShortRackAfterInsert(action, false)
+
+            if options.shortRackAfterInsert and isClient() then
+                if ReloadAnim.shouldQueueShortRackAfterInsert(action) then
+                    ReloadAnim.setShortRackPending(action)
+                end
+            end
+        end,
+        onRackStart = function(action)
+            if not options.shortRackAfterInsert then
+                return false
+            end
+
+            return ReloadAnim.handleShortRackStart(action, ReloadAnim.getHandlerForAction(action))
+        end,
+        onRackStop = function(action)
+            if options.shortRackAfterInsert then
+                ReloadAnim.handleShortRackStop(action)
+            end
+        end,
+        onRackPerform = function(action)
+            if options.shortRackAfterInsert then
+                ReloadAnim.handleShortRackPerform(action)
+            end
+        end,
+    }
+end
+
+--- Build a handler for a magazine-archetype gun that only needs a custom animation clip: no
+--- separate loaded/unloaded texture (style = "sprite") and no part swap (style = "attachments").
+--- This is the registry gap those two styles don't cover - both mandate a visual swap
+--- (validateSpriteReloadOptions requires loadedSprite/unloadedSprite/magItem;
+--- validateAttachmentReloadOptions requires magPart) even for a gun whose pack has no separate
+--- open/closed model at all, so a bare "just play this clip" profile was previously rejected by
+--- RegisterWeapon (see validateReloadOptions - the baseline this style uses instead).
+---
+--- A real magazine item is still optional (magItem): if given, the reload-magazine prop shows in
+--- the off-hand for the whole eject/insert action (attached at start, detached at stop/perform) -
+--- simpler, start-anchored timing than the sprite style's changeWeaponSprite-driven attach, since
+--- there is no sprite-swap event to hang it on here. Also wires the gwSetPart/gwSetProp/
+--- gwSetHandProp/gwPartToHand/gwPartToGun markers (Props.lua/PartSwap.lua) so a "simple" profile
+--- can still opt into a mid-reload part swap or off-hand prop later without switching style.
+---@param options table
+---@nodiscard
+---@return GunworksReloadAnimHandler
+function ReloadAnim.createSimpleReloadHandler(options)
+    return {
+        id = options.id,
+        fullType = options.fullType,
+        animId = options.animId,
+        style = "none",
+        magItem = options.magItem,
+        shortRackAfterInsert = options.shortRackAfterInsert,
+        loadDuration = options.loadDuration,
+        loadShortDuration = options.loadShortDuration,
+        unloadDuration = options.unloadDuration,
+        rackDuration = options.rackDuration,
+        partState = options.partState,
+        matches = options.matches,
+        consumes = options.consumes,
+        onEjectStart = function(action)
+            ReloadAnim.attachReloadMagazine(action, ReloadAnim.getHandlerForAction(action))
+            return false
+        end,
+        onEjectAnimEvent = function(action, event, parameter)
+            local handler = ReloadAnim.getHandlerForAction(action)
+            if ReloadAnim.handleGwSetPartAnimEvent(action, handler, event, parameter) then
+                return false
+            end
+            ReloadAnim.handlePropAnimEvent(action, handler, event, parameter)
+            return false
+        end,
+        onEjectStop = function(action)
+            ReloadAnim.detachReloadMagazine(action)
+        end,
+        onEjectPerform = function(action)
+            ReloadAnim.detachReloadMagazine(action)
+        end,
+        onInsertStart = function(action)
+            ReloadAnim.setShortRackAfterInsert(action, options.shortRackAfterInsert)
+            ReloadAnim.attachReloadMagazine(action, ReloadAnim.getHandlerForAction(action))
+        end,
+        onInsertAnimEvent = function(action, event, parameter)
+            local handler = ReloadAnim.getHandlerForAction(action)
+            if ReloadAnim.handleGwSetPartAnimEvent(action, handler, event, parameter) then
+                return false
+            end
+            ReloadAnim.handlePropAnimEvent(action, handler, event, parameter)
             return false
         end,
         onInsertStop = function(action)
@@ -537,6 +648,10 @@ end
 --- skip the vanilla close/rack finish stage: the reload force-completes the instant the rounds load
 --- (on loadFinished), so the "snap the action shut" animation that stage plays never runs. The load
 --- clip still plays in full, so keep the node's loadFinished event at m_Time = End.
+--- Magazine guns default to style = "sprite" (a real loaded/unloaded texture is required). Set
+--- style = "none" (alias "simple") for a magazine gun that has no separate texture and no part
+--- swap - just a custom animId, exactly like a non-mag profile's default. See
+--- createSimpleReloadHandler; magItem is still accepted there for an optional off-hand prop.
 ---@param fullType string|nil  weapon fullType key, e.g. "MyPack.M249Rifle" (nil only if profile.matches is set)
 ---@param profile {animId:string,archetype:string|nil,style:string|nil,magItem:string|nil,prop:{item:string|nil}|nil,sprite:{loaded:string|nil,unloaded:string|nil}|nil,attachments:table|nil,durations:{load:number|nil,loadShort:number|nil,unload:number|nil,rack:number|nil}|nil,shortRackAfterInsert:boolean|nil,matches:fun(gun:HandWeapon):boolean|nil,id:string|nil}
 ---@return nil
@@ -557,6 +672,13 @@ function ReloadAnim.RegisterWeapon(fullType, profile)
             return
         end
         handler = ReloadAnim.createAttachmentReloadHandler(normalized)
+    elseif normalized.style == "none" then
+        -- Bare magazine profile: same minimum bar as a non-mag one (animId + fullType/matches),
+        -- no sprite/magPart required.
+        if not ReloadAnim.validateReloadOptions(normalized) then
+            return
+        end
+        handler = ReloadAnim.createSimpleReloadHandler(normalized)
     else
         if not ReloadAnim.validateSpriteReloadOptions(normalized) then
             return
