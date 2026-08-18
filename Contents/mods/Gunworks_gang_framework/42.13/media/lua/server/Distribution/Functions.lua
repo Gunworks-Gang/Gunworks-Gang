@@ -1,5 +1,8 @@
 local WeaponDistribution = {}
 
+local table_insert = table.insert
+local table_remove = table.remove
+
 function WeaponDistribution.Insert(baseItem, chance, tables, newItem)
     local script = ScriptManager.instance:getItem(baseItem)
     if not script then return end
@@ -8,15 +11,15 @@ function WeaponDistribution.Insert(baseItem, chance, tables, newItem)
             if data.items then
                 for i, item in pairs(data.items) do
                     if item == script:getName() or item == script:getFullName() then
-                        table.insert(data.items, newItem)
-                        table.insert(data.items, data.items[i + 1] * (chance or 1))
+                        table_insert(data.items, newItem)
+                        table_insert(data.items, data.items[i + 1] * (chance or 1))
                     end
                 end
             end
             if data.weapons then
                 for i, item in pairs(data.weapons) do
                     if item == script:getName() or item == script:getFullName() then
-                        table.insert(data.weapons, newItem)
+                        table_insert(data.weapons, newItem)
                     end
                 end
             end
@@ -40,15 +43,15 @@ function WeaponDistribution.RemoveEverywhere(tables, item)
             if data.items then
                 for i = #data.items - 1, 1, -2 do
                     if data.items[i] == a or data.items[i] == b then
-                        table.remove(data.items, i + 1)
-                        table.remove(data.items, i)
+                        table_remove(data.items, i + 1)
+                        table_remove(data.items, i)
                     end
                 end
             end
             if data.weapons then
                 for i = #data.weapons, 1, -1 do
                     if data.weapons[i] == a or data.weapons[i] == b then
-                        table.remove(data.weapons, i)
+                        table_remove(data.weapons, i)
                     end
                 end
             end
