@@ -1,6 +1,8 @@
 local Ammo = {}
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
+local table_insert = table.insert
+
 -------------------------------------------------
 -- Table 1: Item -> Ammo Family
 -- Maps any weapon or magazine type to its ammo family
@@ -68,7 +70,7 @@ function Ammo.GetBulletTypesForFamily(family)
     if not entries then return nil end
     local types = {}
     for _, entry in ipairs(entries) do
-        table.insert(types, entry.type)
+        table_insert(types, entry.type)
     end
     return types
 end
@@ -139,7 +141,7 @@ function Ammo.RegisterAmmoFamily(family, bullets)
         Ammo.AmmoFamilies[family] = {}
     end
     for _, entry in ipairs(bullets) do
-        table.insert(Ammo.AmmoFamilies[family], entry)
+        table_insert(Ammo.AmmoFamilies[family], entry)
     end
 end
 

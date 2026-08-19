@@ -16,6 +16,8 @@ local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusives")
 local RequiredAttachment = require("WeaponSystems/Utils/RequiredAttachment")
 
+local table_insert = table.insert
+
 local function predicateNotBroken(item)
     return not item:isBroken()
 end
@@ -132,7 +134,7 @@ local function addBayonetAttachmentOption(playerObj, item, context)
             local invItem = inventory:get(i)
             local knifeFullType = invItem:getFullType()
             if not seen[knifeFullType] and Bayonet.BayonetKnives[knifeFullType] and Bayonet.CanAttachBayonet(item, invItem) then
-                table.insert(compatibleKnives, invItem)
+                table_insert(compatibleKnives, invItem)
                 seen[knifeFullType] = true
             end
         end
@@ -361,8 +363,8 @@ local function addRailingOptions(playerObj, item, context)
                         item,
                         part
                     )
-                    table.insert(contextEntries, entry)
-                    table.insert(mergedEntries, entry)
+                    table_insert(contextEntries, entry)
+                    table_insert(mergedEntries, entry)
                 end
             end
 
@@ -373,7 +375,7 @@ local function addRailingOptions(playerObj, item, context)
                 local invItem = inventory:get(i)
                 local invFullType = invItem:getFullType()
                 if not seen[invFullType] and acceptedSet[invFullType] and instanceof(invItem, "WeaponPart") and Railing.CanMountAccessory(item, invFullType) then
-                    table.insert(compatibleItems, invItem)
+                    table_insert(compatibleItems, invItem)
                     seen[invFullType] = true
                 end
             end
@@ -389,14 +391,14 @@ local function addRailingOptions(playerObj, item, context)
                     item,
                     invItem
                 )
-                table.insert(contextEntries, entry)
-                table.insert(mergedEntries, entry)
+                table_insert(contextEntries, entry)
+                table_insert(mergedEntries, entry)
             elseif #compatibleItems > 1 then
                 local submenuEntries = {}
 
                 for _, invItem in ipairs(compatibleItems) do
                     local accName = invItem:getDisplayName()
-                    table.insert(submenuEntries, createRailingActionEntry(
+                    table_insert(submenuEntries, createRailingActionEntry(
                         accName,
                         invItem:getTex(),
                         getText("IGUI_RailingMountDesc", accName, railName),
@@ -404,7 +406,7 @@ local function addRailingOptions(playerObj, item, context)
                         item,
                         invItem
                     ))
-                    table.insert(mergedEntries, createRailingActionEntry(
+                    table_insert(mergedEntries, createRailingActionEntry(
                         getText("IGUI_RailingMount", accName, railName),
                         invItem:getTex(),
                         getText("IGUI_RailingMountDesc", accName, railName),
@@ -414,7 +416,7 @@ local function addRailingOptions(playerObj, item, context)
                     ))
                 end
 
-                table.insert(contextEntries, createRailingSubMenuEntry(
+                table_insert(contextEntries, createRailingSubMenuEntry(
                     getText("IGUI_RailingMountMenu", railName),
                     item:getTex(),
                     nil,
@@ -423,7 +425,7 @@ local function addRailingOptions(playerObj, item, context)
             end
 
             if #contextEntries > 0 then
-                table.insert(railingMenus, {
+                table_insert(railingMenus, {
                     railName = railName,
                     contextEntries = contextEntries,
                     mergedEntries = mergedEntries,
@@ -840,7 +842,7 @@ ISInventoryPaneContextMenu.doMagazineMenu = function(playerObj, magazine, contex
                 local ammoCount = playerObj:getInventory():getItemCountRecurse(typeName)
                 if ammoCount > magazine:getMaxAmmo() then ammoCount = magazine:getMaxAmmo() end
                 if ammoCount > freeSpace then ammoCount = freeSpace end
-                table.insert(entries, { itemKey = typeName, bulletName = bulletName, ammoCount = ammoCount })
+                table_insert(entries, { itemKey = typeName, bulletName = bulletName, ammoCount = ammoCount })
                 if ammoCount > 0 then availableCount = availableCount + 1 end
             end
 
@@ -909,7 +911,7 @@ ISInventoryPaneContextMenu.doBulletMenu = function(playerObj, weapon, context)
             local bulletAvail = playerObj:getInventory():getItemCountRecurse(typeName)
             local bulletNeeded = freeSpace
             if bulletNeeded > bulletAvail then bulletNeeded = bulletAvail end
-            table.insert(entries, { itemKey = typeName, bulletName = bulletName, bulletNeeded = bulletNeeded })
+            table_insert(entries, { itemKey = typeName, bulletName = bulletName, bulletNeeded = bulletNeeded })
             if bulletNeeded > 0 then availableCount = availableCount + 1 end
         end
 

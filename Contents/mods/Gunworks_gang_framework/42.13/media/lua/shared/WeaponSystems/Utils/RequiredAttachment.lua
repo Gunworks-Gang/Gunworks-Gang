@@ -1,5 +1,7 @@
 local RequiredAttachment = {}
 
+local table_insert = table.insert
+
 -------------------------------------------------
 -- Registry: childFullType -> { parentFullType = true, ... }
 -- A child attachment cannot be installed without its parent(s).
@@ -62,31 +64,31 @@ function RequiredAttachment.RegisterRequired(childType, parentTypes)
     local anyParentsToAdd = {}
 
     if type(parentTypes) == "string" then
-        table.insert(allParentsToAdd, parentTypes)
+        table_insert(allParentsToAdd, parentTypes)
     elseif type(parentTypes) == "table" then
         local hasExplicitGroups = parentTypes.all ~= nil or parentTypes.any ~= nil
 
         if hasExplicitGroups then
             if type(parentTypes.all) == "string" then
-                table.insert(allParentsToAdd, parentTypes.all)
+                table_insert(allParentsToAdd, parentTypes.all)
             elseif type(parentTypes.all) == "table" then
                 for _, parentType in ipairs(parentTypes.all) do
-                    table.insert(allParentsToAdd, parentType)
+                    table_insert(allParentsToAdd, parentType)
                 end
             end
 
             if type(parentTypes.any) == "string" then
-                table.insert(anyParentsToAdd, parentTypes.any)
+                table_insert(anyParentsToAdd, parentTypes.any)
             elseif type(parentTypes.any) == "table" then
                 for _, parentType in ipairs(parentTypes.any) do
-                    table.insert(anyParentsToAdd, parentType)
+                    table_insert(anyParentsToAdd, parentType)
                 end
             end
         else
             -- Backward-compatible default for array input:
             -- treat list entries as alternatives (any-of).
             for _, parentType in ipairs(parentTypes) do
-                table.insert(anyParentsToAdd, parentType)
+                table_insert(anyParentsToAdd, parentType)
             end
         end
     end
@@ -149,13 +151,13 @@ function RequiredAttachment.GetRequiredParents(childType)
     local parentsList = {}
     if allParents then
         for parentType, _ in pairs(allParents) do
-            table.insert(parentsList, parentType)
+            table_insert(parentsList, parentType)
         end
     end
 
     if anyParents then
         for parentType, _ in pairs(anyParents) do
-            table.insert(parentsList, parentType)
+            table_insert(parentsList, parentType)
         end
     end
 
@@ -167,7 +169,7 @@ function RequiredAttachment.GetRequiredParents(childType)
     local seen = {}
     for _, parentType in ipairs(parentsList) do
         if not seen[parentType] then
-            table.insert(uniqueParents, parentType)
+            table_insert(uniqueParents, parentType)
             seen[parentType] = true
         end
     end
@@ -248,7 +250,7 @@ function RequiredAttachment.GetInstalledChildren(weapon, parentType)
         if part then
             local partFullType = part:getFullType()
             if children[partFullType] then
-                table.insert(installedChildren, {
+                table_insert(installedChildren, {
                     fullType = partFullType,
                     partType = part:getPartType(),
                     part = part,
@@ -278,7 +280,7 @@ function RequiredAttachment.GetInstalledChildrenTypes(weapon, parentType)
 
     local childTypes = {}
     for _, childData in ipairs(children) do
-        table.insert(childTypes, childData.fullType)
+        table_insert(childTypes, childData.fullType)
     end
     return childTypes
 end

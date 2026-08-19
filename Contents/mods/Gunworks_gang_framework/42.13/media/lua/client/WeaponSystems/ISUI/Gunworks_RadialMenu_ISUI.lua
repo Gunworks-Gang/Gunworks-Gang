@@ -9,6 +9,8 @@ local Magazine          = require("WeaponSystems/Utils/Magazine")
 local Ammo              = require("WeaponSystems/Utils/Ammo")
 local RateOfFireUI      = require("WeaponSystems/ISUI/RateOfFire_ISUI")
 
+local table_insert      = table.insert
+
 -------------------------------------------------
 -- BaseCommand  (mirrors ISFirearmRadialMenu pattern)
 -- frm = ISFirearmRadialMenu instance
@@ -228,7 +230,7 @@ local function getAvailableMagazineTypes(playerObj, gun)
             end
         end
         if best then
-            table.insert(results, { magType = magType, item = best })
+            table_insert(results, { magType = magType, item = best })
         end
     end
     return results
@@ -249,7 +251,7 @@ local function getAvailableAmmoTypesForMag(playerObj, magItem)
             local name = script and script:getDisplayName() or bulletType
             local ammoItem = playerObj:getInventory():getFirstTypeRecurse(bulletType)
             local tex = ammoItem and ammoItem:getTex()
-            table.insert(results, { bulletType = bulletType, name = name, count = toLoad, tex = tex })
+            table_insert(results, { bulletType = bulletType, name = name, count = toLoad, tex = tex })
         end
     end
     return results
@@ -370,7 +372,7 @@ local function getAvailableAmmoTypesForWeapon(playerObj, weapon)
             local name = script and script:getDisplayName() or bulletType
             local ammoItem = playerObj:getInventory():getFirstTypeRecurse(bulletType)
             local tex = ammoItem and ammoItem:getTex()
-            table.insert(results, { bulletType = bulletType, name = name, count = toLoad, tex = tex })
+            table_insert(results, { bulletType = bulletType, name = name, count = toLoad, tex = tex })
         end
     end
     return results

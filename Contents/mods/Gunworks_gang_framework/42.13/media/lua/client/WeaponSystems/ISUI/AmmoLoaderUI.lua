@@ -4,8 +4,10 @@ require("ISUI/ISLabel")
 require("ISUI/ISScrollingListBox")
 require("ISUI/ISItemDropBox")
 
-local Ammo = require("WeaponSystems/Utils/Ammo")
-local GunworksKeybinds = require("WeaponSystems/ISUI/GunworksKeybinds")
+local Ammo              = require("WeaponSystems/Utils/Ammo")
+local GunworksKeybinds  = require("WeaponSystems/ISUI/GunworksKeybinds")
+
+local table_insert      = table.insert
 
 -----------------------------------------------------------
 -- AmmoLoaderUI
@@ -14,10 +16,10 @@ local GunworksKeybinds = require("WeaponSystems/ISUI/GunworksKeybinds")
 -- magazines in a single panel.
 -----------------------------------------------------------
 
-local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
-local FONT_HGT_MEDIUM = getTextManager():getFontHeight(UIFont.Medium)
+local FONT_HGT_SMALL    = getTextManager():getFontHeight(UIFont.Small)
+local FONT_HGT_MEDIUM   = getTextManager():getFontHeight(UIFont.Medium)
 local UI_BORDER_SPACING = 10
-local BUTTON_HGT = FONT_HGT_SMALL + 6
+local BUTTON_HGT        = FONT_HGT_SMALL + 6
 
 -----------------------------------------------------------
 -- Helpers: item type detection
@@ -523,7 +525,7 @@ function AmmoLoaderUI:getAvailableAmmoTypes(targetItem)
             local script = getScriptManager():FindItem(ammoTypeKey)
             local name = script and script:getDisplayName() or ammoTypeKey
             local tex = script and script:getNormalTexture() or nil
-            table.insert(result, {
+            table_insert(result, {
                 ammoTypeKey = ammoTypeKey,
                 name = name,
                 count = count,
@@ -538,7 +540,7 @@ function AmmoLoaderUI:getAvailableAmmoTypes(targetItem)
             local script = getScriptManager():FindItem(ammoTypeKey)
             local name = script and script:getDisplayName() or ammoTypeKey
             local tex = script and script:getNormalTexture() or nil
-            table.insert(result, {
+            table_insert(result, {
                 ammoTypeKey = ammoTypeKey,
                 name = name,
                 count = count,

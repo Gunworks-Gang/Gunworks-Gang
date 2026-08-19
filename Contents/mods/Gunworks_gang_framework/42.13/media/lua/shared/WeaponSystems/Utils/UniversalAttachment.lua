@@ -4,6 +4,8 @@ local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusives")
 
 local UniversalAttachment = {}
 
+local table_insert = table.insert
+
 -------------------------------------------------
 -- Registry: weaponFullType -> { genericItemFullType -> { outcomeFullType, ... } }
 -------------------------------------------------
@@ -83,7 +85,7 @@ function UniversalAttachment.GetGenericItemTypes(weaponOrWeaponType)
 
     local genericItemTypes = {}
     for genericItemType, _ in pairs(entries) do
-        table.insert(genericItemTypes, genericItemType)
+        table_insert(genericItemTypes, genericItemType)
     end
 
     if #genericItemTypes == 0 then return nil end
@@ -143,7 +145,7 @@ function UniversalAttachment.GetAvailableOutcomes(weapon, genericItemType, chara
     local availableOutcomes = {}
     for _, outcomeType in ipairs(outcomes) do
         if UniversalAttachment.CanInstallOutcome(weapon, outcomeType, character) then
-            table.insert(availableOutcomes, outcomeType)
+            table_insert(availableOutcomes, outcomeType)
         end
     end
 
@@ -165,7 +167,7 @@ function UniversalAttachment.GetInstalledOutcomes(weapon, genericItemType)
             if partType then
                 local installedPart = weapon:getWeaponPart(partType)
                 if installedPart and installedPart:getFullType() == outcomeType then
-                    table.insert(installedOutcomes, {
+                    table_insert(installedOutcomes, {
                         fullType = outcomeType,
                         partType = partType,
                         part = installedPart,
