@@ -44,16 +44,28 @@ function Magazine.RegisterMultipleWeaponsWithProfiles(entriesTable)
     end
 end
 
---- Register (or replace) a magazine profile.
+--- Register a new magazine profile or add magazine types to an existing one.
+--- Duplicate magazine types are skipped so round-robin selection isn't skewed.
 ---@param profileName string
 ---@param magazineTypes string[]  ordered list of magazine fullTypes
 function Magazine.RegisterMagazineProfile(profileName, magazineTypes)
-    Magazine.MagazineProfiles[profileName] = magazineTypes
-    local set = {}
-    for i = 1, #magazineTypes do
-        set[magazineTypes[i]] = true
+    local list = Magazine.MagazineProfiles[profileName]
+    if not list then
+        list = {}
+        Magazine.MagazineProfiles[profileName] = list
     end
-    Magazine.ProfileMagazineSet[profileName] = set
+    local set = Magazine.ProfileMagazineSet[profileName]
+    if not set then
+        set = {}
+        Magazine.ProfileMagazineSet[profileName] = set
+    end
+    for i = 1, #magazineTypes do
+        local magType = magazineTypes[i]
+        if not set[magType] then
+            set[magType] = true
+            list[#list + 1] = magType
+        end
+    end
 end
 
 function Magazine.RegisterMultipleMagazineProfiles(entriesTable)
