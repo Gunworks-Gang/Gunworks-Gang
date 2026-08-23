@@ -1,4 +1,6 @@
 [22/June/2026 ]
 B42.19:
-- Rework the arcing of grenades and not it takes into account Z levels
+- Update Handgun animations
+- Spawner Core is not part of Gunworks
+- new shared ammo library
 [ ------ ]
