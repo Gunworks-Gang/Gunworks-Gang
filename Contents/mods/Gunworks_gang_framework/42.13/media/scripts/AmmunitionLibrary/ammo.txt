@@ -9,7 +9,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo;base:shotgunshell,
-        AmmoType         = marzguns:shell_12g_buckshot,
+        AmmoType         = swmg:shell_12g_buckshot,
     }
     
     item 12Gauge_Shell_Slug {
@@ -21,7 +21,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo;base:shotgunshell,
-        AmmoType         = marzguns:shell_12g_slug,
+        AmmoType         = swmg:shell_12g_slug,
     }
     
     item 9x19_Bullet {
@@ -33,7 +33,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_9x19,
+        AmmoType         = swmg:bullet_9x19,
     }
     
     item 45_Bullet {
@@ -45,7 +45,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_45,
+        AmmoType         = swmg:bullet_45,
     }
     
     item 38_Bullet {
@@ -57,7 +57,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_38,
+        AmmoType         = swmg:bullet_38,
     }
     
     item 44_Bullet {
@@ -69,7 +69,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_44,
+        AmmoType         = swmg:bullet_44,
     }
     
     item 50_Bullet {
@@ -81,7 +81,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_50,
+        AmmoType         = swmg:bullet_50,
     }
     
     item 762x51_Bullet {
@@ -93,7 +93,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_762x51,
+        AmmoType         = swmg:bullet_762x51,
     }
     
     item 308_Bullet {
@@ -105,7 +105,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_308,
+        AmmoType         = swmg:bullet_308,
     }
     
     item 762x54_Bullet {
@@ -117,7 +117,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_762x54,
+        AmmoType         = swmg:bullet_762x54,
     }
     
     item 556x45_Bullet {
@@ -129,7 +129,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_556x45,
+        AmmoType         = swmg:bullet_556x45,
     }
     
     item 556x45_Bullet_HollowPoint {
@@ -141,7 +141,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_556x45_hollow_point,
+        AmmoType         = swmg:bullet_556x45_hollow_point,
     }
     
     item 556x45_Bullet_ArmorPiercing {
@@ -153,7 +153,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_556x45_armor_piercing,
+        AmmoType         = swmg:bullet_556x45_armor_piercing,
     }
     
     item 556x45_Bullet_Subsonic {
@@ -165,7 +165,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_556x45_subsonic,
+        AmmoType         = swmg:bullet_556x45_subsonic,
     }
     
     item 556x45_Bullet_Overpressured {
@@ -177,7 +177,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_556x45_overpressured,
+        AmmoType         = swmg:bullet_556x45_overpressured,
     }
     
     item 223_Bullet {
@@ -189,7 +189,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_223,
+        AmmoType         = swmg:bullet_223,
     }
     
     item 545x39_Bullet {
@@ -201,7 +201,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_545x39,
+        AmmoType         = swmg:bullet_545x39,
     }
     
     item 762x39_Bullet {
@@ -213,7 +213,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_762x39,
+        AmmoType         = swmg:bullet_762x39,
     }
     
     item 9x39_Bullet {
@@ -225,7 +225,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_9x39,
+        AmmoType         = swmg:bullet_9x39,
     }
     
     item 3006_Bullet {
@@ -237,7 +237,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_3006,
+        AmmoType         = swmg:bullet_3006,
     }
     
     item 3030_Bullet {
@@ -249,7 +249,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_3030,
+        AmmoType         = swmg:bullet_3030,
     }
     
     item 357_Bullet {
@@ -261,7 +261,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_357,
+        AmmoType         = swmg:bullet_357,
     }
     
     item 4570_Bullet {
@@ -273,7 +273,7 @@ module SWMG {
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
         Tags             = base:ammo,
-        AmmoType         = marzguns:bullet_4570,
+        AmmoType         = swmg:bullet_4570,
     }
     
     item 40mm_Round_Buckshot {
@@ -284,8 +284,8 @@ module SWMG {
         count            = 6,
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
-        Tags             = base:ammo;marzguns:ammo10,
-        AmmoType         = marzguns:round_40mm_buckshot,
+        Tags             = base:ammo;swmg:ammo10,
+        AmmoType         = swmg:round_40mm_buckshot,
     }
     
     item 40mm_Round_HE {
@@ -296,8 +296,8 @@ module SWMG {
         count            = 6,
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
-        Tags             = base:ammo;marzguns:ammo10,
-        AmmoType         = marzguns:round_40mm_he,
+        Tags             = base:ammo;swmg:ammo10,
+        AmmoType         = swmg:round_40mm_he,
     }
     
     item 40mm_Round_Incendiary {
@@ -308,7 +308,7 @@ module SWMG {
         count            = 6,
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
-        Tags             = base:ammo;marzguns:ammo10,
-        AmmoType         = marzguns:round_40mm_incendiary,
+        Tags             = base:ammo;swmg:ammo10,
+        AmmoType         = swmg:round_40mm_incendiary,
     }
 }
