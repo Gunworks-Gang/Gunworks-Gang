@@ -1,5 +1,4 @@
 local ItemSpawnCore = {}
-
 local r = newrandom()
 
 ItemSpawnCore.SPAWNER_ITEM_MODDATA_KEY = "Gunworks_SpawnerItemType"
