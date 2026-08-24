@@ -3,7 +3,7 @@ module SWMG {
     item 12Gauge_Shell_Buckshot {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.031,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 6,
         MetalValue       = 1.0,
@@ -15,7 +15,7 @@ module SWMG {
     item 12Gauge_Shell_Slug {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.031,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 6,
         MetalValue       = 1.0,
@@ -27,7 +27,7 @@ module SWMG {
     item 9x19_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.009,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -39,7 +39,7 @@ module SWMG {
     item 45_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.0145,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -51,7 +51,7 @@ module SWMG {
     item 38_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.01,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -63,7 +63,7 @@ module SWMG {
     item 44_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.016,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 3,
         MetalValue       = 1.0,
@@ -75,7 +75,7 @@ module SWMG {
     item 50_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.024,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 3,
         MetalValue       = 1.0,
@@ -87,7 +87,7 @@ module SWMG {
     item 762x51_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.0165,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -99,7 +99,7 @@ module SWMG {
     item 308_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.0175,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -111,7 +111,7 @@ module SWMG {
     item 762x54_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.016,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -123,7 +123,7 @@ module SWMG {
     item 556x45_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.0085,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -135,7 +135,7 @@ module SWMG {
     item 556x45_Bullet_HollowPoint {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.0085,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -147,7 +147,7 @@ module SWMG {
     item 556x45_Bullet_ArmorPiercing {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.0085,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -159,7 +159,7 @@ module SWMG {
     item 556x45_Bullet_Subsonic {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.0085,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -171,7 +171,7 @@ module SWMG {
     item 556x45_Bullet_Overpressured {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.0085,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -183,7 +183,7 @@ module SWMG {
     item 223_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.0085,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -195,7 +195,7 @@ module SWMG {
     item 545x39_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.007,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -207,7 +207,7 @@ module SWMG {
     item 762x39_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.012,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -219,7 +219,7 @@ module SWMG {
     item 9x39_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.0115,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -231,7 +231,7 @@ module SWMG {
     item 3006_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.019,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -243,7 +243,7 @@ module SWMG {
     item 3030_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.015,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -255,7 +255,7 @@ module SWMG {
     item 357_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.0115,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -267,7 +267,7 @@ module SWMG {
     item 4570_Bullet {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.023,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 5,
         MetalValue       = 1.0,
@@ -279,36 +279,36 @@ module SWMG {
     item 40mm_Round_Buckshot {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.16,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 6,
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
-        Tags             = base:ammo;swmg:ammo10,
+        Tags             = base:ammo,
         AmmoType         = swmg:round_40mm_buckshot,
     }
     
     item 40mm_Round_HE {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.16,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 6,
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
-        Tags             = base:ammo;swmg:ammo10,
+        Tags             = base:ammo,
         AmmoType         = swmg:round_40mm_he,
     }
     
     item 40mm_Round_Incendiary {
         DisplayCategory  = Ammo,
         ItemType         = base:normal,
-        Weight           = 0.16,
+        Weight           = 0,
         Icon             = RifleAmmo308loose,
         count            = 6,
         MetalValue       = 1.0,
         WorldStaticModel = RifleAmmo,
-        Tags             = base:ammo;swmg:ammo10,
+        Tags             = base:ammo,
         AmmoType         = swmg:round_40mm_incendiary,
     }
 }

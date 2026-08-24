@@ -27,4 +27,10 @@ function GunworksSharedUtils.AddTagsToItem(item, tags)
     end
 end
 
+function GunworksSharedUtils.AdjustAmmunitionStats(item, icon, worldStaticModel, weight)
+    GunworksSharedUtils.Adjust(item, "Icon", icon)
+    GunworksSharedUtils.Adjust(item, "WorldStaticModel", worldStaticModel)
+    GunworksSharedUtils.Adjust(item, "Weight", weight)
+end
+
 return GunworksSharedUtils
