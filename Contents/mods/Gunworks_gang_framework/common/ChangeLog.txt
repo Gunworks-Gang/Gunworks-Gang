@@ -1,6 +1,6 @@
-[22/June/2026 ]
-B42.19:
-- Update Handgun animations
-- Spawner Core is not part of Gunworks
-- new shared ammo library
+[24/August/2026 ]
+B42.20.3:
+[*] Magazine list registries should be compatible accross all mods
+[*] New Shared ammunition scripts for weapons mods to use an have Compatibility
+[*] New shared utils function for quick patching items
 [ ------ ]
