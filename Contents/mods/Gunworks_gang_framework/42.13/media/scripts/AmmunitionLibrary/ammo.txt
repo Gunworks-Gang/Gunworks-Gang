@@ -1,0 +1,314 @@
+module SWMG {
+    
+    item 12Gauge_Shell_Buckshot {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 6,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo;base:shotgunshell,
+        AmmoType         = swmg:shell_12g_buckshot,
+    }
+    
+    item 12Gauge_Shell_Slug {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 6,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo;base:shotgunshell,
+        AmmoType         = swmg:shell_12g_slug,
+    }
+    
+    item 9x19_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_9x19,
+    }
+    
+    item 45_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_45,
+    }
+    
+    item 38_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_38,
+    }
+    
+    item 44_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 3,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_44,
+    }
+    
+    item 50_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 3,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_50,
+    }
+    
+    item 762x51_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_762x51,
+    }
+    
+    item 308_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_308,
+    }
+    
+    item 762x54_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_762x54,
+    }
+    
+    item 556x45_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_556x45,
+    }
+    
+    item 556x45_Bullet_HollowPoint {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_556x45_hollow_point,
+    }
+    
+    item 556x45_Bullet_ArmorPiercing {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_556x45_armor_piercing,
+    }
+    
+    item 556x45_Bullet_Subsonic {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_556x45_subsonic,
+    }
+    
+    item 556x45_Bullet_Overpressured {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_556x45_overpressured,
+    }
+    
+    item 223_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_223,
+    }
+    
+    item 545x39_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_545x39,
+    }
+    
+    item 762x39_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_762x39,
+    }
+    
+    item 9x39_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_9x39,
+    }
+    
+    item 3006_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_3006,
+    }
+    
+    item 3030_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_3030,
+    }
+    
+    item 357_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_357,
+    }
+    
+    item 4570_Bullet {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 5,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:bullet_4570,
+    }
+    
+    item 40mm_Round_Buckshot {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 6,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:round_40mm_buckshot,
+    }
+    
+    item 40mm_Round_HE {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 6,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:round_40mm_he,
+    }
+    
+    item 40mm_Round_Incendiary {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 6,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:round_40mm_incendiary,
+    }
+}
