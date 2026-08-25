@@ -9,7 +9,7 @@ Animations.WeaponsWithAnimatedParts = {}
 -- Cycle timing (how long the action stays racked open before it auto-closes)
 -------------------------------------------------
 local TICKS_PER_SECOND = 60
-Animations.DEFAULT_CYCLE_TICKS = 10 -- default: 10/60 seconds, matches previous hardcoded behavior
+Animations.DEFAULT_CYCLE_TICKS = 10 -- default: 10/60 seconds
 
 local function GetCycleSeconds(fullType)
     local entry = Animations.WeaponsWithAnimatedParts[fullType]
@@ -19,9 +19,9 @@ end
 
 --- Register a single weapon with animated moving parts.
 ---@param fullType string  fullType e.g. "Base.M16A3"
----@param entry table      { attachments = { open = "Part.Open", locked = "Part.Locked" } }
----                     OR { MultipleAttachments = { Slide = { open = "Part.Open", locked = "Part.Locked" } } }
----                     OR { MultipleAttachments = { Slide = { partType = "Slide", variants = { ["Part.A"] = { open = "Part.OpenA", locked = "Part.LockedA" }, ["Part.B"] = { open = "Part.OpenB", locked = "Part.LockedB" } } } } }
+---@param entry table      { SingleAttachment = { open = "Part.Open", locked = "Part.Locked" } }
+---                     OR { MultipleAttachment = { Slide = { open = "Part.Open", locked = "Part.Locked" } } }
+---                     OR { MultipleAttachmentsVariant = { Slide = { partType = "Slide", variants = { ["Part.A"] = { open = "Part.OpenA", locked = "Part.LockedA" }, ["Part.B"] = { open = "Part.OpenB", locked = "Part.LockedB" } } } } }
 ---                     OR { models     = { open = "Sprite_Open", locked = "Sprite_Locked" } }
 ---                     Optional: `cycleTicks` (number of ticks at 60 ticks/second) controls how long the
 ---                     action stays racked open before auto-closing. Defaults to Animations.DEFAULT_CYCLE_TICKS (10, i.e. 10/60 seconds).
@@ -89,15 +89,25 @@ end
 function Animations.CallAnimationFunction(weapon, open)
     local entry = Animations.WeaponsWithAnimatedParts[weapon:getFullType()]
     if not entry then return end
+
     local key = open and "open" or "locked"
+
     if entry.models then
         weapon:setWeaponSprite(entry.models[key])
     end
-    if entry.attachments then
-        ApplyAttachmentState(weapon, entry.attachments, key)
+
+    if entry.SingleAttachment then
+        ApplyAttachmentState(weapon, entry.SingleAttachment, key)
     end
-    if entry.MultipleAttachments then
-        for _, attachmentState in pairs(entry.MultipleAttachments) do
+
+    if entry.MultipleAttachment then
+        for _, attachment in pairs(entry.MultipleAttachment) do
+            ApplyAttachmentState(weapon, attachment, key)
+        end
+    end
+
+    if entry.MultipleAttachmentsVariant then
+        for _, attachmentState in pairs(entry.MultipleAttachmentsVariant) do
             ApplyMultipleAttachmentState(weapon, attachmentState, key)
         end
     end
@@ -135,11 +145,21 @@ function Animations.releaseActionLock(player, weapon)
     Animations.CallAnimate(player, weapon, open)
 end
 
+function Animations.releaseActionLockRevolver(player, weapon)
+    if not weapon or not player then return end
+    Animations.CallAnimate(player, weapon, false)
+end
+
 function Animations.lockActionOpen(player, weapon)
     if not weapon or not weapon:isRanged() or not player then return end
-    if weapon:isRackAfterShoot() then return end
-    if weapon:isJammed() or not weapon:haveChamber() then return end
-    if not weapon:isRoundChambered() then return end
+    if weapon:isRackAfterShoot() or weapon:isJammed() then return end
+
+    if not weapon:haveChamber() or not weapon:isRoundChambered() then
+        Animations.CallAnimate(player, weapon, true)
+        local seconds = GetCycleSeconds(weapon:getFullType())
+        Animations.scheduleActionClose(seconds, Animations.releaseActionLockRevolver, player, weapon)
+        return
+    end
 
     Animations.CallAnimate(player, weapon, true)
     local seconds = GetCycleSeconds(weapon:getFullType())
