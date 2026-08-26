@@ -2,6 +2,7 @@ local Ammo = {}
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
 local table_insert = table.insert
+local table_remove = table.remove
 
 -------------------------------------------------
 -- Table 1: Item -> Ammo Family
@@ -237,6 +238,34 @@ function Ammo.CopyAmmoList(source)
         copy[i] = source[i]
     end
     return copy
+end
+
+--- Split a gun's AmmoList when ejecting its magazine: the chambered round (if
+--- any) stays on the gun, everything else moves out with the magazine.
+---@param gun HandWeapon
+---@return string[]|nil ammoListForMag  list to attach to the ejected magazine, or nil if nothing moves
+function Ammo.SplitAmmoListOnEject(gun)
+    local gunModData = gun:getModData()
+    local gunList = gunModData.AmmoList
+
+    if not gunList or #gunList == 0 then
+        gunModData.AmmoList = nil
+        return nil
+    end
+
+    if gun:isRoundChambered() and #gunList > 1 then
+        local ammoListForMag = Ammo.CopyAmmoList(gunList) or {}
+        table_remove(ammoListForMag)
+        gunModData.AmmoList = { gunList[#gunList] }
+        return ammoListForMag
+    elseif gun:isRoundChambered() then
+        gunModData.AmmoList = { gunList[#gunList] }
+        return nil
+    end
+
+    local ammoListForMag = Ammo.CopyAmmoList(gunList)
+    gunModData.AmmoList = nil
+    return ammoListForMag
 end
 
 -------------------------------------------------

@@ -375,30 +375,7 @@ function ISEjectMagazine:unloadAmmo()
         return ISEjectMagazine_unloadAmmo_original(self)
     end
     local inventory = self.character and self.character:getInventory()
-    local gunModData = self.gun:getModData()
-    local gunList = gunModData.AmmoList
-
-    local ammoListForMag = nil
-
-    if gunList and #gunList > 0 then
-        if self.gun:isRoundChambered() and #gunList > 1 then
-            ammoListForMag = {}
-            for i = 1, #gunList - 1 do
-                ammoListForMag[#ammoListForMag + 1] = gunList[i]
-            end
-            gunModData.AmmoList = { gunList[#gunList] }
-        elseif self.gun:isRoundChambered() and #gunList == 1 then
-            gunModData.AmmoList = { gunList[#gunList] }
-        else
-            ammoListForMag = {}
-            for i = 1, #gunList do
-                ammoListForMag[i] = gunList[i]
-            end
-            gunModData.AmmoList = nil
-        end
-    else
-        gunModData.AmmoList = nil
-    end
+    local ammoListForMag = Ammo.SplitAmmoListOnEject(self.gun)
 
     if self.gun:isContainsClip() and savedMagType then
         self.gun:setMagazineType(savedMagType)

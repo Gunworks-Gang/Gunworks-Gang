@@ -1,6 +1,7 @@
 local ExplosionFX = {}
 
 local table_insert = table.insert
+local table_remove = table.remove
 
 ExplosionFX.activeEffects = {}
 
@@ -47,12 +48,12 @@ function ExplosionFX.tick()
             fx.timeToLive = fx.timeToLive - dt
             if fx.timeToLive <= 0 then
                 fx.active = false
-                table.remove(ExplosionFX.activeEffects, i)
+                table_remove(ExplosionFX.activeEffects, i)
             else
                 fx.worldItem = fx.square:AddWorldInventoryItem(fx.itemType, fx.lx, fx.ly, fx.lz)
             end
         else
-            table.remove(ExplosionFX.activeEffects, i)
+            table_remove(ExplosionFX.activeEffects, i)
         end
         i = i - 1
     end
