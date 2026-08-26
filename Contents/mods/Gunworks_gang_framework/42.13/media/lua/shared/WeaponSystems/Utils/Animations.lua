@@ -23,8 +23,8 @@ end
 ---                     OR { MultipleAttachment = { Slide = { open = "Part.Open", locked = "Part.Locked" } } }
 ---                     OR { MultipleAttachmentsVariant = { Slide = { partType = "Slide", variants = { ["Part.A"] = { open = "Part.OpenA", locked = "Part.LockedA" }, ["Part.B"] = { open = "Part.OpenB", locked = "Part.LockedB" } } } } }
 ---                     OR { models     = { open = "Sprite_Open", locked = "Sprite_Locked" } }
----                     Optional: `cycleTicks` (number of ticks at 60 ticks/second) controls how long the
----                     action stays racked open before auto-closing. Defaults to Animations.DEFAULT_CYCLE_TICKS (10, i.e. 10/60 seconds).
+---                     Optional: `cycleTicks` (number of ticks at 60 ticks/second) controls how long the action stays racked open before auto-closing. Defaults to Animations.DEFAULT_CYCLE_TICKS (10, i.e. 10/60 seconds).
+---                     Optional: `force` bypasses the checks and trigger the animation on firing (perfect for revolver type weapons)
 function Animations.RegisterWeaponWithAnimatedParts(fullType, entry)
     Animations.WeaponsWithAnimatedParts[fullType] = entry
 end
