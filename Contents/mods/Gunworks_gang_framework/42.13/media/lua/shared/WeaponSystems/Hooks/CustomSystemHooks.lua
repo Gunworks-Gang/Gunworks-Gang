@@ -116,6 +116,9 @@ ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
         end
         local ammoCount = Magazine.reloadMagazine(playerObj, magazine)
         if ammoCount > 0 or not hasMagazine then
+            if ammoCount == 0 then
+                ISInventoryPaneContextMenu.transferIfNeeded(playerObj, magazine)
+            end
             ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
         end
         return
@@ -146,6 +149,9 @@ ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
         end
         local ammoCount = Magazine.reloadMagazine(playerObj, magazine)
         if ammoCount > 0 or not hasMagazine then
+            if ammoCount == 0 then
+                ISInventoryPaneContextMenu.transferIfNeeded(playerObj, magazine)
+            end
             ISTimedActionQueue.add(ISInsertMagazine:new(playerObj, gun, magazine))
         end
         return

@@ -143,6 +143,7 @@ function Magazine.reloadMagazine(playerObj, magazine)
         ISInventoryPaneContextMenu.transferBullets(playerObj, itemKey, magazine:getCurrentAmmoCount(),
             magazine:getMaxAmmo())
     if ammoCount > 0 then
+        ISInventoryPaneContextMenu.transferIfNeeded(playerObj, magazine)
         ISTimedActionQueue.add(ISLoadBulletsInMagazine:new(playerObj, magazine, ammoCount, nil, itemKey))
     end
     return ammoCount
