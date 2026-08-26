@@ -37,6 +37,15 @@ function Animations.RegisterMultipleWeaponsWithAnimatedParts(entriesTables)
     end
 end
 
+-- We gonna use this silly function to force animation without breaking the current logic
+local function getIsForcedAnimate(weapon)
+    local entry = Animations.WeaponsWithAnimatedParts[weapon:getFullType()]
+    if entry and entry.force then
+        return true
+    end
+    return false
+end
+
 local function MarkSkipEquipRestore(weapon)
     if not weapon then return end
     local modData = weapon:getModData()
@@ -145,25 +154,26 @@ function Animations.releaseActionLock(player, weapon)
     Animations.CallAnimate(player, weapon, open)
 end
 
-function Animations.releaseActionLockRevolver(player, weapon)
+function Animations.releaseActionLockForce(player, weapon)
     if not weapon or not player then return end
     Animations.CallAnimate(player, weapon, false)
 end
 
 function Animations.lockActionOpen(player, weapon)
-    if not weapon or not weapon:isRanged() or not player then return end
-    if weapon:isRackAfterShoot() or weapon:isJammed() then return end
+    if not weapon or not player or not weapon:isRanged() then return end
 
-    if not weapon:haveChamber() or not weapon:isRoundChambered() then
-        Animations.CallAnimate(player, weapon, true)
-        local seconds = GetCycleSeconds(weapon:getFullType())
-        Animations.scheduleActionClose(seconds, Animations.releaseActionLockRevolver, player, weapon)
-        return
+    local forced = getIsForcedAnimate(weapon)
+
+    if not forced then
+        if weapon:isRackAfterShoot() or weapon:isJammed() or not weapon:haveChamber() or not weapon:isRoundChambered() then return end
     end
 
     Animations.CallAnimate(player, weapon, true)
+
     local seconds = GetCycleSeconds(weapon:getFullType())
-    Animations.scheduleActionClose(seconds, Animations.releaseActionLock, player, weapon)
+    local releaseFunc = forced and Animations.releaseActionLockForce or Animations.releaseActionLock
+
+    Animations.scheduleActionClose(seconds, releaseFunc, player, weapon)
 end
 
 function Animations.rackAction(player, weapon, starting)
