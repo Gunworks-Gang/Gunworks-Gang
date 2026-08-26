@@ -7,8 +7,6 @@ require("ISUI/ISItemDropBox")
 local Ammo              = require("WeaponSystems/Utils/Ammo")
 local GunworksKeybinds  = require("WeaponSystems/ISUI/GunworksKeybinds")
 
-local table_insert      = table.insert
-
 -----------------------------------------------------------
 -- AmmoLoaderUI
 -- Unified drag-and-drop ammo loading interface.
@@ -525,12 +523,12 @@ function AmmoLoaderUI:getAvailableAmmoTypes(targetItem)
             local script = getScriptManager():FindItem(ammoTypeKey)
             local name = script and script:getDisplayName() or ammoTypeKey
             local tex = script and script:getNormalTexture() or nil
-            table_insert(result, {
+            result[#result + 1] = {
                 ammoTypeKey = ammoTypeKey,
                 name = name,
                 count = count,
                 texture = tex
-            })
+            }
         end
     else
         local defaultAmmoType = targetItem:getAmmoType()
@@ -540,12 +538,12 @@ function AmmoLoaderUI:getAvailableAmmoTypes(targetItem)
             local script = getScriptManager():FindItem(ammoTypeKey)
             local name = script and script:getDisplayName() or ammoTypeKey
             local tex = script and script:getNormalTexture() or nil
-            table_insert(result, {
+            result[#result + 1] = {
                 ammoTypeKey = ammoTypeKey,
                 name = name,
                 count = count,
                 texture = tex
-            })
+            }
         end
     end
 

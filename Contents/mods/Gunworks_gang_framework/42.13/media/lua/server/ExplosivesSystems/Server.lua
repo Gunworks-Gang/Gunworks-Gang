@@ -3,7 +3,6 @@ local Payloads                            = require("ExplosivesSystems/Payloads"
 local OrdnanceFactory                     = require("ExplosivesSystems/OrdnanceFactory")
 local ExplosionFX                         = require("ExplosivesSystems/ExplosionFX")
 
-local table_insert                        = table.insert
 local table_remove                        = table.remove
 
 ExplosivesSystems.activeOrdnance          = {}
@@ -241,7 +240,8 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         velocityZ        = seedVelZ,
     }
 
-    table_insert(ExplosivesSystems.activeOrdnance, ordnanceData)
+    local list = ExplosivesSystems.activeOrdnance
+    list[#list + 1] = ordnanceData
 end
 
 function ExplosivesSystems.consumeThrowableFromPlayer(player, sourceWeapon)

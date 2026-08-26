@@ -1,6 +1,5 @@
 local ExplosionFX = {}
 
-local table_insert = table.insert
 local table_remove = table.remove
 
 ExplosionFX.activeEffects = {}
@@ -35,7 +34,8 @@ function ExplosionFX.PlayEffect(square, itemType, lx, ly, lz, duration)
         active     = true,
     }
 
-    table_insert(ExplosionFX.activeEffects, fx)
+    local list = ExplosionFX.activeEffects
+    list[#list + 1] = fx
 end
 
 function ExplosionFX.tick()

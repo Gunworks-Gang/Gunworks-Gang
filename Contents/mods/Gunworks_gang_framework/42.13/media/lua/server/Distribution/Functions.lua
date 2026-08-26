@@ -1,6 +1,5 @@
 local WeaponDistribution = {}
 
-local table_insert = table.insert
 local table_remove = table.remove
 
 function WeaponDistribution.Insert(baseItem, chance, tables, newItem)
@@ -11,15 +10,17 @@ function WeaponDistribution.Insert(baseItem, chance, tables, newItem)
             if data.items then
                 for i, item in pairs(data.items) do
                     if item == script:getName() or item == script:getFullName() then
-                        table_insert(data.items, newItem)
-                        table_insert(data.items, data.items[i + 1] * (chance or 1))
+                        local items = data.items
+                        items[#items + 1] = newItem
+                        items[#items + 1] = items[i + 1] * (chance or 1)
                     end
                 end
             end
             if data.weapons then
                 for i, item in pairs(data.weapons) do
                     if item == script:getName() or item == script:getFullName() then
-                        table_insert(data.weapons, newItem)
+                        local weapons = data.weapons
+                        weapons[#weapons + 1] = newItem
                     end
                 end
             end

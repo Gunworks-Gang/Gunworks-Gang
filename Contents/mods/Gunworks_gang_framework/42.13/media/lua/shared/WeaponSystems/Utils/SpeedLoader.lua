@@ -5,6 +5,8 @@ local SpeedLoader = {}
 -------------------------------------------------
 SpeedLoader.WeaponSpeedLoaders = {}
 
+local table_remove = table.remove
+
 local function copyTypeList(source)
     if not source then return nil end
 
@@ -158,7 +160,7 @@ function SpeedLoader.TransferAmmoToGun(gun, speedLoader)
     for _ = 1, transferCount do
         local bulletType = nil
         if speedLoaderAmmoList and #speedLoaderAmmoList > 0 then
-            bulletType = table.remove(speedLoaderAmmoList, 1)
+            bulletType = table_remove(speedLoaderAmmoList, 1)
         end
         appendBulletToGunAmmoList(gun, bulletType or fallbackBulletType)
     end

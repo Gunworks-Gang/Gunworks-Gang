@@ -1,6 +1,5 @@
 local GunworksSharedUtils = {}
 
-local table_insert = table.insert
 local table_concat = table.concat
 
 function GunworksSharedUtils.Adjust(name, property, value)
@@ -17,7 +16,7 @@ function GunworksSharedUtils.AddTagsToItem(item, tags)
 
         for i, addValue in ipairs(type(tags) ~= "table" and { tags } or tags) do
             if not currentTags:contains(addValue) then
-                table_insert(newList, addValue);
+                newList[#newList + 1] = addValue;
             end
         end
 

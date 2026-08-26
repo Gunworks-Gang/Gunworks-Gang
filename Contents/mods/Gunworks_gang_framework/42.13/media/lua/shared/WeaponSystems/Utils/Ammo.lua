@@ -1,9 +1,6 @@
 local Ammo = {}
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
-local table_insert = table.insert
-local table_remove = table.remove
-
 -------------------------------------------------
 -- Table 1: Item -> Ammo Family
 -- Maps any weapon or magazine type to its ammo family
@@ -71,7 +68,7 @@ function Ammo.GetBulletTypesForFamily(family)
     if not entries then return nil end
     local types = {}
     for _, entry in ipairs(entries) do
-        table_insert(types, entry.type)
+        types[#types + 1] = entry.type
     end
     return types
 end
@@ -141,8 +138,9 @@ function Ammo.RegisterAmmoFamily(family, bullets)
     if not Ammo.AmmoFamilies[family] then
         Ammo.AmmoFamilies[family] = {}
     end
+    local list = Ammo.AmmoFamilies[family]
     for _, entry in ipairs(bullets) do
-        table_insert(Ammo.AmmoFamilies[family], entry)
+        list[#list + 1] = entry
     end
 end
 
@@ -255,7 +253,7 @@ function Ammo.SplitAmmoListOnEject(gun)
 
     if gun:isRoundChambered() and #gunList > 1 then
         local ammoListForMag = Ammo.CopyAmmoList(gunList) or {}
-        table_remove(ammoListForMag)
+        ammoListForMag[#ammoListForMag] = nil
         gunModData.AmmoList = { gunList[#gunList] }
         return ammoListForMag
     elseif gun:isRoundChambered() then
