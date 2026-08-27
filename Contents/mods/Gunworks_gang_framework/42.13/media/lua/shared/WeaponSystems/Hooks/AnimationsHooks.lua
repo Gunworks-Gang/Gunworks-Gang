@@ -36,6 +36,14 @@ function ISReloadWeaponAction:stop()
     return ISReloadWeaponAction_stop(self)
 end
 
+-- I really want my revolvers clicking
+-- Gonna leave this commented for now
+-- local ISReloadWeaponAction_canShoot = ISReloadWeaponAction.canShoot
+-- ISReloadWeaponAction.canShoot = function(player, weapon)
+--     Animations.lockActionOpen(player, weapon)
+--     return ISReloadWeaponAction_canShoot(player, weapon)
+-- end
+
 local old_ISReloadWeaponAction_onShoot = ISReloadWeaponAction.onShoot
 Events.OnWeaponSwingHitPoint.Remove(ISReloadWeaponAction.onShoot)
 ISReloadWeaponAction.onShoot = function(player, weapon)
