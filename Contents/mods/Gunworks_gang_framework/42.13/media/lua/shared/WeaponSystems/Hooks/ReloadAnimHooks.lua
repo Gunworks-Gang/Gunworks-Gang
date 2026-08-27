@@ -12,7 +12,6 @@
 require("TimedActions/ISEjectMagazine")
 require("TimedActions/ISInsertMagazine")
 require("TimedActions/ISRackFirearm")
-require("TimedActions/ISTimedActionQueue")
 require("TimedActions/ISReloadWeaponAction")
 
 ---@class GunworksReloadAnim

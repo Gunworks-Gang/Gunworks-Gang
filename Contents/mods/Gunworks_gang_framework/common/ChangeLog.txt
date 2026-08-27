@@ -1,8 +1,17 @@
-[24/August/2026 ]
+[ 22/June/2026 ]
+B42.19:
+- Rework the arcing of grenades and not it takes into account Z levels
+[ ------ ]
+
+[ 24/August/2026 ]
 B42.20.3:
 [*] Fix magazine duplication in MP, no more empty mag dups when having mags in your backpack
 [*] Refactor and rework for optimization accross different systems
 [*] New animations callback structure for customization of moving attachments
 [*] New Shared Ammunition Library so modders can have a common resource for ammunition
-[*] 
+[*]
+[ ------ ]
+
+[ 27/August/2026 ]
+- Fixed the two failing requires throwing warnings
 [ ------ ]
