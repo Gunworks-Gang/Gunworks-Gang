@@ -1,6 +1,8 @@
 [24/August/2026 ]
 B42.20.3:
-[*] Magazine list registries should be compatible accross all mods
-[*] New Shared ammunition scripts for weapons mods to use an have Compatibility
-[*] New shared utils function for quick patching items
+[*] Fix magazine duplication in MP, no more empty mag dups when having mags in your backpack
+[*] Refactor and rework for optimization accross different systems
+[*] New animations callback structure for customization of moving attachments
+[*] New Shared Ammunition Library so modders can have a common resource for ammunition
+[*] 
 [ ------ ]
