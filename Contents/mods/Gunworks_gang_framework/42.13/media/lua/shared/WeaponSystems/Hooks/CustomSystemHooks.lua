@@ -14,8 +14,6 @@ local OrdnanceFactory = require("ExplosivesSystems/OrdnanceFactory")
 local RateOfFire = require("WeaponSystems/Utils/RateOfFire")
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
 
-local table_remove = table.remove
-
 -------------------------------------------------
 -- Multi-item reload: a gun whose reload handler declares `consumes` requires those extra items
 -- (a paper powder charge, a percussion cap, ...) once PER ROUND, on top of the valued bullet the
@@ -697,7 +695,16 @@ function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
 
             if not isClient() then
                 while gun:getCurrentAmmoCount() > 0 and count > 0 and #ammoList > 0 do
-                    local bulletType = table_remove(ammoList, 1)
+                    local bulletType
+                    if #ammoList > 1 then
+                        local index = #ammoList - 1
+                        bulletType = ammoList[index]
+                        ammoList[index] = ammoList[#ammoList]
+                        ammoList[#ammoList] = nil
+                    else
+                        bulletType = ammoList[#ammoList]
+                        ammoList[#ammoList] = nil
+                    end
                     local newBullet = instanceItem(bulletType)
                     self.character:getInventory():AddItem(newBullet)
                     gun:setCurrentAmmoCount(gun:getCurrentAmmoCount() - 1)
