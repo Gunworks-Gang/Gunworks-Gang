@@ -3,9 +3,6 @@ local Payloads                            = require("ExplosivesSystems/Payloads"
 local OrdnanceFactory                     = require("ExplosivesSystems/OrdnanceFactory")
 local ExplosionFX                         = require("ExplosivesSystems/ExplosionFX")
 
-local table_insert                        = table.insert
-local table_remove                        = table.remove
-
 ExplosivesSystems.activeOrdnance          = {}
 ExplosivesSystems.RANDOM                  = newrandom()
 ExplosivesSystems.updateCounter           = 0
@@ -241,7 +238,8 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         velocityZ        = seedVelZ,
     }
 
-    table_insert(ExplosivesSystems.activeOrdnance, ordnanceData)
+    local list = ExplosivesSystems.activeOrdnance
+    list[#list + 1] = ordnanceData
 end
 
 function ExplosivesSystems.consumeThrowableFromPlayer(player, sourceWeapon)
@@ -276,7 +274,10 @@ function ExplosivesSystems.forceDetonate(ord, index)
         )
     end
     ord.active = false
-    table_remove(ExplosivesSystems.activeOrdnance, index)
+    local list = ExplosivesSystems.activeOrdnance
+    local lastIndex = #list
+    list[index] = list[lastIndex]
+    list[lastIndex] = nil
     return true
 end
 
@@ -301,7 +302,10 @@ function ExplosivesSystems.update()
         local removed = false
 
         if not ord or not ord.active then
-            table_remove(ExplosivesSystems.activeOrdnance, i)
+            local list = ExplosivesSystems.activeOrdnance
+            local lastIndex = #list
+            list[i] = list[lastIndex]
+            list[lastIndex] = nil
             removed = true
         else
             removed = ExplosivesSystems.updateOrdnance(ord, i, scale, shouldRender)
@@ -487,7 +491,10 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
 
             Payloads.ResolveImpact(ord)
             ord.active = false
-            table_remove(ExplosivesSystems.activeOrdnance, index)
+            local list = ExplosivesSystems.activeOrdnance
+            local lastIndex = #list
+            list[index] = list[lastIndex]
+            list[lastIndex] = nil
             return true
         end
     end

@@ -9,6 +9,8 @@
 -- the public RegisterWeapon API; this file is the registry core that other ReloadAnim
 -- modules extend (kept dependency-free to avoid a require cycle).
 
+local table_remove = table.remove
+
 ---@class GunworksReloadAnimHandler
 ---@field id string
 ---@field fullType string|nil
@@ -174,7 +176,7 @@ function ReloadAnim.unregisterHandler(handlerId)
     local list = ReloadAnim.handlers
     for i = #list, 1, -1 do
         if list[i].id == handlerId then
-            table.remove(list, i)
+            table_remove(list, i)
         end
     end
     ReloadAnim.reindex()

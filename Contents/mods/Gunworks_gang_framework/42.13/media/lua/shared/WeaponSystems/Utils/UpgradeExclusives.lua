@@ -1,7 +1,5 @@
 local UpgradeExclusives = {}
 
-local table_insert = table.insert
-
 -------------------------------------------------
 -- Exclusives: partFullType -> { otherFullType = true, ... }
 -- Two registered vanilla weapon parts cannot both be installed
@@ -27,10 +25,10 @@ function UpgradeExclusives.SetExclusives(itemA, itemB)
     local itemsB = {}
     if type(itemB) == "table" then
         for _, exclusiveItem in ipairs(itemB) do
-            table_insert(itemsB, exclusiveItem)
+            itemsB[#itemsB + 1] = exclusiveItem
         end
     else
-        table_insert(itemsB, itemB)
+        itemsB[#itemsB + 1] = itemB
     end
 
     for _, exclusiveItem in ipairs(itemsB) do

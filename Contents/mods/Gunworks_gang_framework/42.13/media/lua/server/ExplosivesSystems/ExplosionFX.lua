@@ -1,8 +1,5 @@
 local ExplosionFX = {}
 
-local table_insert = table.insert
-local table_remove = table.remove
-
 ExplosionFX.activeEffects = {}
 
 local function removeWorldItem(fx)
@@ -35,7 +32,8 @@ function ExplosionFX.PlayEffect(square, itemType, lx, ly, lz, duration)
         active     = true,
     }
 
-    table_insert(ExplosionFX.activeEffects, fx)
+    local list = ExplosionFX.activeEffects
+    list[#list + 1] = fx
 end
 
 function ExplosionFX.tick()
@@ -48,12 +46,16 @@ function ExplosionFX.tick()
             fx.timeToLive = fx.timeToLive - dt
             if fx.timeToLive <= 0 then
                 fx.active = false
-                table_remove(ExplosionFX.activeEffects, i)
+                local lastIndex = #ExplosionFX.activeEffects
+                ExplosionFX.activeEffects[i] = ExplosionFX.activeEffects[lastIndex]
+                ExplosionFX.activeEffects[lastIndex] = nil
             else
                 fx.worldItem = fx.square:AddWorldInventoryItem(fx.itemType, fx.lx, fx.ly, fx.lz)
             end
         else
-            table_remove(ExplosionFX.activeEffects, i)
+            local lastIndex = #ExplosionFX.activeEffects
+            ExplosionFX.activeEffects[i] = ExplosionFX.activeEffects[lastIndex]
+            ExplosionFX.activeEffects[lastIndex] = nil
         end
         i = i - 1
     end

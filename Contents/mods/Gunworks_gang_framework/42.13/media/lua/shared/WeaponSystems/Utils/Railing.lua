@@ -1,8 +1,6 @@
 local Railing = {}
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
-local table_insert = table.insert
-
 -------------------------------------------------
 -- Registry: railingFullType -> { accessoryFullType, ... }
 -- A railing (WeaponPart already on the weapon) defines which
@@ -120,10 +118,10 @@ function Railing.SetExclusives(itemA, itemB)
     local itemsB = {}
     if type(itemB) == "table" then
         for _, exclusiveItem in ipairs(itemB) do
-            table_insert(itemsB, exclusiveItem)
+            itemsB[#itemsB + 1] = exclusiveItem
         end
     else
-        table_insert(itemsB, itemB)
+        itemsB[#itemsB + 1] = itemB
     end
 
     for _, exclusiveItem in ipairs(itemsB) do
@@ -184,7 +182,7 @@ function Railing.GetInstalledRailings(weapon)
         if part then
             local fullType = part:getFullType()
             if Railing.AcceptedAccessories[fullType] then
-                table_insert(railings, { railingType = fullType, part = part })
+                railings[#railings + 1] = { railingType = fullType, part = part }
             end
         end
     end
@@ -213,7 +211,7 @@ function Railing.GetAcceptedAccessories(weapon)
             for _, acc in ipairs(accList) do
                 if not seen[acc] then
                     seen[acc] = true
-                    table_insert(combined, acc)
+                    combined[#combined + 1] = acc
                 end
             end
         end
@@ -242,7 +240,7 @@ function Railing.GetMountedAccessories(weapon)
     for i = 0, parts:size() - 1 do
         local part = parts:get(i)
         if part and acceptedSet[part:getFullType()] then
-            table_insert(mounted, part)
+            mounted[#mounted + 1] = part
         end
     end
     return mounted

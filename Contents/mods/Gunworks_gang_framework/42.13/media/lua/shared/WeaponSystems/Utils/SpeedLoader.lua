@@ -154,13 +154,21 @@ function SpeedLoader.TransferAmmoToGun(gun, speedLoader)
     local speedLoaderAmmoList = speedLoaderModData.AmmoList
     local fallbackAmmoType = speedLoader:getAmmoType()
     local fallbackBulletType = fallbackAmmoType and fallbackAmmoType:getItemKey()
+    local listSize = speedLoaderAmmoList and #speedLoaderAmmoList or 0
 
-    for _ = 1, transferCount do
-        local bulletType = nil
-        if speedLoaderAmmoList and #speedLoaderAmmoList > 0 then
-            bulletType = table.remove(speedLoaderAmmoList, 1)
-        end
+    for i = 1, transferCount do
+        local bulletType = i <= listSize and speedLoaderAmmoList[i] or nil
         appendBulletToGunAmmoList(gun, bulletType or fallbackBulletType)
+    end
+
+    if listSize > 0 then
+        local consumed = math.min(transferCount, listSize)
+        for i = 1, listSize - consumed do
+            speedLoaderAmmoList[i] = speedLoaderAmmoList[i + consumed]
+        end
+        for i = listSize - consumed + 1, listSize do
+            speedLoaderAmmoList[i] = nil
+        end
     end
 
     gun:setCurrentAmmoCount(gun:getCurrentAmmoCount() + transferCount)
