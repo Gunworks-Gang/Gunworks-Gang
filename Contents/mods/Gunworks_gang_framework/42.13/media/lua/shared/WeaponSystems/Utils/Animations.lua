@@ -46,16 +46,13 @@ local function getIsForcedAnimate(weapon)
     return false
 end
 
-local function MarkSkipEquipRestore(weapon)
-    if not weapon then return end
-    local modData = weapon:getModData()
-    local current = modData.GW_SkipEquipRestoreCount or 0
-    local increment = weapon:isTwoHandWeapon() and 2 or 1
-    modData.GW_SkipEquipRestoreCount = current + increment
+local firingRefresh = false
+
+function Animations.IsFiringRefresh()
+    return firingRefresh
 end
 
 function Animations.CallSyncHandWeaponFields(player, weapon)
-    MarkSkipEquipRestore(weapon)
     syncHandWeaponFields(player, weapon)
     player:setPrimaryHandItem(nil)
     if weapon:isTwoHandWeapon() then
@@ -123,8 +120,10 @@ function Animations.CallAnimationFunction(weapon, open)
 end
 
 function Animations.CallAnimate(player, weapon, open)
+    firingRefresh = true
     Animations.CallAnimationFunction(weapon, open)
     Animations.CallSyncHandWeaponFields(player, weapon)
+    firingRefresh = false
 end
 
 function Animations.scheduleActionClose(seconds, callback, ...)
