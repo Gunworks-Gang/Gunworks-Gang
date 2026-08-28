@@ -1,10 +1,7 @@
 local GunworksSharedUtils = {}
+local table_concat = table.concat
 
---- Override a single script property on an already-loaded item.
----
---- Thin wrapper around `ScriptItem:DoParam`. If the item does not exist
---- (usually because the mod that defines it is not enabled) the call is a
---- silent no-op, so patch scripts can run unconditionally.
+--- Set a script property on an item. No-op if the item does not exist.
 ---@param name string      full item type, e.g. `"Base.Bullets9mm"`
 ---@param property string  script property to set, e.g. `"Icon"`, `"Weight"`, `"WorldStaticModel"`
 ---@param value any        new value; concatenated into `"<property> = <value>"`
@@ -14,11 +11,7 @@ function GunworksSharedUtils.Adjust(name, property, value)
     item:DoParam(property .. " = " .. value)
 end
 
---- Add one or more tags to an already-loaded item without dropping its existing tags.
----
---- Tags the item already carries are left untouched; only genuinely new tags
---- are added. No-op if the item does not exist. Accepts either a single tag
---- string or an array of tag strings.
+--- Add one or more tags to an item without removing existing tags.
 ---@param item string           full item type, e.g. `"Base.Bullets9mm"`
 ---@param tags string|string[]  one tag, or a list of tags, to add
 function GunworksSharedUtils.AddTagsToItem(item, tags)
@@ -35,11 +28,55 @@ function GunworksSharedUtils.AddTagsToItem(item, tags)
     end
 end
 
---- Reskin / reweight a piece of ammunition in a single call.
----
---- Convenience wrapper over `Adjust` + `AddTagsToItem` covering the fields a
---- content mod normally overrides when swapping vanilla-compatible rounds for
---- its own art. Every field is optional; anything omitted is left as-is.
+--- Add one or more valid weapons to an attachment's MountOn list.
+--- Existing mounts are preserved and duplicate or missing weapons are skipped.
+---@param attachment string       full attachment item type
+---@param weapons string|string[] one weapon type, or a list of weapon types
+function GunworksSharedUtils.AddWeaponsToMountOn(attachment, weapons)
+    local attachmentScript = ScriptManager.instance:getItem(attachment)
+    if not attachmentScript then return end
+
+    local mountOptions = instanceItem(attachment):getMountOn()
+    local weaponList = type(weapons) == "table" and weapons or { weapons }
+    local newMounts = {}
+
+    for _, weapon in ipairs(weaponList) do
+        if not mountOptions:contains(weapon) and instanceItem(weapon) then
+            newMounts[#newMounts + 1] = weapon
+        end
+    end
+
+    if #newMounts == 0 then return end
+
+    for index = 0, mountOptions:size() - 1 do
+        local weapon = mountOptions:get(index)
+        if weapon and instanceItem(weapon) then
+            newMounts[#newMounts + 1] = weapon
+        end
+    end
+
+    attachmentScript:DoParam("MountOn = " .. table_concat(newMounts, "; "))
+end
+
+--- Add model weapon parts to an item. Invalid parts are skipped.
+---@param itemName string  full weapon type, e.g. `"Base.AssaultRifle"`
+---@param parts string[]|string[][]  one `{ partType, modelName, ... }` part, or a list of them
+function GunworksSharedUtils.AddToModelWeaponPart(itemName, parts)
+    local itemScript = ScriptManager.instance:getItem(itemName)
+    if not itemScript then return end
+
+    ---@type string[][]
+    local partList = type(parts[1]) == "table" and parts or { parts }
+
+    for _, part in ipairs(partList) do
+        local fieldCount = #part
+        if fieldCount >= 2 and fieldCount <= 4 then
+            itemScript:DoParam("ModelWeaponPart = " .. table_concat(part, " "))
+        end
+    end
+end
+
+--- Adjust optional ammunition properties in one call.
 ---@class GunworksAmmoStats
 ---@field icon string|nil                inventory icon name (without the `Item_` prefix)
 ---@field worldStaticModel string|nil    world model, e.g. `"MarzGuns.9x19_Round_Base"`
