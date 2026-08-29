@@ -1,30 +1,7 @@
--------------------------------------------------
--- Underbarrel.lua
--- Underbarrel weapons via a FULL EQUIPPED-ITEM SWAP.
---
--- Pressing the toggle key removes the weapon in hand from the inventory and
--- equips the registered underbarrel weapon in its place (and back again).
--- Nothing is simulated on top of the host weapon: the host is rebuilt from a
--- plain, serialisable snapshot stored in the swapped-in weapon's modData.
---
--- What survives a toggle:
---   * condition / conditionMax / repair count / custom name
---   * every WeaponPart (optic, grip, laser, sling, integrated parts, ...)
---     with its own condition + modData
---   * ammo count, chambered / spent-round state, jam, magazine + which type,
---     the Gunworks mixed-ammo AmmoList, fire mode
---   * the ENTIRE weapon modData table (minus this system's own keys), so any
---     per-weapon state another subsystem or mod stores rides along for free
---   * anything a RegisterStatePreserver handler chooses to carry (for state
---     that does not live in modData)
---
--- The swap is server-authoritative in MP (mirrors SpawnerSystems and the base
--- game's "replace an equipped item" flow in server/ClientCommands.lua).
--------------------------------------------------
-local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
-local Ammo         = require("WeaponSystems/Utils/Ammo")
+local StatsFactory                 = require("WeaponSystems/Utils/StatsFactory")
+local Ammo                         = require("WeaponSystems/Utils/Ammo")
 
-local Underbarrel  = {}
+local Underbarrel                  = {}
 
 -- [attachmentFullType] = entry   (public: read by the gun packs' context/radial menus)
 Underbarrel.UnderbarrelAttachments = {}
@@ -39,50 +16,19 @@ Underbarrel.MODEL_SELF             = "self"
 -------------------------------------------------
 -- modData keys
 -------------------------------------------------
-local K_MODE        = "GW_UBMode"         -- true on a swapped-in underbarrel weapon
-local K_WEAPON      = "GW_UBWeaponType"   -- underbarrel weapon fullType
-local K_ATTACH      = "GW_UBAttachment"   -- attachment part fullType
-local K_MODEL       = "GW_UBModel"        -- "host" | "self"
-local K_HOST_SNAP   = "GW_UBHostSnapshot" -- snapshot needed to rebuild the host
-local K_HOST_SPRITE = "GW_UBHostSprite"   -- host WeaponSprite (for model == "host")
-local K_HOST_TYPE   = "GW_UBHostType"     -- host fullType (for model == "host" re-mask on load)
-local K_SELF_SNAP   = "GW_UBSelfSnapshot" -- on the HOST: the underbarrel weapon's own state
-
--------------------------------------------------
--- Legacy (old stat-swap system) cleanup
--------------------------------------------------
-local LEGACY_PREFIXES = {
-    "GW_MainWeapon", "GW_Underbarrel", "GW_IntegratedUnderbarrel",
-    "GW_CachedUnderbarrel", "GW_CachedIntegratedUnderbarrel",
-}
-local LEGACY_EXACT = {
-    GW_IsUnderbarrelMode            = true,
-    GW_UnderbarrelModeSource        = true,
-    GW_UnderbarrelModeWeaponType    = true,
-    GW_MainWeaponSavedStats         = true,
-    GW_IntegratedUnderbarrelDeployed = true,
-    WillRequiredManualRemovalOfAmmo = true,
-}
-local LEGACY_MAIN = {
-    ammo            = "GW_MainWeaponAmmo",
-    chambered       = "GW_MainWeaponChambered",
-    spentRound      = "GW_MainWeaponSpentRound",
-    spentRoundCount = "GW_MainWeaponSpentRoundCount",
-    jammed          = "GW_MainWeaponJammed",
-    containsClip    = "GW_MainWeaponContainsClip",
-    magazineType    = "GW_MainWeaponMagazineType",
-}
+local K_MODE                       = "GW_UBMode" -- true on a swapped-in underbarrel weapon
+local K_WEAPON                     = "GW_UBWeaponType" -- underbarrel weapon fullType
+local K_ATTACH                     = "GW_UBAttachment" -- attachment part fullType
+local K_MODEL                      = "GW_UBModel" -- "host" | "self"
+local K_HOST_SNAP                  = "GW_UBHostSnapshot" -- snapshot needed to rebuild the host
+local K_HOST_SPRITE                = "GW_UBHostSprite" -- host WeaponSprite (for model == "host")
+local K_HOST_TYPE                  = "GW_UBHostType" -- host fullType (for model == "host" re-mask on load)
+local K_SELF_SNAP                  = "GW_UBSelfSnapshot" -- on the HOST: the underbarrel weapon's own state
 
 -- Keys the host snapshot's wholesale modData copy must never carry.
 local function IsReservedModDataKey(key)
     if type(key) ~= "string" then return true end
-    if key:sub(1, 5) == "GW_UB" then return true end
-    if LEGACY_EXACT[key] then return true end
-    for i = 1, #LEGACY_PREFIXES do
-        local p = LEGACY_PREFIXES[i]
-        if key:sub(1, #p) == p then return true end
-    end
-    return false
+    return key:sub(1, 5) == "GW_UB"
 end
 
 -------------------------------------------------
@@ -106,15 +52,14 @@ function Underbarrel.Register(config)
 
     Underbarrel.UnderbarrelAttachments[config.attachment] = {
         attachment = config.attachment,
-        type       = config.weapon,   -- ".type" name kept for existing consumers
+        type       = config.weapon, -- ".type" name kept for existing consumers
         model      = model,
     }
 end
 
 --- Backwards-compatible shim for the old signature.
---- RegisterUnderbarrelAttachment(attachment, weapon [, manualRemoval] [, swapStats])
---- `manualRemoval` and `swapStats` are accepted and ignored.
-function Underbarrel.RegisterUnderbarrelAttachment(attachmentType, underbarrelType, manualRemovalOrSwapStats, swapStats)
+--- RegisterUnderbarrelAttachment(attachment, weapon)
+function Underbarrel.RegisterUnderbarrelAttachment(attachmentType, underbarrelType)
     Underbarrel.Register({
         attachment = attachmentType,
         weapon     = underbarrelType,
@@ -313,16 +258,16 @@ end
 local function BuildSnapshot(weapon)
     local md   = weapon:getModData()
     local snap = {
-        type            = weapon:getFullType(),
-        condition       = weapon:getCondition(),
-        conditionMax    = weapon:getConditionMax(),
+        type             = weapon:getFullType(),
+        condition        = weapon:getCondition(),
+        conditionMax     = weapon:getConditionMax(),
         haveBeenRepaired = weapon:getHaveBeenRepaired(),
-        weaponSprite    = weapon:getWeaponSprite(),
-        customName      = (weapon:isCustomName() and md.customName ~= nil) and tostring(md.customName) or nil,
-        ammo            = SnapshotAmmo(weapon),
-        parts           = SnapshotParts(weapon),
-        modData         = CopyModData(md),
-        preservers      = {},
+        weaponSprite     = weapon:getWeaponSprite(),
+        customName       = (weapon:isCustomName() and md.customName ~= nil) and tostring(md.customName) or nil,
+        ammo             = SnapshotAmmo(weapon),
+        parts            = SnapshotParts(weapon),
+        modData          = CopyModData(md),
+        preservers       = {},
     }
     for i = 1, #Underbarrel.StatePreservers do
         local pv = Underbarrel.StatePreservers[i]
@@ -440,8 +385,8 @@ end
 -------------------------------------------------
 
 local function ReplaceEquipped(player, oldWeapon, newWeapon)
-    local inv        = player:getInventory()
-    local sourceInv  = oldWeapon:getContainer() or inv
+    local inv       = player:getInventory()
+    local sourceInv = oldWeapon:getContainer() or inv
 
     player:removeFromHands(oldWeapon)
     sourceInv:Remove(oldWeapon)
@@ -497,7 +442,7 @@ local function RefundAmmo(player, underbarrelType, ammo)
     if not key then
         local ref = instanceItem(underbarrelType)
         local at  = ref and ref:getAmmoType()
-        key = at and at:getItemKey() or nil
+        key       = at and at:getItemKey() or nil
     end
     if not key then return end
 
@@ -554,7 +499,7 @@ function Underbarrel.PerformSwap(oldWeapon, player, entering, silent)
             newWeapon:getModData().AmmoList = nil
         end
 
-        local nmd = newWeapon:getModData()
+        local nmd          = newWeapon:getModData()
         nmd[K_MODE]        = true
         nmd[K_WEAPON]      = entry.type
         nmd[K_ATTACH]      = entry.attachment
@@ -570,7 +515,7 @@ function Underbarrel.PerformSwap(oldWeapon, player, entering, silent)
         if not Underbarrel.IsWeaponInUnderbarrelMode(oldWeapon) then return nil end
 
         local hostSnap = oldWeapon:getModData()[K_HOST_SNAP]
-        local selfSnap = BuildSnapshot(oldWeapon)   -- the underbarrel weapon's own state
+        local selfSnap = BuildSnapshot(oldWeapon) -- the underbarrel weapon's own state
 
         if type(hostSnap) == "table" then
             newWeapon = RebuildFromSnapshot(hostSnap)
@@ -692,8 +637,8 @@ function Underbarrel.HandleAttachmentRemoval(weapon, removedPart, player)
     local entry = Underbarrel.UnderbarrelAttachments[removedPart:getFullType()]
     if not entry then return end
 
-    local md       = weapon:getModData()
-    local selfSnap = md[K_SELF_SNAP]
+    local md        = weapon:getModData()
+    local selfSnap  = md[K_SELF_SNAP]
     md[K_SELF_SNAP] = nil
 
     if player and type(selfSnap) == "table" then
@@ -705,73 +650,12 @@ end
 -- Load-time reconcile
 -------------------------------------------------
 
-local function StripLegacyKeys(md)
-    for k in pairs(md) do
-        if type(k) == "string" then
-            local strip = LEGACY_EXACT[k] == true
-            if not strip then
-                for i = 1, #LEGACY_PREFIXES do
-                    local p = LEGACY_PREFIXES[i]
-                    if k:sub(1, #p) == p then
-                        strip = true
-                        break
-                    end
-                end
-            end
-            if strip then md[k] = nil end
-        end
-    end
-    md.GW_MainWeaponAmmoListBeforeUnderbarrel = nil
-end
-
---- Migrate a weapon that was saved mid-swap under the OLD stat-swap system back
---- to a clean main-weapon state, then strip all legacy keys.
-local function MigrateLegacyWeapon(weapon)
-    local md = weapon:getModData()
-    local midSwap = md.GW_IsUnderbarrelMode == true or md.GW_MainWeaponSavedStats ~= nil
-
-    if not midSwap then
-        StripLegacyKeys(md)
-        return
-    end
-
-    local saved = md.GW_MainWeaponSavedStats
-    if type(saved) == "table" then
-        for statName, value in pairs(saved) do
-            local reg = StatsFactory.Registry[statName]
-            if reg then weapon[reg.set](weapon, value) end
-        end
-    else
-        local base = StatsFactory.GetBaseStatsWithAttachments(weapon)
-        StatsFactory.Apply(weapon, StatsFactory.Snapshot(base, nil))
-    end
-
-    if md[LEGACY_MAIN.magazineType] ~= nil then weapon:setMagazineType(md[LEGACY_MAIN.magazineType]) end
-    if md[LEGACY_MAIN.ammo] ~= nil then weapon:setCurrentAmmoCount(md[LEGACY_MAIN.ammo]) end
-    if md[LEGACY_MAIN.chambered] ~= nil then weapon:setRoundChambered(md[LEGACY_MAIN.chambered]) end
-    if md[LEGACY_MAIN.spentRound] ~= nil then weapon:setSpentRoundChambered(md[LEGACY_MAIN.spentRound]) end
-    if md[LEGACY_MAIN.spentRoundCount] ~= nil then weapon:setSpentRoundCount(md[LEGACY_MAIN.spentRoundCount]) end
-    if md[LEGACY_MAIN.jammed] ~= nil then weapon:setJammed(md[LEGACY_MAIN.jammed]) end
-    if md[LEGACY_MAIN.containsClip] ~= nil then weapon:setContainsClip(md[LEGACY_MAIN.containsClip]) end
-
-    if md.GW_MainWeaponAmmoListBeforeUnderbarrel ~= nil then
-        md.AmmoList = md.GW_MainWeaponAmmoListBeforeUnderbarrel
-    end
-
-    StripLegacyKeys(md)
-    StatsFactory.ReapplyAllModifiers(weapon)
-end
-
 --- Called by Init.lua for every ranged weapon at load / equip time.
 --- A weapon legitimately stays swapped across save/load, so this re-applies the
---- host model mask (sprite / icon / ModelWeaponPart, which are not serialised)
---- plus runs the one-time legacy migration.
+--- host model mask (sprite / icon / ModelWeaponPart, which are not serialised).
 ---@param weapon HandWeapon
 function Underbarrel.RestoreOnLoad(weapon)
     if not weapon then return end
-
-    MigrateLegacyWeapon(weapon)
-
     if not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return end
 
     ReassertHostAppearance(weapon)
@@ -786,7 +670,7 @@ end
 ---@param hostType    string|nil
 function Underbarrel.ApplyRemoteModelMask(weapon, model, hostSprite, hostType)
     if not weapon or model ~= Underbarrel.MODEL_HOST then return end
-    local md = weapon:getModData()
+    local md          = weapon:getModData()
     md[K_MODE]        = true
     md[K_MODEL]       = model
     md[K_HOST_SPRITE] = hostSprite
@@ -816,7 +700,7 @@ end
 ---@param player IsoPlayer
 function Underbarrel.RecoverLostHost(player)
     if not player then return end
-    if isClient() then return end   -- server / SP authoritative only
+    if isClient() then return end -- server / SP authoritative only
 
     local pmd  = player:getModData()
     local snap = pmd[K_HOST_SNAP]
