@@ -318,7 +318,6 @@ end
 
 function CInsertMagazineProfile:fillMenu(menu, weapon)
     if weapon:isContainsClip() then return end
-    if Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return end
     local typeList = Magazine.GetMagazineTypesForGun(weapon)
     if not typeList or #typeList < 2 then return end
     local available = getAvailableMagazineTypes(self.character, weapon)

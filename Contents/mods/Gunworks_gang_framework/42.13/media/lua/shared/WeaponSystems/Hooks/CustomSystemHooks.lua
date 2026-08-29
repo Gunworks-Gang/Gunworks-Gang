@@ -9,7 +9,6 @@ local Magazine = require("WeaponSystems/Utils/Magazine")
 local SpeedLoader = require("WeaponSystems/Utils/SpeedLoader")
 local Ammo = require("WeaponSystems/Utils/Ammo")
 local Bayonet = require("WeaponSystems/Utils/Bayonet")
-local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local OrdnanceFactory = require("ExplosivesSystems/OrdnanceFactory")
 local RateOfFire = require("WeaponSystems/Utils/RateOfFire")
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
@@ -90,11 +89,6 @@ local function BeginAutomaticSpeedLoaderReload(playerObj, gun)
 end
 
 ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
-    if gun and Underbarrel.IsWeaponInUnderbarrelMode(gun) then
-        ISReloadWeaponAction_BeginAutomaticReload_Original(playerObj, gun)
-        return
-    end
-
     if Magazine.GetProfileForGun(gun) then
         local magazine = Magazine.getBestMagazineForGun(playerObj, gun)
         local hasMagazine = gun:isContainsClip()
@@ -263,10 +257,6 @@ end
 
 local ISInsertMagazine_loadAmmo_original = ISInsertMagazine.loadAmmo
 function ISInsertMagazine:loadAmmo()
-    if self.gun and Underbarrel.IsWeaponInUnderbarrelMode(self.gun) then
-        return ISInsertMagazine_loadAmmo_original(self)
-    end
-
     if self.magazine and SpeedLoader.IsCompatibleTypeForGun(self.magazine:getFullType(), self.gun) then
         local transferredCount = SpeedLoader.TransferAmmoToGun(self.gun, self.magazine)
         self.character:clearVariable("isLoading")
@@ -362,10 +352,6 @@ end
 
 local ISEjectMagazine_unloadAmmo_original = ISEjectMagazine.unloadAmmo
 function ISEjectMagazine:unloadAmmo()
-    if self.gun and Underbarrel.IsWeaponInUnderbarrelMode(self.gun) then
-        return ISEjectMagazine_unloadAmmo_original(self)
-    end
-
     local savedMagType = self._actualMagType or Magazine.GetMagazineType(self.gun)
     if not savedMagType then
         return ISEjectMagazine_unloadAmmo_original(self)

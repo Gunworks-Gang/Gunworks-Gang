@@ -1847,6 +1847,9 @@ Underbarrel.Register({
     you still visually hold your rifle. Use this for a true underbarrel launcher.
   - `"self"` — the swapped-in weapon shows its own script model. Use this when the underbarrel
     weapon should look like its own thing.
+  - In **both** modes the host's attached parts (optic, grip, laser, sling, integrated
+    parts…) are cloned onto the swapped-in weapon. The two modes differ only in the
+    sprite / model. Author the underbarrel `weapon` script without a randomising `OnCreate`.
 
 IMPORTANT: for the framework to detect the attachment, the `PartType` on your underbarrel
 attachment part must be `Underbarrel` (or `UnderbarrelIntegrated` for a built-in one):

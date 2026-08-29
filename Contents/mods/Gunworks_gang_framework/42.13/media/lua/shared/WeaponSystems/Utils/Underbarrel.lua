@@ -36,8 +36,10 @@ end
 --- config = {
 ---   attachment = string,          attachment (or integrated) part fullType
 ---   weapon     = string,          standalone underbarrel weapon fullType
----   model      = "host" | "self"  "host" (default) keeps the host weapon's model on the
----                                 swapped-in weapon; "self" shows its own script model
+---   model      = "host" | "self"  "host" (default) keeps the host weapon's model/sprite on
+---                                 the swapped-in weapon; "self" shows its own script model.
+---                                 The host's attached parts are cloned onto the swapped-in
+---                                 weapon in BOTH modes.
 --- }
 function Underbarrel.Register(config)
     if type(config) ~= "table" then return end
@@ -152,22 +154,15 @@ local function DetachAllParts(weapon)
 end
 
 -------------------------------------------------
--- Host appearance (model == "host")
+-- Host parts + model mask
 -------------------------------------------------
 
---- Make `target` look exactly like `host`: copy the sprite, icon and ModelWeaponPart list
---- (the model mask), then clone every attached part one by one. Mirrors the temporary
---- weapon built in Bayonet.BayonetAttack.
-local function ApplyHostAppearance(target, host)
+--- Replace every WeaponPart on `target` with a clone of each part attached to `host`, so the
+--- swapped-in weapon carries the same optic / grip / laser / sling / integrated parts. The
+--- clones are real WeaponParts and persist on their own. Runs for BOTH model modes. Mirrors
+--- the temporary weapon built in Bayonet.BayonetAttack.
+local function CloneHostParts(target, host)
     if not target or not host then return end
-
-    target:setWeaponSprite(host:getWeaponSprite())
-
-    local icon = host:getIcon()
-    if icon then target:setIcon(icon) end
-
-    local modelParts = host:getModelWeaponPart()
-    if modelParts then target:setModelWeaponPart(modelParts) end
 
     DetachAllParts(target)
 
@@ -182,6 +177,20 @@ local function ApplyHostAppearance(target, host)
             end
         end
     end
+end
+
+--- Copy the host's sprite, icon and ModelWeaponPart list (the model mask) onto `target`, so
+--- a model="host" weapon still renders as the rifle. Not used for model="self".
+local function ApplyHostModelMask(target, host)
+    if not target or not host then return end
+
+    target:setWeaponSprite(host:getWeaponSprite())
+
+    local icon = host:getIcon()
+    if icon then target:setIcon(icon) end
+
+    local modelParts = host:getModelWeaponPart()
+    if modelParts then target:setModelWeaponPart(modelParts) end
 end
 
 --- Re-apply the host's sprite / icon / ModelWeaponPart mask on a swapped-in weapon after a
@@ -479,25 +488,13 @@ function Underbarrel.PerformSwap(oldWeapon, player, entering, silent)
         local selfSnapshot = oldWeapon:getModData()[KEY_SELF_SNAPSHOT]
 
         -- Reuse the underbarrel weapon's own retained state if we have it, so a loaded
-        -- grenade survives repeated toggles.
-        local restoredFromSelf = false
+        -- grenade survives repeated toggles. Otherwise a plain fresh instance (the
+        -- underbarrel weapon scripts carry no randomising OnCreate).
         if type(selfSnapshot) == "table" and selfSnapshot.type == entry.type then
             newWeapon = RebuildFromSnapshot(selfSnapshot)
-            restoredFromSelf = newWeapon ~= nil
         end
         newWeapon = newWeapon or instanceItem(entry.type)
         if not newWeapon then return nil end
-
-        if not restoredFromSelf then
-            -- Fresh instance: clear any ammo the weapon's OnCreate randomised in, so it
-            -- deploys empty the first time.
-            newWeapon:setCurrentAmmoCount(0)
-            newWeapon:setRoundChambered(false)
-            newWeapon:setSpentRoundChambered(false)
-            newWeapon:setSpentRoundCount(0)
-            newWeapon:setJammed(false)
-            newWeapon:getModData().AmmoList = nil
-        end
 
         local newModData              = newWeapon:getModData()
         newModData[KEY_MODE]          = true
@@ -508,8 +505,9 @@ function Underbarrel.PerformSwap(oldWeapon, player, entering, silent)
         newModData[KEY_HOST_SPRITE]   = oldWeapon:getWeaponSprite()
         newModData[KEY_HOST_TYPE]     = oldWeapon:getFullType()
 
+        CloneHostParts(newWeapon, oldWeapon)
         if entry.model == Underbarrel.MODEL_HOST then
-            ApplyHostAppearance(newWeapon, oldWeapon)
+            ApplyHostModelMask(newWeapon, oldWeapon)
         end
     else
         if not Underbarrel.IsWeaponInUnderbarrelMode(oldWeapon) then return nil end
@@ -624,16 +622,44 @@ function Underbarrel.ToggleUnderbarrel(weapon, player)
     return true
 end
 
---- Called when a weapon part is removed (WeaponUpgradeHooks / ISRailingAction). No-op unless
---- the removed part is a registered underbarrel attachment; then the stashed underbarrel
---- weapon's retained state is dropped and its loaded rounds are refunded to the player.
+--- Drop a removed part from a stored snapshot's parts list, so a later rebuild does not
+--- re-create it. Matches on slot (partType) or exact item type.
+local function PruneSnapshotPart(snapshot, removedPart)
+    if type(snapshot) ~= "table" or type(snapshot.parts) ~= "table" then return end
+
+    local fullType = removedPart:getFullType()
+    local partType = removedPart:getPartType()
+
+    local kept = {}
+    for i = 1, #snapshot.parts do
+        local saved = snapshot.parts[i]
+        local removed = saved and (saved.type == fullType or (partType and saved.partType == partType))
+        if not removed then kept[#kept + 1] = saved end
+    end
+    snapshot.parts = kept
+end
+
+--- Called when a weapon part is removed (WeaponUpgradeHooks / ISRailingAction).
+---  * weapon is a deployed underbarrel weapon: the part also lives in the stored host
+---    snapshot, so drop it there too or toggling back would duplicate it.
+---  * weapon is in main mode and the removed part is the underbarrel attachment: drop the
+---    stashed underbarrel weapon's retained state and refund its loaded rounds.
 function Underbarrel.HandleAttachmentRemoval(weapon, removedPart, player)
     if not weapon or not removedPart then return end
+
+    local modData = weapon:getModData()
+
+    if modData[KEY_MODE] == true then
+        PruneSnapshotPart(modData[KEY_HOST_SNAPSHOT], removedPart)
+        if player then
+            PruneSnapshotPart(player:getModData()[KEY_HOST_SNAPSHOT], removedPart)
+        end
+        return
+    end
 
     local entry = Underbarrel.UnderbarrelAttachments[removedPart:getFullType()]
     if not entry then return end
 
-    local modData = weapon:getModData()
     local selfSnapshot = modData[KEY_SELF_SNAPSHOT]
     modData[KEY_SELF_SNAPSHOT] = nil
 
