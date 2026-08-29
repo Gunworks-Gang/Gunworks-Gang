@@ -3,23 +3,20 @@ local Ammo                         = require("WeaponSystems/Utils/Ammo")
 
 local Underbarrel                  = {}
 
--- attachment fullType -> registry entry. Public: the gun packs' context/radial menus read it.
 Underbarrel.UnderbarrelAttachments = {}
--- { { id, snapshot = fn(weapon), restore = fn(weapon, data) }, ... }
 Underbarrel.StatePreservers        = {}
 
-Underbarrel.MODE_SOURCE_ATTACHMENT = "attachment" -- kept for old GetModeState consumers
+Underbarrel.MODE_SOURCE_ATTACHMENT = "attachment"
 Underbarrel.MODEL_HOST             = "host"
 Underbarrel.MODEL_SELF             = "self"
 
--- modData keys, written on the swapped-in underbarrel weapon (KEY_SELF_SNAPSHOT on the host).
-local KEY_MODE                     = "GW_UBMode" -- true while this weapon is a deployed underbarrel weapon
-local KEY_WEAPON_TYPE              = "GW_UBWeaponType" -- underbarrel weapon fullType
-local KEY_ATTACHMENT               = "GW_UBAttachment" -- attachment part fullType
-local KEY_MODEL                    = "GW_UBModel" -- "host" | "self"
+local KEY_MODE                     = "GW_UBMode"         -- true while this weapon is a deployed underbarrel weapon
+local KEY_WEAPON_TYPE              = "GW_UBWeaponType"   -- underbarrel weapon fullType
+local KEY_ATTACHMENT               = "GW_UBAttachment"   -- attachment part fullType
+local KEY_MODEL                    = "GW_UBModel"        -- "host" | "self"
 local KEY_HOST_SNAPSHOT            = "GW_UBHostSnapshot" -- everything needed to rebuild the host weapon
-local KEY_HOST_SPRITE              = "GW_UBHostSprite" -- host WeaponSprite         (model == "host")
-local KEY_HOST_TYPE                = "GW_UBHostType" -- host fullType, to re-derive the model mask on load
+local KEY_HOST_SPRITE              = "GW_UBHostSprite"   -- host WeaponSprite         (model == "host")
+local KEY_HOST_TYPE                = "GW_UBHostType"     -- host fullType, to re-derive the model mask on load
 local KEY_SELF_SNAPSHOT            = "GW_UBSelfSnapshot" -- on the HOST: the underbarrel weapon's own retained state
 
 -- Keys the host snapshot's wholesale modData copy must never carry.
@@ -50,7 +47,7 @@ function Underbarrel.Register(config)
 
     Underbarrel.UnderbarrelAttachments[config.attachment] = {
         attachment = config.attachment,
-        type       = config.weapon, -- ".type" kept for existing consumers
+        type       = config.weapon,
         model      = model,
     }
 end
@@ -718,7 +715,7 @@ end
 --- weapon is gone (broke, dropped, destroyed), rebuild the host into their inventory.
 function Underbarrel.RecoverLostHost(player)
     if not player then return end
-    if isClient() then return end -- server / SP authoritative only
+    if isClient() then return end
 
     local playerModData = player:getModData()
     local snapshot = playerModData[KEY_HOST_SNAPSHOT]
