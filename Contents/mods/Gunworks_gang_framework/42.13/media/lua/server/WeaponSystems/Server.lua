@@ -32,9 +32,15 @@ local function BroadcastWeaponSync(player, weapon)
 
     syncHandWeaponFields(player, weapon)
 
+    local md = weapon:getModData()
     local syncArgs = {
         onlineID = player:getOnlineID(),
         itemId = weapon:getID(),
+        -- underbarrel model="host" mask (native packet is owner-only)
+        ubMode = md.GW_UBMode == true or nil,
+        ubModel = md.GW_UBModel,
+        ubHostSprite = md.GW_UBHostSprite,
+        ubHostType = md.GW_UBHostType,
     }
     local onlinePlayers = getOnlinePlayers()
     for i = 0, onlinePlayers:size() - 1 do
@@ -42,24 +48,6 @@ local function BroadcastWeaponSync(player, weapon)
     end
 end
 
-local function SendUnderbarrelResponse(player, itemId, approved, weapon)
-    if not player or not itemId then return end
-
-    local state = weapon and Underbarrel.GetModeState(weapon) or {
-        isUnderbarrelMode = false,
-        underbarrelType = nil,
-        modeSource = nil,
-    }
-
-    sendServerCommand(player, "SWMG", "applyUnderbarrelMode", {
-        onlineID = player:getOnlineID(),
-        itemId = itemId,
-        approved = approved == true,
-        isUnderbarrelMode = state.isUnderbarrelMode == true,
-        underbarrelType = state.underbarrelType,
-        modeSource = state.modeSource,
-    })
-end
 
 function Server.OnClientCommand(module, command, player, args)
     if module ~= "SWMG" then return end
@@ -250,44 +238,16 @@ function Server.OnClientCommand(module, command, player, args)
         Bayonet.ProcessMultiplayerHit(player, weapon)
     elseif command == "underbarrelMode" then
         local weapon = Server.getRecursiveWeaponById(player, args.itemId)
-        if not weapon then
-            SendUnderbarrelResponse(player, args.itemId, false, nil)
-            return
-        end
+        if not weapon then return end
+        if player:getPrimaryHandItem() ~= weapon then return end
 
-        if player:getPrimaryHandItem() ~= weapon then
-            SendUnderbarrelResponse(player, args.itemId, false, weapon)
-            return
-        end
+        local entering = args.action == "enter"
+        if entering and not Underbarrel.CanSwapToUnderbarrel(weapon) then return end
+        if not entering and not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return end
 
-        local approved = false
-
-        if args.action == Underbarrel.ACTION_ENTER_ATTACHMENT then
-            local entry = Underbarrel.GetAttachmentEntry(weapon)
-            if entry
-                and entry.type == args.underbarrelType
-                and not Underbarrel.IsWeaponInUnderbarrelMode(weapon) then
-                approved = Underbarrel.ReconcileModeState(
-                    weapon,
-                    player,
-                    true,
-                    Underbarrel.MODE_SOURCE_ATTACHMENT,
-                    entry.type,
-                    true
-                )
-            end
-        elseif args.action == Underbarrel.ACTION_RESTORE then
-            local state = Underbarrel.GetModeState(weapon)
-            if state.isUnderbarrelMode
-                and (not args.underbarrelType or state.underbarrelType == args.underbarrelType)
-                and (not args.modeSource or state.modeSource == args.modeSource) then
-                approved = Underbarrel.ReconcileModeState(weapon, player, false, nil, nil, true)
-            end
-        end
-
-        SendUnderbarrelResponse(player, args.itemId, approved, weapon)
-        if approved then
-            BroadcastWeaponSync(player, weapon)
+        local newWeapon = Underbarrel.PerformSwap(weapon, player, entering, true)
+        if newWeapon then
+            BroadcastWeaponSync(player, newWeapon)
         end
     elseif command == "magazineAmmoProfile" then
         local item = Server.getItemById(player, args.itemId)

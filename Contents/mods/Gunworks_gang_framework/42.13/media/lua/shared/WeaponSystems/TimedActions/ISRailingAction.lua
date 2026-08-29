@@ -66,11 +66,6 @@ end
 ISRailingUnmount = ISBaseTimedAction:derive("ISRailingUnmount")
 
 function ISRailingUnmount:isValid()
-    if self.weapon and self.accessoryPart and Underbarrel.IsWeaponInUnderbarrelMode(self.weapon) then
-        if Underbarrel.UnderbarrelAttachments[self.accessoryPart:getFullType()] then
-            return false
-        end
-    end
     if isClient() and self.weapon then
         return self.character:getInventory():containsID(self.weapon:getID())
     end

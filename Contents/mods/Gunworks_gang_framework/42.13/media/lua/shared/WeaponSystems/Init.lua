@@ -32,6 +32,7 @@ end
 local function restorePlayer(playerObj)
     if not playerObj then return end
     restoreContainer(playerObj:getInventory())
+    Underbarrel.RecoverLostHost(playerObj)
 end
 
 local function restoreEquippedWeapon(playerObj, weapon)

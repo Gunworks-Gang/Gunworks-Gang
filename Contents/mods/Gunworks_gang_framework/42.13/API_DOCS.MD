@@ -1797,14 +1797,31 @@ end
 # Underbarrel System
 
 This system lets a weapon switch to an underbarrel weapon, such as a grenade launcher or shotgun.
-The framework handles the actual mode swap and ammo state.
-For setup, you only need to register what the underbarrel weapon is.
 
-Typical setup:
+Pressing the toggle key (`U` by default) **swaps the equipped item entirely**: the weapon in
+your hand is removed from the inventory and the registered underbarrel weapon is equipped in
+its place. Pressing it again rebuilds the original weapon and re-equips it.
 
-1. Register the attachment item and the underbarrel weapon it should use.
-2. Or register a weapon that has a built-in underbarrel.
-3. Only pass `swapStats` if you need a custom stat list.
+Nothing is simulated on top of the host weapon. When you swap away, the framework takes a
+full snapshot of the host and stores it in the swapped-in weapon's modData; when you swap
+back, the host is rebuilt from that snapshot. The reverse is also true — the underbarrel
+weapon's own state (loaded round, condition) is snapshotted on the host and restored the next
+time you deploy it.
+
+What survives a toggle, in both directions:
+
+- condition, condition max, repair count, custom name
+- every attached `WeaponPart` (optic, grip, laser, sling, integrated parts…) with its own
+  condition and modData
+- ammo count, chambered / spent-round state, jam state, magazine + which magazine type, the
+  Gunworks mixed-ammo `AmmoList`, fire mode
+- the **entire weapon modData table** (minus this system's own keys), so any per-weapon state
+  another Gunworks subsystem or another mod stores is carried across for free
+
+The swap is server-authoritative in multiplayer.
+
+> Note: the swapped-in weapon is a **new item each toggle** (new item ID). Do not hold a
+> weapon's item ID across a toggle.
 
 ### Module import
 
@@ -1812,87 +1829,71 @@ Typical setup:
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 ```
 
-### 1. Attachment underbarrel registration
-
-Use this when the underbarrel comes from an attachment part.
+### Registration
 
 ```lua
-Underbarrel.RegisterUnderbarrelAttachment(attachmentType, underbarrelType, swapStats)
+Underbarrel.Register({
+    attachment = "MyMod.M203_Attachment",   -- attachment (or integrated) part fullType
+    weapon     = "MyMod.M203_Weapon",       -- standalone underbarrel weapon fullType
+    model      = "host",                    -- "host" (default) | "self"
+})
 ```
 
-Parameters:
+- `attachment`: full item type of the underbarrel attachment part. Its `PartType` must be
+  `Underbarrel` (attachment) or `UnderbarrelIntegrated` (built-in / permanent).
+- `weapon`: full item type of the standalone underbarrel weapon that gets equipped.
+- `model`:
+  - `"host"` *(default)* — the swapped-in weapon takes on the host weapon's model/sprite, so
+    you still visually hold your rifle. Use this for a true underbarrel launcher.
+  - `"self"` — the swapped-in weapon shows its own script model. Use this when the underbarrel
+    weapon should look like its own thing.
+  - In **both** modes the host's attached parts (optic, grip, laser, sling, integrated
+    parts…) are cloned onto the swapped-in weapon. The two modes differ only in the
+    sprite / model. Author the underbarrel `weapon` script without a randomising `OnCreate`.
 
-- `attachmentType`: full item type of the underbarrel attachment part.
-- `underbarrelType`: full item type of the underbarrel weapon.
-- `swapStats`: optional array of stat names to swap between the main weapon and the underbarrel weapon.
-
-If you leave `swapStats` empty, the framework uses its default stat list.
-
-IMPORTANT, For the system to detect the attachment correctly, the PartType for your underbarrel attachment needs to be set to "Underbarrel"
+IMPORTANT: for the framework to detect the attachment, the `PartType` on your underbarrel
+attachment part must be `Underbarrel` (or `UnderbarrelIntegrated` for a built-in one):
 
 ```
-item M203
+item M203_Attachment
     {
         DisplayCategory  = WeaponPart,
         ItemType         = base:weaponpart,
         Icon             = M203,
         Weight           = 0.9,
         WeightModifier   = 0.9,
-        MountOn          = MarzGuns.FakeItemRifles,
+        MountOn          = MyMod.FakeItemRifles,
         PartType         = Underbarrel,   <------------------- IMPORTANT!
         Tooltip          = Tooltip_Underbarrel_m203,
-        WorldStaticModel = MarzGuns.M203,
+        WorldStaticModel = MyMod.M203,
         CanAttach        = ItemCodeOnTest.hasScrewdriver,
         CanDetach        = ItemCodeOnTest.hasScrewdriver,
     }
 ```
 
-Example:
+The underbarrel `weapon` is an ordinary firearm script item — it uses its own ammo type,
+reload type, sounds and (with `model = "self"`) its own model.
+
+### Built-in underbarrels
+
+Put the permanent part in the weapon's `UnderbarrelIntegrated` slot (via the script's
+`OnCreate`) and register that part type the same way:
 
 ```lua
-Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_Attachment", "MyMod.M203")
+Underbarrel.Register({ attachment = "MyMod.M203_IntegratedPart", weapon = "MyMod.M203_Weapon" })
 ```
 
-Example with manual spent-round removal:
+### Preserving state outside modData
+
+Almost everything a subsystem needs is already in the weapon's modData and is carried across
+automatically. If you have state that lives somewhere else (an engine field, a toggled visual
+part), register a preserver:
 
 ```lua
-Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_Attachment", "MyMod.M203", true)
-```
-
-Example with custom swap stats:
-
-```lua
-Underbarrel.RegisterUnderbarrelAttachment("MyMod.Masterkey_Attachment", "MyMod.Masterkey", {
-	"AmmoType",
-	"MaxAmmo",
-	"ClipSize",
-	"MinDamage",
-	"MaxDamage",
-	"SoundRadius",
-	"SoundVolume",
+Underbarrel.RegisterStatePreserver("myFeature", {
+    snapshot = function(weapon) return { deployed = weapon:getSomeEngineFlag() } end,
+    restore  = function(weapon, data) weapon:setSomeEngineFlag(data.deployed) end,
 })
-```
-
-Example with manual spent-round removal and custom swap stats:
-
-```lua
-Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_Attachment", "MyMod.M203", true, {
-	"AmmoType",
-	"MaxAmmo",
-	"ClipSize",
-})
-```
-
-### 2. Built-in underbarrels
-
-Built-in underbarrels use the same attachment registration API.
-Add the permanent part to the weapon's `UnderbarrelIntegrated` slot and
-register that part type with `RegisterUnderbarrelAttachment`.
-
-Example:
-
-```lua
-Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_IntegratedPart", "MyMod.M203")
 ```
 
 ### Complete example
@@ -1900,10 +1901,21 @@ Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_IntegratedPart", "MyMod.M2
 ```lua
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 
-Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_Attachment", "MyMod.M203")
-Underbarrel.RegisterUnderbarrelAttachment("MyMod.Masterkey_Attachment", "MyMod.Masterkey")
-Underbarrel.RegisterUnderbarrelAttachment("MyMod.M203_IntegratedPart", "MyMod.M203")
+Underbarrel.Register({ attachment = "MyMod.M203_Attachment",     weapon = "MyMod.M203_Weapon" })
+Underbarrel.Register({ attachment = "MyMod.Masterkey_Attachment", weapon = "MyMod.Masterkey_Weapon" })
+Underbarrel.Register({ attachment = "MyMod.M203_IntegratedPart",  weapon = "MyMod.M203_Weapon" })
 ```
+
+### Backwards compatibility
+
+The old `Underbarrel.RegisterUnderbarrelAttachment(attachment, weapon, manualRemoval, swapStats)`
+still works. It maps to `Register{ attachment, weapon, model = "host" }`; the `manualRemoval`
+and `swapStats` arguments are accepted and ignored (the real underbarrel weapon script now
+drives spent-round handling, and there are no stats to swap).
+
+The query functions are unchanged: `Underbarrel.IsWeaponInUnderbarrelMode(weapon)`,
+`CanToggleUnderbarrel(weapon)`, `CanSwapToUnderbarrel(weapon)`, `IsUsingUnderbarrel(player)`,
+`GetModeUnderbarrelType(weapon)`, `ToggleUnderbarrel(weapon, player)`.
 
 # Universal Attachment System
 

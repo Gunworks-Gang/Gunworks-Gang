@@ -12,7 +12,6 @@ local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachment")
 local Railing = require("WeaponSystems/Utils/Railing")
 local UniversalAttachment = require("WeaponSystems/Utils/UniversalAttachment")
 local PreventRemoval = require("WeaponSystems/Utils/PreventRemovals")
-local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusives")
 local RequiredAttachment = require("WeaponSystems/Utils/RequiredAttachment")
 
@@ -652,15 +651,11 @@ local function filterPermanentParts(playerid, context, items)
             break
         end
     end
-    local isUnderbarrelMode = weapon and Underbarrel.IsWeaponInUnderbarrelMode(weapon)
-
     for i = #subMenu.options, 0, -1 do
         local v = subMenu.options[i]
         if v and v.param1 and instanceof(v.param1, "WeaponPart") then
             local partType = v.param1:getFullType()
             if PreventRemoval.IsPermanent(partType) then
-                subMenu:removeOptionByName(v.name)
-            elseif isUnderbarrelMode and Underbarrel.UnderbarrelAttachments[partType] then
                 subMenu:removeOptionByName(v.name)
             elseif weapon and Railing.HasMountedAccessoryOnRailing(weapon, v.param1) then
                 subMenu:removeOptionByName(v.name)
@@ -773,10 +768,6 @@ Events.OnFillInventoryObjectContextMenu.Add(filterRequiredAttachmentRemovals)
 local _onRemoveUpgradeWeapon_Original = ISInventoryPaneContextMenu.onRemoveUpgradeWeapon
 ISInventoryPaneContextMenu.onRemoveUpgradeWeapon = function(weapon, part, player)
     if part and PreventRemoval.IsPermanent(part:getFullType()) then
-        return
-    end
-    if weapon and part and Underbarrel.IsWeaponInUnderbarrelMode(weapon)
-        and Underbarrel.UnderbarrelAttachments[part:getFullType()] then
         return
     end
     if weapon and part and Railing.HasMountedAccessoryOnRailing(weapon, part) then
