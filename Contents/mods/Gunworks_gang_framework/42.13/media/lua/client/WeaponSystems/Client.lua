@@ -75,29 +75,14 @@ function Client.OnServerCommand(module, command, args)
         if item then
             item:getModData().AmmoList = args.ammoList
         end
-    elseif command == "applyUnderbarrelMode" then
-        local item = playerObj:getInventory():getItemWithIDRecursiv(args.itemId)
-        if item and instanceof(item, "HandWeapon") then
-            local currentState = Underbarrel.GetModeState(item)
-            local targetIsUnderbarrel = args.isUnderbarrelMode == true
-            if currentState.isUnderbarrelMode ~= targetIsUnderbarrel
-                or currentState.underbarrelType ~= args.underbarrelType
-                or currentState.modeSource ~= args.modeSource then
-                Underbarrel.ReconcileModeState(
-                    item,
-                    playerObj,
-                    targetIsUnderbarrel,
-                    args.modeSource,
-                    args.underbarrelType,
-                    true
-                )
-            end
-        end
     elseif command == "syncWeapon" then
         local targetPlayer = getPlayerByOnlineID(args.onlineID)
         if not targetPlayer then return end
         local weapon = targetPlayer:getInventory():getItemWithIDRecursiv(args.itemId)
         if not weapon or not instanceof(weapon, "HandWeapon") then return end
+        if args.ubMode then
+            Underbarrel.ApplyRemoteModelMask(weapon, args.ubModel, args.ubHostSprite, args.ubHostType)
+        end
         Animations.CallSyncHandWeaponFields(targetPlayer, weapon)
     elseif command == "applyWeapon" then
         local playerObj = getSpecificPlayer(0)
