@@ -495,6 +495,7 @@ function ISUnloadBulletsFromMagazine:animEvent(event, parameter)
                 self.character:getInventory():AddItem(newBullet)
                 mag:setCurrentAmmoCount(mag:getCurrentAmmoCount() - 1)
                 sendAddItemToContainer(self.character:getInventory(), newBullet)
+                syncItemFields(self.character, mag)
 
                 if #ammoList == 0 then
                     mag:getModData().AmmoList = nil
