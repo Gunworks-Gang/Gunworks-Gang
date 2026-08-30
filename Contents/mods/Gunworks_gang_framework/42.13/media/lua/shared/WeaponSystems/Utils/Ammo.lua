@@ -73,9 +73,92 @@ function Ammo.GetBulletTypesForFamily(family)
     return types
 end
 
+-------------------------------------------------
+-- Reload ammo preference (per-player, per-family)
+--
+-- Players can reorder how the automatic reload (R) picks between the bullet
+-- types in a family. The order is stored in the player's modData so it
+-- persists and survives relog; in MP it is a client-side ordering hint only
+-- and never mutates the shared Ammo.AmmoFamilies registry.
+-------------------------------------------------
+
+--- Get the player's saved reload-preference order for a family.
+---@param playerObj IsoPlayer
+---@param family string
+---@return string[]|nil  ordered bullet-type list, or nil if none saved
+function Ammo.GetReloadPreferenceForFamily(playerObj, family)
+    if not playerObj or not family then return nil end
+    local prefs = playerObj:getModData().GunworksAmmoPref
+    return prefs and prefs[family]
+end
+
+--- Save the player's reload-preference order for a family. Entries that are
+--- not registered in the family are dropped so modData stays tidy.
+---@param playerObj IsoPlayer
+---@param family string
+---@param orderedTypes string[]
+function Ammo.SetReloadPreferenceForFamily(playerObj, family, orderedTypes)
+    if not playerObj or not family or not orderedTypes then return end
+
+    local registryList = Ammo.GetBulletTypesForFamily(family)
+    if not registryList then return end
+
+    local inRegistry = {}
+    for _, t in ipairs(registryList) do inRegistry[t] = true end
+
+    local clean, seen = {}, {}
+    for _, t in ipairs(orderedTypes) do
+        if inRegistry[t] and not seen[t] then
+            clean[#clean + 1] = t
+            seen[t] = true
+        end
+    end
+
+    local md = playerObj:getModData()
+    if not md.GunworksAmmoPref then md.GunworksAmmoPref = {} end
+    md.GunworksAmmoPref[family] = clean
+
+    if isClient() then
+        playerObj:transmitModData()
+    end
+end
+
+--- Return a family's bullet types ordered by the player's saved preference:
+--- preferred entries first (stale ones skipped), then any remaining registered
+--- types in their original registry order. Falls back to the raw registry list
+--- when the player has no saved preference.
+---@param playerObj IsoPlayer
+---@param family string
+---@return string[]|nil
+function Ammo.GetOrderedBulletTypesForFamily(playerObj, family)
+    local registryList = Ammo.GetBulletTypesForFamily(family)
+    if not registryList then return nil end
+
+    local pref = Ammo.GetReloadPreferenceForFamily(playerObj, family)
+    if not pref or #pref == 0 then return registryList end
+
+    local inRegistry = {}
+    for _, t in ipairs(registryList) do inRegistry[t] = true end
+
+    local ordered, seen = {}, {}
+    for _, t in ipairs(pref) do
+        if inRegistry[t] and not seen[t] then
+            ordered[#ordered + 1] = t
+            seen[t] = true
+        end
+    end
+    for _, t in ipairs(registryList) do
+        if not seen[t] then
+            ordered[#ordered + 1] = t
+            seen[t] = true
+        end
+    end
+    return ordered
+end
+
 --- Pick reload ammo with the simplest rule set:
---- use the family's registered base ammo first, otherwise use the next
---- registered ammo type that exists in inventory.
+--- use the player's most-preferred ammo for the family first (falling back to
+--- registry order), otherwise use the next type that exists in inventory.
 ---@param playerObj IsoPlayer
 ---@param item InventoryItem
 ---@return string|nil
@@ -86,7 +169,7 @@ function Ammo.GetAutomaticReloadAmmoType(playerObj, item)
     if not inventory then return nil end
 
     local family = Ammo.ItemAmmoFamily[item:getFullType()]
-    local bulletTypes = family and Ammo.GetBulletTypesForFamily(family)
+    local bulletTypes = family and Ammo.GetOrderedBulletTypesForFamily(playerObj, family)
     if bulletTypes and #bulletTypes > 0 then
         for i = 1, #bulletTypes do
             local bulletType = bulletTypes[i]

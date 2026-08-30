@@ -394,6 +394,10 @@ function AmmoLoaderUI:createChildren()
     self.ammoList.doDrawItem = AmmoLoaderUI.doDrawAmmoItem
     self.ammoList.target = self
     self.ammoList.onMouseDown = AmmoLoaderUI.onAmmoListMouseDown
+    self.ammoList.onMouseMove = AmmoLoaderUI.onAmmoListMouseMove
+    self.ammoList.onMouseMoveOutside = AmmoLoaderUI.onAmmoListMouseMoveOutside
+    self.ammoList.onMouseUp = AmmoLoaderUI.onAmmoListMouseUp
+    self.ammoList.onMouseUpOutside = AmmoLoaderUI.onAmmoListMouseUpOutside
     self.ammoList.backgroundColor = { r = 0.05, g = 0.05, b = 0.05, a = 0.9 }
     self.ammoList.borderColor = { r = 0.3, g = 0.3, b = 0.3, a = 1 }
     self.rightPanel:addChild(self.ammoList)
@@ -482,7 +486,10 @@ end
 
 function AmmoLoaderUI:onItemRemoved()
     self.ammoList:clear()
+    self.ammoList.ammoSortable = false
     self.selectedAmmoType = nil
+    self.currentAmmoFamily = nil
+    self.ammoOrderDirty = false
     self.transferAmount = 0
     self.maxTransferAmount = 0
     self.ammoSlider:setValues(0, 0)
@@ -495,14 +502,25 @@ end
 function AmmoLoaderUI:populateAmmoList()
     self.ammoList:clear()
     self.selectedAmmoType = nil
+    self.ammoOrderDirty = false
 
     local targetItem = self.dropPanel:getItem()
-    if not targetItem then return end
+    if not targetItem then
+        self.currentAmmoFamily = nil
+        return
+    end
+
+    self.currentAmmoFamily = Ammo.ItemAmmoFamily[targetItem:getFullType()]
 
     local ammoTypes = self:getAvailableAmmoTypes(targetItem)
 
+    local sortable = self.currentAmmoFamily ~= nil and #ammoTypes > 1
+    self.ammoList.ammoSortable = sortable
+    local tooltip = sortable and (getText("IGUI_AmmoLoader_SortTooltip")
+        or "Drag to set reload priority (top = preferred for R)") or nil
+
     for _, ammoData in ipairs(ammoTypes) do
-        self.ammoList:addItem(ammoData.name, ammoData)
+        self.ammoList:addItem(ammoData.name, ammoData, tooltip)
     end
 
     if #self.ammoList.items > 0 then
@@ -515,8 +533,8 @@ function AmmoLoaderUI:getAvailableAmmoTypes(targetItem)
     local result = {}
     local inventory = self.player:getInventory()
 
-    local ammoProfile = Ammo.ItemAmmoFamily[targetItem:getFullType()]
-    local bulletTypes = ammoProfile and Ammo.GetBulletTypesForFamily(ammoProfile)
+    local family = Ammo.ItemAmmoFamily[targetItem:getFullType()]
+    local bulletTypes = family and Ammo.GetOrderedBulletTypesForFamily(self.player, family)
     if bulletTypes then
         for _, ammoTypeKey in ipairs(bulletTypes) do
             local count = inventory:getCountTypeRecurse(ammoTypeKey)
@@ -568,6 +586,15 @@ function AmmoLoaderUI.doDrawAmmoItem(self, y, item, alt)
     local rightPadding = 5
     local scrollbarWidth = self.vscroll and self.vscroll:getWidth() or 0
 
+    if self.ammoSortable then
+        local gripW, gripX = 7, 4
+        local gripMidY = y + self.itemheight / 2
+        for i = -1, 1 do
+            self:drawRect(gripX, gripMidY + i * 3, gripW, 1, 0.5, 0.7, 0.7, 0.7)
+        end
+        textX = gripX + gripW + 5
+    end
+
     if ammoData.texture then
         local iconSize = self.itemheight - 4
         self:drawTextureScaled(ammoData.texture, textX, y + 2, iconSize, iconSize, 1, 1, 1, 1)
@@ -599,16 +626,97 @@ function AmmoLoaderUI.doDrawAmmoItem(self, y, item, alt)
     return y + self.itemheight
 end
 
+local function ammoRowAt(listBox, localY)
+    return listBox:rowAt(listBox:getMouseX(), localY - listBox:getYScroll())
+end
+
 function AmmoLoaderUI.onAmmoListMouseDown(self, x, y)
     if #self.items == 0 then return end
 
-    local row = self:rowAt(x, y)
+    local row = ammoRowAt(self, y)
     if row > 0 and row <= #self.items then
         self.selected = row
         local parent = self.target
         parent.selectedAmmoType = self.items[row].item.ammoTypeKey
         parent:updateMaxAmount()
+
+        if self.ammoSortable and not self:isMouseOverScrollBar() then
+            self.dragArmed  = true
+            self.dragMoved  = false
+            self.dragRow    = row
+            self.dragStartY = y
+            self:setCapture(true)
+            return true
+        end
     end
+end
+
+local function updateAmmoDrag(listBox)
+    if not listBox.dragArmed then return end
+
+    local y = listBox:getMouseY()
+    if not listBox.dragMoved then
+        if math.abs(y - listBox.dragStartY) < 4 then return end
+        listBox.dragMoved = true
+    end
+
+    local row = ammoRowAt(listBox, y)
+    if row < 1 then row = 1 end
+    if row > #listBox.items then row = #listBox.items end
+
+    if row ~= listBox.dragRow then
+        local moved = table.remove(listBox.items, listBox.dragRow)
+        table.insert(listBox.items, row, moved)
+        listBox.dragRow               = row
+        listBox.selected              = row
+        listBox.target.ammoOrderDirty = true
+    end
+end
+
+local function finishAmmoDrag(listBox)
+    if not listBox.dragArmed then return end
+    listBox.dragArmed = false
+    listBox.dragRow   = nil
+    listBox:setCapture(false)
+
+    if listBox.dragMoved and listBox.target.ammoOrderDirty then
+        listBox.target:commitAmmoOrder()
+    end
+    listBox.dragMoved = false
+end
+
+function AmmoLoaderUI.onAmmoListMouseMove(self, dx, dy)
+    ISScrollingListBox.onMouseMove(self, dx, dy)
+    updateAmmoDrag(self)
+end
+
+function AmmoLoaderUI.onAmmoListMouseMoveOutside(self, dx, dy)
+    ISScrollingListBox.onMouseMoveOutside(self, dx, dy)
+    updateAmmoDrag(self)
+end
+
+function AmmoLoaderUI.onAmmoListMouseUp(self, x, y)
+    ISScrollingListBox.onMouseUp(self, x, y)
+    local wasDragging = self.dragArmed
+    finishAmmoDrag(self)
+    if wasDragging then return true end
+end
+
+function AmmoLoaderUI.onAmmoListMouseUpOutside(self, x, y)
+    ISScrollingListBox.onMouseUpOutside(self, x, y)
+    finishAmmoDrag(self)
+end
+
+function AmmoLoaderUI:commitAmmoOrder()
+    self.ammoOrderDirty = false
+    if not self.currentAmmoFamily then return end
+
+    local ordered = {}
+    for _, listItem in ipairs(self.ammoList.items) do
+        ordered[#ordered + 1] = listItem.item.ammoTypeKey
+    end
+    if #ordered == 0 then return end
+    Ammo.SetReloadPreferenceForFamily(self.player, self.currentAmmoFamily, ordered)
 end
 
 -----------------------------------------------------------

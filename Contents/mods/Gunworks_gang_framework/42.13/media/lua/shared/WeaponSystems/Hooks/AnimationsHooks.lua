@@ -39,6 +39,7 @@ end
 -- I really want my revolvers clicking
 local ISReloadWeaponAction_canShoot = ISReloadWeaponAction.canShoot
 ISReloadWeaponAction.canShoot = function(player, weapon)
+    if weapon:getFireMode() == "Safe" then return false end
     Animations.lockActionOpen(player, weapon)
     return ISReloadWeaponAction_canShoot(player, weapon)
 end

@@ -2,6 +2,7 @@
   "IGUI_AmmoLoader_Title": "Ammo Loader",
   "IGUI_AmmoLoader_DropLabel": "Drop Firearm or Magazine",
   "IGUI_AmmoLoader_DragTooltip": "Drag a firearm or magazine here",
+  "IGUI_AmmoLoader_SortTooltip": "Drag to set reload priority. The top entry is picked first when you press Reload.",
   "IGUI_Amount": "Amount",
   "IGUI_AmmoType": "Ammo Type",
   "IGUI_Load": "Load",
