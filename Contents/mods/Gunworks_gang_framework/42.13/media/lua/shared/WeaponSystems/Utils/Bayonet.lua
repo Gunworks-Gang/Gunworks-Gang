@@ -1,7 +1,10 @@
+local RequiredAttachment = require("WeaponSystems/Utils/RequiredAttachment")
+
 local Bayonet = {}
 local random = newrandom()
 
 Bayonet.BayonetMountableWeapons = {}
+Bayonet.ModularMountableWeapons = {}
 Bayonet.BayonetKnives = {}
 Bayonet.MountableWeapons = {}
 Bayonet.PendingWeaponRestorations = {}
@@ -146,7 +149,11 @@ end
 
 --- Register one or more weapons that can accept a bayonet.
 ---@param bayonetType string|string[]  the bayonet attachment fullType e.g. "MWA.M9_BAYONET" or { "MWA.M9_BAYONET", "MWA.M5_BAYONET" }
----@param weaponTypes string|string[]  fullType or table of fullTypes e.g. "MWA.M16A2" or { "MWA.M16A2", "MWA.ACR" }
+---@param weaponTypes string|table     fullType, or a list of fullTypes. A list entry may itself
+---                                    be { "Weapon.FullType", modular = true } to mark that
+---                                    weapon as part-gated: attaching the bayonet then respects
+---                                    RequiredAttachment (e.g. it needs a barrel installed).
+---                                    Legacy weapons (bare strings) are never part-gated.
 function Bayonet.RegisterMountableWeapon(bayonetType, weaponTypes)
     if not bayonetType or not weaponTypes then return end
 
@@ -155,6 +162,17 @@ function Bayonet.RegisterMountableWeapon(bayonetType, weaponTypes)
             if currentBayonetType then
                 Bayonet.RegisterMountableWeapon(currentBayonetType, weaponTypes)
             end
+        end
+        return
+    end
+
+    -- Entry-table form: { "Weapon.FullType", modular = true }
+    if type(weaponTypes) == "table" and type(weaponTypes[1]) == "string" and weaponTypes[2] == nil then
+        local weaponType = weaponTypes[1]
+        Bayonet.BayonetMountableWeapons[weaponType] = Bayonet.BayonetMountableWeapons[weaponType] or {}
+        Bayonet.BayonetMountableWeapons[weaponType][bayonetType] = true
+        if weaponTypes.modular then
+            Bayonet.ModularMountableWeapons[weaponType] = true
         end
         return
     end
@@ -297,6 +315,11 @@ function Bayonet.CanAttachBayonet(weapon, bayonetKnife)
     if not acceptedBayonets[knifeEntry.bayonetType] then return false end
     if Bayonet.IsBlockedByExclusive(weapon, knifeEntry.bayonetType) then return false end
 
+    if Bayonet.ModularMountableWeapons[weapon:getFullType()]
+        and RequiredAttachment.IsInstallationBlocked(weapon, knifeEntry.bayonetType) then
+        return false
+    end
+
     return true
 end
 
@@ -376,7 +399,7 @@ function Bayonet.RestoreWeaponAfterBayonet(character, weapon)
     local attackContext = GetPendingAttackContext(character)
     if attackContext and attackContext.originalWeapon == weapon then
         if attackContext.tempWeapon then
-            attackContext.tempWeapon:getModData().MWA_BayonetOriginalWeapon = nil
+            attackContext.tempWeapon:getModData().GW_BayonetOriginalWeapon = nil
         end
     end
 
@@ -434,7 +457,7 @@ function Bayonet.BayonetAttack(character, chargeDelta, weapon, callback)
     bayonetTempWeapon:setWeaponSprite(weapon:getWeaponSprite())
     bayonetTempWeapon:setIcon(weapon:getIcon())
     bayonetTempWeapon:setBloodLevel(weapon:getBloodLevel())
-    bayonetTempWeapon:getModData().MWA_BayonetOriginalWeapon = weapon
+    bayonetTempWeapon:getModData().GW_BayonetOriginalWeapon = weapon
 
     local modelParts = weapon:getModelWeaponPart()
     if modelParts then
@@ -588,7 +611,7 @@ Events.OnPlayerUpdate.Add(function(playerObj)
     local primaryHand = playerObj:getPrimaryHandItem()
 
     if primaryHand then
-        local originalWeapon = primaryHand:getModData().MWA_BayonetOriginalWeapon
+        local originalWeapon = primaryHand:getModData().GW_BayonetOriginalWeapon
         if originalWeapon then
             if not playerObj:isAttacking() and not playerObj:isAttackStarted() then
                 Bayonet.RestoreWeaponAfterBayonet(playerObj, originalWeapon)
