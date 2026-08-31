@@ -79,7 +79,7 @@ end
 -- Players can reorder how the automatic reload (R) picks between the bullet
 -- types in a family. The order is stored in the player's modData so it
 -- persists and survives relog; in MP it is a client-side ordering hint only
--- and never mutates the shared Ammo.AmmoFamilies registry.
+-- and never mutates the shared Ammo.AmmoFamilies registry. <- important to keep this independent
 -------------------------------------------------
 
 --- Get the player's saved reload-preference order for a family.

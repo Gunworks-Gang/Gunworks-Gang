@@ -15,3 +15,9 @@ B42.20.3:
 [ 27/August/2026 ]
 - Fixed the two failing requires throwing warnings
 [ ------ ]
+
+[ 31/August/2026 ]
+- Implement new ammo priority systems
+- Fix Underbarrel system removing the player hotbar items preferences
+- Bayonet system despect requiredparts system and allow flagging a weapon as modular
+[ ------ ]
