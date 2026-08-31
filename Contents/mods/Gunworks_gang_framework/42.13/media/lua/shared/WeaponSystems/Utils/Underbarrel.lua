@@ -513,9 +513,6 @@ function Underbarrel.PerformSwap(oldWeapon, player, entering, silent)
         local hostSnapshot = BuildSnapshot(oldWeapon)
         local selfSnapshot = oldWeapon:getModData()[KEY_SELF_SNAPSHOT]
 
-        -- Reuse the underbarrel weapon's own retained state if we have it, so a loaded
-        -- grenade survives repeated toggles. Otherwise a plain fresh instance (the
-        -- underbarrel weapon scripts carry no randomising OnCreate).
         if type(selfSnapshot) == "table" and selfSnapshot.type == entry.type then
             newWeapon = RebuildFromSnapshot(selfSnapshot)
         end
@@ -610,7 +607,6 @@ function Underbarrel.GetAttachmentEntry(weapon)
     return GetAttachmentEntry(weapon)
 end
 
---- Kept for consumers that read the old table shape.
 function Underbarrel.GetModeState(weapon)
     if not weapon then
         return { isUnderbarrelMode = false, underbarrelType = nil, modeSource = nil }
