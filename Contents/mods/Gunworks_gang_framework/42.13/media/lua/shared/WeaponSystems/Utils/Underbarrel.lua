@@ -92,7 +92,19 @@ end
 
 local function GetAttachmentPart(weapon)
     if not weapon then return nil end
-    return weapon:getWeaponPart("Underbarrel") or weapon:getWeaponPart("UnderbarrelIntegrated")
+
+    local part = weapon:getWeaponPart("Underbarrel") or weapon:getWeaponPart("UnderbarrelIntegrated")
+    if part and Underbarrel.UnderbarrelAttachments[part:getFullType()] then return part end
+
+    local parts = weapon:getAllWeaponParts()
+    if not parts then return nil end
+    for i = 0, parts:size() - 1 do
+        local candidate = parts:get(i)
+        if candidate and Underbarrel.UnderbarrelAttachments[candidate:getFullType()] then
+            return candidate
+        end
+    end
+    return nil
 end
 
 local function GetAttachmentEntry(weapon)
