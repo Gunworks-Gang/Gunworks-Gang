@@ -379,13 +379,42 @@ local function RebuildFromSnapshot(snapshot)
 
     StatsFactory.ReapplyAllModifiers(weapon)
 
-    -- Fire mode last: custom RoF fire modes only become valid once the modifier layers have
-    -- re-registered the weapon's fire-mode possibilities.
     if snapshot.ammo and snapshot.ammo.fireMode then
         weapon:setFireMode(snapshot.ammo.fireMode)
     end
 
     return weapon
+end
+
+-------------------------------------------------
+-- Hotbar slot preservation
+-------------------------------------------------
+
+local function CaptureHotbarSlot(player, weapon)
+    if not getPlayerHotbar then return nil end
+    local hotBar = getPlayerHotbar(player:getPlayerNum())
+    if not hotBar or not hotBar:isInHotbar(weapon) then return nil end
+
+    local slotIndex = weapon:getAttachedSlot()
+    local available = hotBar.availableSlot[slotIndex]
+    if not available or not available.def then return nil end
+
+    return {
+        slotIndex  = slotIndex,
+        slotDef    = available.def,
+        attachment = available.def.attachments[weapon:getAttachmentType()],
+    }
+end
+
+local function RestoreHotbarSlot(player, weapon, slot)
+    if not slot or not weapon or not getPlayerHotbar then return end
+    local hotBar = getPlayerHotbar(player:getPlayerNum())
+    if not hotBar then return end
+
+    local attachment = slot.slotDef.attachments[weapon:getAttachmentType()] or slot.attachment
+    hotBar:attachItem(weapon, attachment, slot.slotIndex, slot.slotDef, false)
+    hotBar.needsRefresh = true
+    hotBar:update()
 end
 
 -------------------------------------------------
@@ -523,7 +552,9 @@ function Underbarrel.PerformSwap(oldWeapon, player, entering, silent)
         newWeapon:getModData()[KEY_SELF_SNAPSHOT] = selfSnapshot
     end
 
-    local equipped = ReplaceEquipped(player, oldWeapon, newWeapon)
+    local hotbarSlot = CaptureHotbarSlot(player, oldWeapon)
+    local equipped   = ReplaceEquipped(player, oldWeapon, newWeapon)
+    RestoreHotbarSlot(player, equipped, hotbarSlot)
 
     -- Keep the host snapshot on the player too, as a recovery net (see RecoverLostHost).
     local playerModData = player:getModData()
