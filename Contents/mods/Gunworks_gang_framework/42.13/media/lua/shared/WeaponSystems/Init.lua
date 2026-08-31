@@ -1,4 +1,5 @@
 require("WeaponSystems/Utils/CustomStatsAttachments")
+require("WeaponSystems/Utils/ConditionalModel")
 
 local Animations   = require("WeaponSystems/Utils/Animations")
 local Bayonet      = require("WeaponSystems/Utils/Bayonet")

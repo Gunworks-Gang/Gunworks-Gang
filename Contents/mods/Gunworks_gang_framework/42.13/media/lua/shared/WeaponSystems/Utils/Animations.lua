@@ -23,6 +23,8 @@ end
 ---                     OR { MultipleAttachment = { Slide = { open = "Part.Open", locked = "Part.Locked" } } }
 ---                     OR { MultipleAttachmentsVariant = { Slide = { partType = "Slide", variants = { ["Part.A"] = { open = "Part.OpenA", locked = "Part.LockedA" }, ["Part.B"] = { open = "Part.OpenB", locked = "Part.LockedB" } } } } }
 ---                     OR { Models     = { open = "Sprite_Open", locked = "Sprite_Locked" } }
+---                        `open` / `locked` may each be a function(weapon) -> sprite string,
+---                        for weapons whose sprite is resolved dynamically (e.g. from installed parts).
 ---                     Optional: `cycleTicks` (number of ticks at 60 ticks/second) controls how long the action stays racked open before auto-closing. Defaults to Animations.DEFAULT_CYCLE_TICKS (10, i.e. 10/60 seconds).
 ---                     Optional: `force` bypasses the checks and trigger the animation on firing (perfect for revolver type weapons)
 function Animations.RegisterWeaponWithAnimatedParts(fullType, entry)
@@ -99,7 +101,13 @@ function Animations.CallAnimationFunction(weapon, open)
     local key = open and "open" or "locked"
 
     if entry.Models then
-        weapon:setWeaponSprite(entry.Models[key])
+        local sprite = entry.Models[key]
+        if type(sprite) == "function" then
+            sprite = sprite(weapon)
+        end
+        if sprite then
+            weapon:setWeaponSprite(sprite)
+        end
     end
 
     if entry.SingleAttachment then
