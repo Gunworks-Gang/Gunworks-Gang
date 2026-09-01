@@ -20,4 +20,6 @@ B42.20.3:
 - Implement new ammo priority systems
 - Fix Underbarrel system removing the player hotbar items preferences
 - Bayonet system despect requiredparts system and allow flagging a weapon as modular
+- Underbarrel allow look up of weapon parts outside of Underbarrel PartType
+- New Endpoint for conditional adjustments of weapon models
 [ ------ ]
