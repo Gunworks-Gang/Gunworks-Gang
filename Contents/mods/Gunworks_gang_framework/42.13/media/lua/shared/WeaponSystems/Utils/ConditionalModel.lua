@@ -1,21 +1,11 @@
-local ConditionalModel = {}
-local StatsFactory     = require("WeaponSystems/Utils/StatsFactory")
+local ConditionalModel    = {}
+local StatsFactory        = require("WeaponSystems/Utils/StatsFactory")
 
 -------------------------------------------------
 -- Registry: weaponFullType -> {
 --   rules   = { { parts = { <slot> = <match>, ... }, model = "Module.Model" }, ... }
 --   default = "Module.Model" | nil   model used when no rule matched
 -- }
---
--- Each rule's `parts` maps a weapon-part slot (PartType string, e.g. "Barrel",
--- "Handguard") to the part that must be installed there. A <match> is:
---   * a string        exact part fullType installed in that slot
---   * a string array   any one of these part fullTypes
--- Every slot in `parts` must match for the rule to fire (logical AND).
---
--- Rules are tested top to bottom and the first match wins, so list the most
--- specific combos first. `model` must be the name of a `model` script block
--- (with module prefix) - it is set as the weapon's WeaponSprite.
 -------------------------------------------------
 ConditionalModel.Registry = {}
 
