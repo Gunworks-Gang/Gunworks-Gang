@@ -113,10 +113,14 @@ function ItemSpawnCore.resolve(item, entry, computeFn, queue, resolveFn)
         return
     end
 
-    queue.clear(item)
-
     local newItem, bonusItems = computeFn(item, entry)
-    if not newItem then return end
+    if not newItem then
+        print("Attempting to replace again " .. tostring(item:getFullType()))
+        queue.mark(item, resolveFn)
+        return
+    end
+
+    queue.clear(item)
 
     if container then
         replaceContainerSpawner(item, container, newItem, bonusItems)
