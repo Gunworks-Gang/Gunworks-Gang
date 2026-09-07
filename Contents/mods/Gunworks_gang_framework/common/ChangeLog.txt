@@ -23,3 +23,7 @@ B42.20.3:
 - Underbarrel allow look up of weapon parts outside of Underbarrel PartType
 - New Endpoint for conditional adjustments of weapon models
 [ ------ ]
+
+[ 7/Septiembre/2026 ]
+- Add a check for replacers to flag retry during replace operations
+[ ------ ]
