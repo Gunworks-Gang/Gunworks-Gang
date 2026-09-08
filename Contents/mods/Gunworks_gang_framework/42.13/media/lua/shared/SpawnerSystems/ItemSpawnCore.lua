@@ -2,6 +2,7 @@ local ItemSpawnCore = {}
 local r = newrandom()
 
 ItemSpawnCore.SPAWNER_ITEM_MODDATA_KEY = "Gunworks_SpawnerItemType"
+ItemSpawnCore.MAX_DEFERRED_TICKS = 300
 
 function ItemSpawnCore.shouldProcess()
     return not isClient() or isServer()
@@ -74,27 +75,33 @@ local function replaceWorldSpawner(spawnerItem, worldItem, newItem, bonusItems)
 end
 
 function ItemSpawnCore.newDeferredQueue()
-    local activeTicks = {}
+    local entries = {}
     local queue = {}
 
     function queue.mark(item, resolveFn)
-        if activeTicks[item] then return end
+        if entries[item] then return end
 
-        local function tick()
+        local entry = { attempts = 0 }
+        entry.tick = function()
+            entry.attempts = entry.attempts + 1
+            if entry.attempts > ItemSpawnCore.MAX_DEFERRED_TICKS then
+                queue.clear(item)
+                return
+            end
             if not ItemSpawnCore.shouldProcess() then return end
             resolveFn(item)
         end
 
-        activeTicks[item] = tick
-        Events.OnTick.Add(tick)
+        entries[item] = entry
+        Events.OnTick.Add(entry.tick)
     end
 
     function queue.clear(item)
-        local tick = activeTicks[item]
-        if not tick then return end
+        local entry = entries[item]
+        if not entry then return end
 
-        Events.OnTick.Remove(tick)
-        activeTicks[item] = nil
+        Events.OnTick.Remove(entry.tick)
+        entries[item] = nil
     end
 
     return queue
