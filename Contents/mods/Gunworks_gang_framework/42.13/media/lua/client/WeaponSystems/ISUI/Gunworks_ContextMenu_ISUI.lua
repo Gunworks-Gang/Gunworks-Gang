@@ -19,6 +19,14 @@ local function predicateNotBroken(item)
     return not item:isBroken()
 end
 
+local function getUpgradeTool(playerObj, partType)
+    local tool = Gunworks_AttachAndDetach and Gunworks_AttachAndDetach.getPrimaryTool(playerObj, partType)
+    if tool then
+        return tool
+    end
+    return playerObj:getInventory():getFirstTagEvalRecurse(ItemTag.SCREWDRIVER, predicateNotBroken)
+end
+
 -------------------------------------------------
 -- Foldable Stock Context Menu
 -------------------------------------------------
@@ -765,23 +773,50 @@ end
 
 Events.OnFillInventoryObjectContextMenu.Add(filterRequiredAttachmentRemovals)
 
-local _onRemoveUpgradeWeapon_Original = ISInventoryPaneContextMenu.onRemoveUpgradeWeapon
+-------------------------------------------------
+-- Weapon Upgrade / Remove Upgrade
+-- Block invalid removals, then auto-equip the correct tool for the part's
+-- PartType (screwdriver, wrench, ...) via Gunworks_AttachAndDetach.
+-- This is the ONE ISUI owner of the tool-equip step. Content mods register
+-- their PartType -> tool map with Gunworks_AttachAndDetach.RegisterPartTools
+-- and must not override onUpgradeWeapon / onRemoveUpgradeWeapon themselves.
+-------------------------------------------------
 ISInventoryPaneContextMenu.onRemoveUpgradeWeapon = function(weapon, part, player)
-    if part and PreventRemoval.IsPermanent(part:getFullType()) then
+    if not weapon or not part then return end
+
+    if PreventRemoval.IsPermanent(part:getFullType()) then
         return
     end
-    if weapon and part and Railing.HasMountedAccessoryOnRailing(weapon, part) then
+    if Railing.HasMountedAccessoryOnRailing(weapon, part) then
         return
     end
-    if weapon and part and RequiredAttachment.IsRemovalBlocked(weapon, part:getFullType()) then
+    if RequiredAttachment.IsRemovalBlocked(weapon, part:getFullType()) then
         return
     end
-    if weapon and part and UniversalAttachment.IsRegisteredOutcome(weapon, part) then
-        if not UniversalAttachment.CanRemoveInstalledPart(weapon, part) then
-            return
-        end
+    if UniversalAttachment.IsRegisteredOutcome(weapon, part)
+        and not UniversalAttachment.CanRemoveInstalledPart(weapon, part) then
+        return
     end
-    _onRemoveUpgradeWeapon_Original(weapon, part, player)
+
+    ISInventoryPaneContextMenu.transferIfNeeded(player, weapon)
+    local tool = getUpgradeTool(player, part:getPartType())
+    if tool then
+        ISInventoryPaneContextMenu.equipWeapon(tool, true, false, player:getPlayerNum())
+    end
+    ISTimedActionQueue.add(ISRemoveWeaponUpgrade:new(player, weapon, part:getPartType()))
+end
+
+ISInventoryPaneContextMenu.onUpgradeWeapon = function(weapon, part, player)
+    if not weapon or not part then return end
+
+    ISInventoryPaneContextMenu.transferIfNeeded(player, weapon)
+    ISInventoryPaneContextMenu.transferIfNeeded(player, part)
+    ISInventoryPaneContextMenu.equipWeapon(part, false, false, player:getPlayerNum())
+    local tool = getUpgradeTool(player, part:getPartType())
+    if tool then
+        ISInventoryPaneContextMenu.equipWeapon(tool, true, false, player:getPlayerNum())
+    end
+    ISTimedActionQueue.add(ISUpgradeWeapon:new(player, weapon, part))
 end
 
 -------------------------------------------------
