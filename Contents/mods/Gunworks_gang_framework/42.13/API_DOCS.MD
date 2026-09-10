@@ -48,7 +48,8 @@ Ammo.RegisterRestoreStats({
 
 ### 2. Item to family registration
 
-Use this to assign one or more weapon or magazine item types to an ammo family.
+Use this to assign one or more weapon, magazine, **or weapon-part** item types to
+an ammo family.
 
 ```lua
 Ammo.RegisterItemWithFamily(family, itemTypes)
@@ -69,6 +70,17 @@ Ammo.RegisterItemWithFamily("5.56x45mm", {
 	"MyMod.AR15Mag30",
 	"MyMod.AR15Mag60",
 })
+```
+
+**Weapon parts:** register a part fullType the same way. While that part is
+installed on a weapon its family overrides the weapon's own — a caliber-conversion
+kit or swap barrel can change what a direct-fed weapon chambers. If several
+installed parts are registered, the first one found on the weapon wins. For
+magazine-fed weapons, use a weapon-part **magazine profile** (see Magazine
+Systems) instead, so the swapped magazines carry the new family.
+
+```lua
+Ammo.RegisterItemWithFamily("22LR", "MyMod.AR15_22LRConversionKit")
 ```
 
 ```lua
@@ -1186,6 +1198,41 @@ Magazine.RegisterMultipleWeaponsWithProfiles({
 	["FAL_Magazines"] = {
 		"MyMod.FAL",
 	},
+})
+```
+
+### 1b. Weapon part to profile registration
+
+Use this to assign a weapon **part** to a magazine profile. When that part is
+installed on a weapon, its profile overrides whatever profile the weapon itself
+is registered with (and grants a profile to a weapon that had none). This is how
+a magwell adapter or a caliber-conversion part changes which magazines — and
+therefore which ammunition — the weapon can load.
+
+```lua
+Magazine.RegisterWeaponPartWithProfile(profileName, weaponPartTypes)
+Magazine.RegisterMultipleWeaponPartsWithProfiles(entriesTable)
+```
+
+Parameters:
+
+- `profileName`: shared profile name, such as `"Glock_Magazines"`.
+- `weaponPartTypes`: one full part type or an array of full part types.
+- `entriesTable`: table in the form `{ [profileName] = weaponPartTypes }`.
+
+Priority: if several installed parts are registered, the first one found on the
+weapon wins. Register the profile's magazine list the same way as in step 2.
+
+Examples:
+
+```lua
+Magazine.RegisterWeaponPartWithProfile("Glock_Magazines", "MyMod.AR15_GlockMagwell")
+```
+
+```lua
+Magazine.RegisterMultipleWeaponPartsWithProfiles({
+	["Glock_Magazines"] = "MyMod.AR15_GlockMagwell",
+	["Drum_Magazines"]  = { "MyMod.AR15_DrumAdapter" },
 })
 ```
 

@@ -852,9 +852,10 @@ end
 
 local ISInventoryPaneContextMenu_doMagazineMenu_Original = ISInventoryPaneContextMenu.doMagazineMenu
 ISInventoryPaneContextMenu.doMagazineMenu = function(playerObj, magazine, context)
-    if Ammo.ItemAmmoFamily[magazine:getFullType()] then
+    local magFamily = Ammo.GetFamilyForItem(magazine)
+    if magFamily then
         if magazine:getCurrentAmmoCount() < magazine:getMaxAmmo() then
-            local typeList = Ammo.GetBulletTypesForFamily(Ammo.ItemAmmoFamily[magazine:getFullType()])
+            local typeList = Ammo.GetBulletTypesForFamily(magFamily)
             local freeSpace = magazine:getMaxAmmo() - magazine:getCurrentAmmoCount()
 
             -- Build entries and count how many have ammo available
@@ -923,8 +924,9 @@ end
 
 local ISInventoryPaneContextMenu_doBulletMenu_Original = ISInventoryPaneContextMenu.doBulletMenu
 ISInventoryPaneContextMenu.doBulletMenu = function(playerObj, weapon, context)
-    if Ammo.ItemAmmoFamily[weapon:getFullType()] then
-        local typeList = Ammo.GetBulletTypesForFamily(Ammo.ItemAmmoFamily[weapon:getFullType()])
+    local weaponFamily = Ammo.GetFamilyForItem(weapon)
+    if weaponFamily then
+        local typeList = Ammo.GetBulletTypesForFamily(weaponFamily)
         local freeSpace = weapon:getMaxAmmo() - weapon:getCurrentAmmoCount()
 
         local entries = {}

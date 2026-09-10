@@ -3,7 +3,9 @@ local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 
 -------------------------------------------------
 -- Table 1: Item -> Ammo Family
--- Maps any weapon or magazine type to its ammo family
+-- Maps any weapon, magazine, OR weapon-part type to its ammo family. A part
+-- entry lets a caliber-conversion kit / swap barrel override its host weapon's
+-- family while installed - see Ammo.GetFamilyForItem.
 -------------------------------------------------
 Ammo.ItemAmmoFamily = {}
 
@@ -38,9 +40,6 @@ end
 -- Helper functions (query AmmoFamilies directly)
 -------------------------------------------------
 
---- Find a bullet entry across all families
---- @param bulletType string  e.g. "Base.556Bullets"
---- @return table|nil entry, string|nil family
 function Ammo.FindBulletEntry(bulletType)
     for family, bullets in pairs(Ammo.AmmoFamilies) do
         for _, entry in ipairs(bullets) do
@@ -52,17 +51,11 @@ function Ammo.FindBulletEntry(bulletType)
     return nil, nil
 end
 
---- Get the AmmoType enum for a bullet type
---- @param bulletType string
---- @return userdata|nil enum
 function Ammo.GetEnumForBullet(bulletType)
     local entry = Ammo.FindBulletEntry(bulletType)
     return entry and entry.enum
 end
 
---- Get list of bullet type strings for a family (for UI iteration)
---- @param family string
---- @return table|nil  array of type strings, or nil if family not found
 function Ammo.GetBulletTypesForFamily(family)
     local entries = Ammo.AmmoFamilies[family]
     if not entries then return nil end
@@ -71,6 +64,32 @@ function Ammo.GetBulletTypesForFamily(family)
         types[#types + 1] = entry.type
     end
     return types
+end
+
+--- Resolve the ammo family for an item. For a weapon, an installed part that is
+--- registered with its own family (a caliber-conversion kit, a swap barrel)
+--- overrides the weapon's own family, so the part dictates what the weapon
+--- chambers. The first registered part found on the weapon wins. Magazines have
+--- no parts and resolve straight from ItemAmmoFamily.
+---@param item InventoryItem  weapon or magazine
+---@return string|nil
+function Ammo.GetFamilyForItem(item)
+    if not item then return nil end
+
+    if item.getAllWeaponParts then
+        local parts = item:getAllWeaponParts()
+        if parts then
+            for i = 0, parts:size() - 1 do
+                local part = parts:get(i)
+                if part then
+                    local family = Ammo.ItemAmmoFamily[part:getFullType()]
+                    if family then return family end
+                end
+            end
+        end
+    end
+
+    return Ammo.ItemAmmoFamily[item:getFullType()]
 end
 
 -------------------------------------------------
@@ -82,21 +101,12 @@ end
 -- and never mutates the shared Ammo.AmmoFamilies registry. <- important to keep this independent
 -------------------------------------------------
 
---- Get the player's saved reload-preference order for a family.
----@param playerObj IsoPlayer
----@param family string
----@return string[]|nil  ordered bullet-type list, or nil if none saved
 function Ammo.GetReloadPreferenceForFamily(playerObj, family)
     if not playerObj or not family then return nil end
     local prefs = playerObj:getModData().GunworksAmmoPref
     return prefs and prefs[family]
 end
 
---- Save the player's reload-preference order for a family. Entries that are
---- not registered in the family are dropped so modData stays tidy.
----@param playerObj IsoPlayer
----@param family string
----@param orderedTypes string[]
 function Ammo.SetReloadPreferenceForFamily(playerObj, family, orderedTypes)
     if not playerObj or not family or not orderedTypes then return end
 
@@ -123,13 +133,6 @@ function Ammo.SetReloadPreferenceForFamily(playerObj, family, orderedTypes)
     end
 end
 
---- Return a family's bullet types ordered by the player's saved preference:
---- preferred entries first (stale ones skipped), then any remaining registered
---- types in their original registry order. Falls back to the raw registry list
---- when the player has no saved preference.
----@param playerObj IsoPlayer
----@param family string
----@return string[]|nil
 function Ammo.GetOrderedBulletTypesForFamily(playerObj, family)
     local registryList = Ammo.GetBulletTypesForFamily(family)
     if not registryList then return nil end
@@ -156,19 +159,13 @@ function Ammo.GetOrderedBulletTypesForFamily(playerObj, family)
     return ordered
 end
 
---- Pick reload ammo with the simplest rule set:
---- use the player's most-preferred ammo for the family first (falling back to
---- registry order), otherwise use the next type that exists in inventory.
----@param playerObj IsoPlayer
----@param item InventoryItem
----@return string|nil
 function Ammo.GetAutomaticReloadAmmoType(playerObj, item)
     if not playerObj or not item or not item.getAmmoType then return nil end
 
     local inventory = playerObj:getInventory()
     if not inventory then return nil end
 
-    local family = Ammo.ItemAmmoFamily[item:getFullType()]
+    local family = Ammo.GetFamilyForItem(item)
     local bulletTypes = family and Ammo.GetOrderedBulletTypesForFamily(playerObj, family)
     if bulletTypes and #bulletTypes > 0 then
         for i = 1, #bulletTypes do
@@ -321,10 +318,6 @@ function Ammo.CopyAmmoList(source)
     return copy
 end
 
---- Split a gun's AmmoList when ejecting its magazine: the chambered round (if
---- any) stays on the gun, everything else moves out with the magazine.
----@param gun HandWeapon
----@return string[]|nil ammoListForMag  list to attach to the ejected magazine, or nil if nothing moves
 function Ammo.SplitAmmoListOnEject(gun)
     local gunModData = gun:getModData()
     local gunList = gunModData.AmmoList

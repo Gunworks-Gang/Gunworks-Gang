@@ -236,7 +236,7 @@ end
 
 -- Returns {bulletType, name, count} for each ammo type the player can load into magItem.
 local function getAvailableAmmoTypesForMag(playerObj, magItem)
-    local family = Ammo.ItemAmmoFamily[magItem:getFullType()]
+    local family = Ammo.GetFamilyForItem(magItem)
     if not family then return {} end
     local typeList = Ammo.GetBulletTypesForFamily(family)
     if not typeList then return {} end
@@ -356,7 +356,7 @@ end
 -- Returns {bulletType, name, count, tex} for each Gunworks ammo type
 -- the player can load directly into a non-magazine weapon.
 local function getAvailableAmmoTypesForWeapon(playerObj, weapon)
-    local family = Ammo.ItemAmmoFamily[weapon:getFullType()]
+    local family = Ammo.GetFamilyForItem(weapon)
     if not family then return {} end
     local typeList = Ammo.GetBulletTypesForFamily(family)
     if not typeList then return {} end
