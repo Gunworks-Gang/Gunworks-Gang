@@ -112,6 +112,134 @@ function ReloadAnim.isNonMagArchetype(archetype)
     return ReloadAnim.NON_MAG_ARCHETYPES[archetype] == true
 end
 
+-------------------------------------------------
+-- Installed-part conditions (for whenParts / matches)
+-------------------------------------------------
+
+--- True if the gun currently has `part` attached, matched by the part's item fullType OR its
+--- partType slot - so a condition can target a specific attachment item
+--- ("MarzModular.Mini14_LongBarrel") or a whole slot ("Canon"). Mirrors Gunworks.gunHasPart,
+--- kept here too so the dependency-free registry core can resolve part conditions without a
+--- require cycle back through Gunworks.lua.
+---@param gun HandWeapon|nil
+---@param part string|nil
+---@nodiscard
+---@return boolean
+function ReloadAnim.gunHasPart(gun, part)
+    if not gun or not part or part == "" or not gun.getAllWeaponParts then
+        return false
+    end
+
+    local parts = gun:getAllWeaponParts()
+    if not parts then
+        return false
+    end
+
+    for i = 0, parts:size() - 1 do
+        local p = parts:get(i)
+        if p and (p:getFullType() == part or p:getPartType() == part) then
+            return true
+        end
+    end
+
+    return false
+end
+
+--- Normalize the friendly `whenParts` profile field into an { all, any, none } condition of
+--- string lists (each string an item fullType OR a partType slot). Accepts:
+---   "Canon"                                    -> all  = { "Canon" }
+---   { "A", "B" }                               -> all  = { "A", "B" }  (AND)
+---   { all = {...}, any = {...}, none = {...} }  -> as given (any subset of the three keys)
+--- Returns nil for a malformed value so the caller can reject the whole profile.
+---@param whenParts string|string[]|table|nil
+---@nodiscard
+---@return {all:string[]|nil, any:string[]|nil, none:string[]|nil}|nil
+function ReloadAnim.normalizePartCondition(whenParts)
+    if not whenParts then
+        return nil
+    end
+
+    if type(whenParts) == "string" then
+        return whenParts ~= "" and { all = { whenParts } } or nil
+    end
+
+    if type(whenParts) ~= "table" then
+        return nil
+    end
+
+    if whenParts.all or whenParts.any or whenParts.none then
+        return { all = whenParts.all, any = whenParts.any, none = whenParts.none }
+    end
+
+    -- A plain array is the AND of every entry.
+    return #whenParts > 0 and { all = whenParts } or nil
+end
+
+--- Evaluate a normalized part condition (see normalizePartCondition) against a gun:
+---   all  -> every listed part must be attached
+---   none -> not one listed part may be attached
+---   any  -> at least one listed part must be attached
+--- Absent lists impose no constraint; an empty condition matches every gun.
+---@param gun HandWeapon|nil
+---@param condition {all:string[]|nil, any:string[]|nil, none:string[]|nil}
+---@nodiscard
+---@return boolean
+function ReloadAnim.gunMatchesPartCondition(gun, condition)
+    if not gun or not condition then
+        return false
+    end
+
+    local all = condition.all
+    if all then
+        for i = 1, #all do
+            if not ReloadAnim.gunHasPart(gun, all[i]) then
+                return false
+            end
+        end
+    end
+
+    local none = condition.none
+    if none then
+        for i = 1, #none do
+            if ReloadAnim.gunHasPart(gun, none[i]) then
+                return false
+            end
+        end
+    end
+
+    local any = condition.any
+    if any and #any > 0 then
+        for i = 1, #any do
+            if ReloadAnim.gunHasPart(gun, any[i]) then
+                return true
+            end
+        end
+        return false
+    end
+
+    return true
+end
+
+--- A stable id suffix for a part condition, so two whenParts variants on one gun get distinct
+--- handler ids (and re-registering the same variant replaces rather than stacks).
+---@param condition {all:string[]|nil, any:string[]|nil, none:string[]|nil}
+---@nodiscard
+---@return string
+function ReloadAnim.partConditionKey(condition)
+    local tokens = {}
+    local prefixes = { all = "+", any = "?", none = "!" }
+    for key, prefix in pairs(prefixes) do
+        local list = condition[key]
+        if list then
+            for i = 1, #list do
+                tokens[#tokens + 1] = prefix .. tostring(list[i])
+            end
+        end
+    end
+    table.sort(tokens)
+    return table.concat(tokens, ",")
+end
+
 --- Flat list of every registered handler (registration order; used for introspection).
 ---@type GunworksReloadAnimHandler[]
 ReloadAnim.handlers = {}

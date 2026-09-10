@@ -91,6 +91,33 @@ function ReloadAnim.normalizeWeaponReloadOptions(fullType, options)
         normalized.style = "none"
     end
 
+    -- Part-conditional profile: `whenParts` synthesises a matches(gun) predicate, AND-scoped to
+    -- the weapon fullType when one was given, so this profile wins WHILE the listed part(s) are
+    -- attached and otherwise falls through to the gun's unconditional profile. It is kept OUT of
+    -- the fullType index (normalized.fullType cleared, like the Gunworks facade's RegisterWeapon(nil,
+    -- ...) call) so it can never shadow that base profile; the fullType is still captured in the
+    -- closure for the gun-identity check. An explicit `matches` always wins over `whenParts`.
+    -- Register the most specific condition FIRST - matchers are tried in registration order.
+    if options.whenParts and not normalized.matches then
+        local condition = ReloadAnim.normalizePartCondition(options.whenParts)
+        if not condition then
+            ReloadAnim.logInvalidOptions(options,
+                "whenParts must be an item/partType string, an array of them, or { all/any/none = {...} }")
+            return nil
+        end
+
+        local gunType = fullType
+        normalized.matches = function(gun)
+            if gunType and gun:getFullType() ~= gunType then
+                return false
+            end
+            return ReloadAnim.gunMatchesPartCondition(gun, condition)
+        end
+        normalized.id = options.id
+            or ((fullType or options.animId or "reloadAnim") .. "@" .. ReloadAnim.partConditionKey(condition))
+        normalized.fullType = nil
+    end
+
     return normalized
 end
 
@@ -652,10 +679,28 @@ end
 --- style = "none" (alias "simple") for a magazine gun that has no separate texture and no part
 --- swap - just a custom animId, exactly like a non-mag profile's default. See
 --- createSimpleReloadHandler; magItem is still accepted there for an optional off-hand prop.
----@param fullType string|nil  weapon fullType key, e.g. "MyPack.M249Rifle" (nil only if profile.matches is set)
----@param profile {animId:string,archetype:string|nil,style:string|nil,magItem:string|nil,prop:{item:string|nil}|nil,sprite:{loaded:string|nil,unloaded:string|nil}|nil,attachments:table|nil,durations:{load:number|nil,loadShort:number|nil,unload:number|nil,rack:number|nil}|nil,shortRackAfterInsert:boolean|nil,matches:fun(gun:HandWeapon):boolean|nil,id:string|nil}
+---
+--- Installed-part conditions: set `whenParts` to swap the reload animation based on what is
+--- currently attached to the gun rather than which gun it is. The value is an item fullType OR a
+--- partType slot, an array of them (all must be attached), or { all = {...}, any = {...},
+--- none = {...} }. A whenParts profile is AND-scoped to `fullType` when one is given (pass nil for
+--- "any gun carrying this part"); it wins while its condition holds and otherwise falls through to
+--- the gun's plain profile. Give each variant its own `whenParts` (or `id`); register the most
+--- specific one first, matchers are tried in registration order. `profile` may also be an ARRAY of
+--- profiles for one fullType (a base plus whenParts variants).
+---@param fullType string|nil  weapon fullType key, e.g. "MyPack.M249Rifle" (nil only if profile.matches or profile.whenParts is set)
+---@param profile {animId:string,archetype:string|nil,style:string|nil,magItem:string|nil,prop:{item:string|nil}|nil,sprite:{loaded:string|nil,unloaded:string|nil}|nil,attachments:table|nil,durations:{load:number|nil,loadShort:number|nil,unload:number|nil,rack:number|nil}|nil,shortRackAfterInsert:boolean|nil,matches:fun(gun:HandWeapon):boolean|nil,whenParts:string|string[]|table|nil,id:string|nil}|table[]
 ---@return nil
 function ReloadAnim.RegisterWeapon(fullType, profile)
+    -- An array of profiles for one gun (base + whenParts variants). Each entry carries its own
+    -- animId, so recursion bottoms out on the first pass.
+    if type(profile) == "table" and not profile.animId and profile[1] then
+        for i = 1, #profile do
+            ReloadAnim.RegisterWeapon(fullType, profile[i])
+        end
+        return
+    end
+
     local normalized = ReloadAnim.normalizeWeaponReloadOptions(fullType, profile)
     if not normalized then
         return
@@ -693,8 +738,9 @@ function ReloadAnim.RegisterWeapon(fullType, profile)
     ReloadAnim.registerHandler(handler)
 end
 
---- Public API: register many guns at once. Keys are weapon fullTypes.
----@param entries table<string,table>
+--- Public API: register many guns at once. Keys are weapon fullTypes; each value is a single
+--- profile or an array of profiles (a base plus whenParts variants for that gun).
+---@param entries table<string,table|table[]>
 ---@return nil
 function ReloadAnim.RegisterMultipleWeapons(entries)
     if not entries then
