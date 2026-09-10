@@ -1,4 +1,4 @@
-Gunworks_AttachAndDetach = Gunworks_AttachAndDetach or {}
+Gunworks_AttachAndDetach = {}
 Gunworks_AttachAndDetach.weaponPartToolMapping = Gunworks_AttachAndDetach.weaponPartToolMapping or {}
 
 local function predicateNotBroken(item)
