@@ -136,4 +136,6 @@ function ISRemoveWeaponUpgrade:complete()
         end
         StatsFactory.ReapplyAllModifiers(self.weapon)
     end
+
+    return true
 end
