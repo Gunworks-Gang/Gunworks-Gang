@@ -8,6 +8,7 @@ local FoldingBipod = require("WeaponSystems/Utils/FoldingBipod")
 local Magazine     = require("WeaponSystems/Utils/Magazine")
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 local Underbarrel  = require("WeaponSystems/Utils/Underbarrel")
+local Ammo         = require("WeaponSystems/Utils/Ammo")
 
 local function restoreContainer(container)
     if not container then return end
@@ -33,6 +34,7 @@ end
 local function restorePlayer(playerObj)
     if not playerObj then return end
     restoreContainer(playerObj:getInventory())
+    Ammo.RestoreOnLoad(playerObj)
     Underbarrel.RecoverLostHost(playerObj)
 end
 
@@ -50,8 +52,9 @@ local function restoreEquippedWeapon(playerObj, weapon)
 end
 
 Events.OnGameStart.Add(function()
-    for i = 0, getNumActivePlayers() - 1 do
-        restorePlayer(getSpecificPlayer(i))
+    local player = getSpecificPlayer(0)
+    if player then
+        restorePlayer(player)
     end
 end)
 
@@ -60,5 +63,4 @@ Events.OnCreatePlayer.Add(function(_, playerObj)
 end)
 
 Events.OnEquipPrimary.Add(restoreEquippedWeapon)
-
 Events.OnEquipSecondary.Add(restoreEquippedWeapon)

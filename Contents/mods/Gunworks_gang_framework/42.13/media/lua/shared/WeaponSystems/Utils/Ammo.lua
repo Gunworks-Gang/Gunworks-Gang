@@ -380,11 +380,4 @@ function Ammo.RestoreOnLoad(player)
     end
 end
 
-Events.OnGameStart.Add(function()
-    local player = getSpecificPlayer(0)
-    if player then
-        Ammo.RestoreOnLoad(player)
-    end
-end)
-
 return Ammo
