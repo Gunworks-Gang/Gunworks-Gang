@@ -158,47 +158,64 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         local ratio = maxDist / distance
         destX       = originX + dx * ratio
         destY       = originY + dy * ratio
-        -- dx/dy MUST be rescaled too: dirX/dirY below divide by the now-clamped
-        -- `distance`, so leaving dx/dy at their raw (pre-clamp) magnitude turns
-        -- dirX/dirY into a vector far longer than 1 -- e.g. aiming at 40 tiles with a
-        -- 15-tile cap gives |dir| = 40/15 = 2.67, silently multiplying the launch speed
-        -- by that factor and bypassing maxThrowDist entirely the farther over-range the
-        -- cursor is aimed.
         dx          = dx * ratio
         dy          = dy * ratio
         distance    = maxDist
     end
 
-    local throwSpeed  = math.max(1, params.throwSpeed or 12)
-    local arcFactor   = params.arcFactor or 0.12
-    local maxArc      = params.maxArc or 1.5
-    local arcHeight   = math.min(maxArc, distance * arcFactor)
+    local throwSpeed = math.max(1, params.throwSpeed or 12)
+    local forceMul   = (params.throwForce or 8) / 8
+    local XY_CONV    = ExplosivesSystems.XY_STEP * 60
+    local Z_CONV     = ExplosivesSystems.Z_STEP * 60
 
-    local dirX        = (distance > 0.01) and (dx / distance) or 0
-    local dirY        = (distance > 0.01) and (dy / distance) or 0
+    local seedVelX, seedVelY, seedVelZ
 
-    local XY_CONV     = ExplosivesSystems.XY_STEP * 60
-    local Z_CONV      = ExplosivesSystems.Z_STEP * 60
-    local gWorld      = ExplosivesSystems.GRAVITY_WORLD_Z
-    local vz0World    = math.sqrt(math.max(0, 2.0 * gWorld * arcHeight))
-    local vz0Internal = vz0World / Z_CONV
+    if params.directProjectile then
+        local dirX           = (distance > 0.01) and (dx / distance) or 0
+        local dirY           = (distance > 0.01) and (dy / distance) or 0
 
-    local startZLocal = math.max(0, originZ - destZ)
-    local unitRange   = ExplosivesSystems.predictUnitHorizontalRange(vz0Internal, startZLocal)
-    local hSpeedNeeded
-    if unitRange > 0.001 then
-        hSpeedNeeded = (distance / unitRange) * XY_CONV
+        local hSpeedInternal = throwSpeed / XY_CONV * forceMul
+        local startZLocal    = originZ - destZ
+
+        local ticks          = 1
+        if hSpeedInternal > 0.0001 then
+            ticks = math.max(1, distance / (hSpeedInternal * ExplosivesSystems.XY_STEP))
+        end
+
+        local vz0Internal = (ExplosivesSystems.GRAVITY * (ticks + 1) / 2)
+            - (startZLocal / (ExplosivesSystems.Z_STEP * ticks))
+
+        seedVelX = dirX * hSpeedInternal
+        seedVelY = dirY * hSpeedInternal
+        seedVelZ = vz0Internal
     else
-        hSpeedNeeded = distance / 0.02
+        local arcFactor   = params.arcFactor or 0.12
+        local maxArc      = params.maxArc or 1.5
+        local arcHeight   = math.min(maxArc, distance * arcFactor)
+
+        local dirX        = (distance > 0.01) and (dx / distance) or 0
+        local dirY        = (distance > 0.01) and (dy / distance) or 0
+
+        local gWorld      = ExplosivesSystems.GRAVITY_WORLD_Z
+        local vz0World    = math.sqrt(math.max(0, 2.0 * gWorld * arcHeight))
+        local vz0Internal = vz0World / Z_CONV
+
+        local startZLocal = math.max(0, originZ - destZ)
+        local unitRange   = ExplosivesSystems.predictUnitHorizontalRange(vz0Internal, startZLocal)
+        local hSpeedNeeded
+        if unitRange > 0.001 then
+            hSpeedNeeded = (distance / unitRange) * XY_CONV
+        else
+            hSpeedNeeded = distance / 0.02
+        end
+        local hSpeedWorld = math.min(hSpeedNeeded, throwSpeed)
+
+        seedVelX = dirX * hSpeedWorld / XY_CONV * forceMul
+        seedVelY = dirY * hSpeedWorld / XY_CONV * forceMul
+        seedVelZ = vz0World / Z_CONV * forceMul
     end
-    local hSpeedWorld = math.min(hSpeedNeeded, throwSpeed)
-    local forceMul    = (params.throwForce or 8) / 8
 
-    local seedVelX    = dirX * hSpeedWorld / XY_CONV * forceMul
-    local seedVelY    = dirY * hSpeedWorld / XY_CONV * forceMul
-    local seedVelZ    = vz0World / Z_CONV * forceMul
-
-    local sq          = getCell():getGridSquare(math.floor(originX), math.floor(originY), math.floor(originZ))
+    local sq = getCell():getGridSquare(math.floor(originX), math.floor(originY), math.floor(originZ))
     if not sq then
         sq = player and player:getCurrentSquare() or nil
         if not sq then return end
@@ -211,6 +228,15 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
     local localZ = originZ - sq:getZ()
 
     local worldItem = sq:AddWorldInventoryItem(modelType, localX, localY, localZ)
+
+    local directRotation = nil
+    if params.directProjectile and player then
+        directRotation = player:getDirectionAngle() or 0
+        if worldItem then
+            worldItem:setWorldZRotation(directRotation)
+        end
+    end
+
     local detonationTimer = params.detonationDelay or 0
     local ordnanceData = {
         player           = player,
@@ -236,6 +262,7 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         velocityX        = seedVelX,
         velocityY        = seedVelY,
         velocityZ        = seedVelZ,
+        directRotation   = directRotation,
     }
 
     local list = ExplosivesSystems.activeOrdnance
@@ -480,6 +507,9 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
                     ord.params.worldModel or ord.sourceWeapon,
                     PZMath.clamp_01(ord.x), PZMath.clamp_01(ord.y), 0
                 )
+                if ord.directRotation and ord.worldItem then
+                    ord.worldItem:setWorldZRotation(ord.directRotation)
+                end
             end
 
             if ord.params.detonateOnImpact or (ord.params.detonationDelay or 0) > 0 then
@@ -509,6 +539,9 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale, shouldRender)
             ord.params.worldModel or ord.sourceWeapon,
             ord.x, ord.y, ord.z
         )
+        if ord.directRotation and ord.worldItem then
+            ord.worldItem:setWorldZRotation(ord.directRotation)
+        end
     end
 
     return false
