@@ -51,6 +51,7 @@ function ExplosionFX.tick()
                 ExplosionFX.activeEffects[lastIndex] = nil
             else
                 fx.worldItem = fx.square:AddWorldInventoryItem(fx.itemType, fx.lx, fx.ly, fx.lz)
+                fx.worldItem:setWorldZRotation(180)
             end
         else
             local lastIndex = #ExplosionFX.activeEffects
