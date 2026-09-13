@@ -11,7 +11,7 @@ local UniversalAttachment               = require("WeaponSystems/Utils/Universal
 -- Prevent invalid parent/child attachment states
 -------------------------------------------------
 
-local _ISUpgradeWeapon_isValid_original = ISUpgradeWeapon.isValid
+local ISUpgradeWeapon_isValid = ISUpgradeWeapon.isValid
 function ISUpgradeWeapon:isValid()
     if self.outcomeFullType then
         if not self.weapon or not self.part then return false end
@@ -26,7 +26,7 @@ function ISUpgradeWeapon:isValid()
         return self.character:getInventory():contains(self.part) and self.character:getInventory():contains(self.weapon)
     end
 
-    if not _ISUpgradeWeapon_isValid_original(self) then
+    if not ISUpgradeWeapon_isValid(self) then
         return false
     end
 
@@ -40,9 +40,9 @@ function ISUpgradeWeapon:isValid()
     return true
 end
 
-local _ISRemoveWeaponUpgrade_isValid_original = ISRemoveWeaponUpgrade.isValid
+local ISRemoveWeaponUpgrade_isValid = ISRemoveWeaponUpgrade.isValid
 function ISRemoveWeaponUpgrade:isValid()
-    if not _ISRemoveWeaponUpgrade_isValid_original(self) then
+    if not ISRemoveWeaponUpgrade_isValid(self) then
         return false
     end
 
@@ -66,14 +66,14 @@ end
 -- NOTE: Need to double check if I really still needs. We reaply modifiers on equip and unequip, so it might be redundant. will see UPDATE: it's not redundant lmao
 -------------------------------------------------
 
-local _ISUpgradeWeapon_new = ISUpgradeWeapon.new
+local ISUpgradeWeapon_new = ISUpgradeWeapon.new
 function ISUpgradeWeapon:new(character, weapon, part, outcomeFullType)
-    local o = _ISUpgradeWeapon_new(self, character, weapon, part)
+    local o = ISUpgradeWeapon_new(self, character, weapon, part)
     o.outcomeFullType = outcomeFullType
     return o
 end
 
-local _ISUpgradeWeapon_complete = ISUpgradeWeapon.complete
+local ISUpgradeWeapon_complete = ISUpgradeWeapon.complete
 function ISUpgradeWeapon:complete()
     if self.outcomeFullType then
         local outcomePart = instanceItem(self.outcomeFullType)
@@ -87,7 +87,7 @@ function ISUpgradeWeapon:complete()
         sendRemoveItemFromContainer(self.character:getInventory(), self.part)
         self.character:setSecondaryHandItem(nil)
     else
-        _ISUpgradeWeapon_complete(self)
+        ISUpgradeWeapon_complete(self)
     end
 
     if self.weapon and instanceof(self.weapon, "HandWeapon") then
@@ -97,7 +97,7 @@ function ISUpgradeWeapon:complete()
     return true
 end
 
-local _ISRemoveWeaponUpgrade_complete = ISRemoveWeaponUpgrade.complete
+local ISRemoveWeaponUpgrade_complete = ISRemoveWeaponUpgrade.complete
 function ISRemoveWeaponUpgrade:complete()
     local removedPart = nil
     if self.weapon and instanceof(self.weapon, "HandWeapon") and self.partType then
@@ -128,7 +128,7 @@ function ISRemoveWeaponUpgrade:complete()
         return true
     end
 
-    _ISRemoveWeaponUpgrade_complete(self)
+    ISRemoveWeaponUpgrade_complete(self)
 
     if self.weapon and instanceof(self.weapon, "HandWeapon") then
         if removedPart then
