@@ -781,7 +781,9 @@ Events.OnFillInventoryObjectContextMenu.Add(filterRequiredAttachmentRemovals)
 -- their PartType -> tool map with Gunworks_AttachAndDetach.RegisterPartTools
 -- and must not override onUpgradeWeapon / onRemoveUpgradeWeapon themselves.
 -------------------------------------------------
+local ISInventoryPaneContextMenu_onRemoveUpgradeWeapon = ISInventoryPaneContextMenu.onRemoveUpgradeWeapon
 ISInventoryPaneContextMenu.onRemoveUpgradeWeapon = function(weapon, part, player)
+    if not Gunworks_AttachAndDetach then return ISInventoryPaneContextMenu_onRemoveUpgradeWeapon(weapon, part, player) end
     if not weapon or not part then return end
 
     if PreventRemoval.IsPermanent(part:getFullType()) then
@@ -806,7 +808,9 @@ ISInventoryPaneContextMenu.onRemoveUpgradeWeapon = function(weapon, part, player
     ISTimedActionQueue.add(ISRemoveWeaponUpgrade:new(player, weapon, part:getPartType()))
 end
 
+local ISInventoryPaneContextMenu_onUpgradeWeapon = ISInventoryPaneContextMenu.onUpgradeWeapon
 ISInventoryPaneContextMenu.onUpgradeWeapon = function(weapon, part, player)
+    if not Gunworks_AttachAndDetach then return ISInventoryPaneContextMenu_onUpgradeWeapon(weapon, part, player) end
     if not weapon or not part then return end
 
     ISInventoryPaneContextMenu.transferIfNeeded(player, weapon)
