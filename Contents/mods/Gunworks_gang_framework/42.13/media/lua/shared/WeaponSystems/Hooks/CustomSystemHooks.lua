@@ -1,6 +1,6 @@
-require('TimedActions/ISReloadWeaponAction')
-require('TimedActions/ISLoadBulletsInMagazine')
-require('TimedActions/ISUnloadBulletsFromMagazine')
+require("TimedActions/ISReloadWeaponAction")
+require("TimedActions/ISLoadBulletsInMagazine")
+require("TimedActions/ISUnloadBulletsFromMagazine")
 require("TimedActions/ISInsertMagazine")
 require("TimedActions/ISEjectMagazine")
 require("TimedActions/ISRackFirearm")
@@ -12,6 +12,10 @@ local Bayonet = require("WeaponSystems/Utils/Bayonet")
 local OrdnanceFactory = require("ExplosivesSystems/OrdnanceFactory")
 local RateOfFire = require("WeaponSystems/Utils/RateOfFire")
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
+
+if getActivatedMods():contains("HBVCEFb42") then
+    require("SpentCasingPhysics/TimedActionsHooks")
+end
 
 -------------------------------------------------
 -- Multi-item reload: a gun whose reload handler declares `consumes` requires those extra items
