@@ -822,7 +822,7 @@ end
 -------------------------------------------------
 -- Original Magazine Profile Menu Overrides
 -------------------------------------------------
-local ISInventoryPaneContextMenu_doReloadMenuForMagazine_Original = ISInventoryPaneContextMenu.doReloadMenuForMagazine
+local ISInventoryPaneContextMenu_doReloadMenuForMagazine = ISInventoryPaneContextMenu.doReloadMenuForMagazine
 ISInventoryPaneContextMenu.doReloadMenuForMagazine = function(playerObj, magazine, context)
     local magType = magazine:getFullType()
     local weapons = playerObj:getInventory():getItemsFromCategory("Weapon")
@@ -846,11 +846,11 @@ ISInventoryPaneContextMenu.doReloadMenuForMagazine = function(playerObj, magazin
     end
 
     if not handledByProfile then
-        ISInventoryPaneContextMenu_doReloadMenuForMagazine_Original(playerObj, magazine, context)
+        ISInventoryPaneContextMenu_doReloadMenuForMagazine(playerObj, magazine, context)
     end
 end
 
-local ISInventoryPaneContextMenu_doMagazineMenu_Original = ISInventoryPaneContextMenu.doMagazineMenu
+local ISInventoryPaneContextMenu_doMagazineMenu = ISInventoryPaneContextMenu.doMagazineMenu
 ISInventoryPaneContextMenu.doMagazineMenu = function(playerObj, magazine, context)
     local magFamily = Ammo.GetFamilyForItem(magazine)
     if magFamily then
@@ -908,7 +908,7 @@ ISInventoryPaneContextMenu.doMagazineMenu = function(playerObj, magazine, contex
                 ISInventoryPaneContextMenu.onUnloadBulletsFromMagazine, magazine)
         end
     else
-        ISInventoryPaneContextMenu_doMagazineMenu_Original(playerObj, magazine, context)
+        ISInventoryPaneContextMenu_doMagazineMenu(playerObj, magazine, context)
     end
 end
 
@@ -922,7 +922,7 @@ ISInventoryPaneContextMenu.onLoadBulletsInMagazineFromDiffAmmoType = function(pl
     end
 end
 
-local ISInventoryPaneContextMenu_doBulletMenu_Original = ISInventoryPaneContextMenu.doBulletMenu
+local ISInventoryPaneContextMenu_doBulletMenu = ISInventoryPaneContextMenu.doBulletMenu
 ISInventoryPaneContextMenu.doBulletMenu = function(playerObj, weapon, context)
     local weaponFamily = Ammo.GetFamilyForItem(weapon)
     if weaponFamily then
@@ -975,7 +975,7 @@ ISInventoryPaneContextMenu.doBulletMenu = function(playerObj, weapon, context)
                 ISInventoryPaneContextMenu.onUnloadBulletsFromFirearm, weapon)
         end
     else
-        ISInventoryPaneContextMenu_doBulletMenu_Original(playerObj, weapon, context)
+        ISInventoryPaneContextMenu_doBulletMenu(playerObj, weapon, context)
     end
 end
 

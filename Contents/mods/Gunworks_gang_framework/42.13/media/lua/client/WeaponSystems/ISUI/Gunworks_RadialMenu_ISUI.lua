@@ -498,10 +498,10 @@ end
 -- Calls vanilla first so reload slices are built,
 -- then appends applicable Gunworks slices.
 -------------------------------------------------
-local ISFirearmRadialMenu_fillMenu_orig = ISFirearmRadialMenu.fillMenu
+local ISFirearmRadialMenu_fillMenu = ISFirearmRadialMenu.fillMenu
 
 function ISFirearmRadialMenu:fillMenu()
-    ISFirearmRadialMenu_fillMenu_orig(self)
+    ISFirearmRadialMenu_fillMenu(self)
 
     local weapon = self.character:getPrimaryHandItem()
     if not weapon or not instanceof(weapon, "HandWeapon") or not weapon:isRanged() then return end
@@ -532,10 +532,10 @@ end
 -- Ensures the R-key radial activates for weapons
 -- that have Gunworks features.
 -------------------------------------------------
-local ISFirearmRadialMenu_checkWeapon_orig = ISFirearmRadialMenu.checkWeapon
+local ISFirearmRadialMenu_checkWeapon = ISFirearmRadialMenu.checkWeapon
 
 function ISFirearmRadialMenu.checkWeapon(playerObj)
-    if ISFirearmRadialMenu_checkWeapon_orig(playerObj) then return true end
+    if ISFirearmRadialMenu_checkWeapon(playerObj) then return true end
     local weapon = playerObj:getPrimaryHandItem()
     if not weapon or not instanceof(weapon, "HandWeapon") or not weapon:isRanged() then return false end
     return hasGunworksFeature(weapon, playerObj)
