@@ -297,7 +297,8 @@ function ExplosivesSystems.forceDetonate(ord, index)
             ord.square,
             ord.params.explosionFXObject,
             ord.x, ord.y, ord.z,
-            ord.params.explosionFXDuration
+            ord.params.explosionFXDuration,
+            ord.params.frames
         )
     end
     ord.active = false

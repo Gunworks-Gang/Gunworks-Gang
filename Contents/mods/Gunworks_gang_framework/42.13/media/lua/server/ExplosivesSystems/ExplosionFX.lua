@@ -17,22 +17,41 @@ local function removeWorldItem(fx)
     fx.worldItem = nil
 end
 
-function ExplosionFX.PlayEffect(square, itemType, lx, ly, lz, duration)
+local function buildSequence(itemType, frames)
+    if type(frames) ~= "table" then return nil end
+    local first, last = frames[1], frames[2]
+    if not first or not last then return nil end
+
+    local sequence = {}
+    for i = first, last do
+        sequence[#sequence + 1] = itemType .. i
+    end
+    return sequence
+end
+
+function ExplosionFX.PlayEffect(square, itemType, lx, ly, lz, duration, frames)
     if not square then return end
     if not itemType then return end
 
-    local fx = {
+    local sequence  = buildSequence(itemType, frames)
+    local frameStep = (tonumber(duration) or 30) / 60
+
+    local fx        = {
         square     = square,
         itemType   = itemType,
+        sequence   = sequence,
+        frameIndex = 1,
+        frameTimer = 0,
+        frameStep  = frameStep,
         lx         = lx or 0.5,
         ly         = ly or 0.5,
         lz         = lz or 0,
-        timeToLive = (tonumber(duration) or 30) / 60,
-        worldItem  = square:AddWorldInventoryItem(itemType, lx or 0.5, ly or 0.5, lz or 0),
+        timeToLive = sequence and (frameStep * #sequence) or frameStep,
+        worldItem  = square:AddWorldInventoryItem(sequence and sequence[1] or itemType, lx or 0.5, ly or 0.5, lz or 0),
         active     = true,
     }
 
-    local list = ExplosionFX.activeEffects
+    local list      = ExplosionFX.activeEffects
     list[#list + 1] = fx
 end
 
@@ -50,8 +69,17 @@ function ExplosionFX.tick()
                 ExplosionFX.activeEffects[i] = ExplosionFX.activeEffects[lastIndex]
                 ExplosionFX.activeEffects[lastIndex] = nil
             else
-                fx.worldItem = fx.square:AddWorldInventoryItem(fx.itemType, fx.lx, fx.ly, fx.lz)
-                fx.worldItem:setWorldZRotation(180)
+                local currentType = fx.itemType
+                if fx.sequence then
+                    fx.frameTimer = fx.frameTimer + dt
+                    while fx.frameTimer >= fx.frameStep and fx.frameIndex < #fx.sequence do
+                        fx.frameTimer = fx.frameTimer - fx.frameStep
+                        fx.frameIndex = fx.frameIndex + 1
+                    end
+                    currentType = fx.sequence[fx.frameIndex]
+                end
+                fx.worldItem = fx.square:AddWorldInventoryItem(currentType, fx.lx, fx.ly, fx.lz)
+                fx.worldItem:setWorldZRotation(0)
             end
         else
             local lastIndex = #ExplosionFX.activeEffects
