@@ -278,7 +278,7 @@ function Ammo.AmmoProfileSetter(weapon, bulletType)
             })
         end
     else
-        print('Ammo Profile Setting!')
+        print("Ammo Profile Setting!")
         print(weapon:getAmmoType(), "  -->   ", ammoEnum)
     end
 
@@ -302,7 +302,7 @@ function Ammo.MagazineAmmoProfileSetter(magazine, bulletType)
             })
         end
     else
-        print('Magazine Ammo Profile Setting!')
+        print("Magazine Ammo Profile Setting!")
         print(magazine:getAmmoType(), "  -->   ", ammoEnum)
     end
 

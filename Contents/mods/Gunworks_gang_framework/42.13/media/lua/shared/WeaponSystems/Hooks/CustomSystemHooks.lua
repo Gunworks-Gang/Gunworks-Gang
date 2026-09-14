@@ -419,7 +419,7 @@ end
 
 local ISLoadBulletsInMagazine_animEvent = ISLoadBulletsInMagazine.animEvent
 function ISLoadBulletsInMagazine:animEvent(event, parameter)
-    if event == 'InsertBullet' then
+    if event == "InsertBullet" then
         if self.ammoTypeOverride then
             if self:isLoadFinished() then
                 return
@@ -665,8 +665,8 @@ end
 -------------------------------------------------
 local ISUnloadBulletsFromFirearm_animEvent = ISUnloadBulletsFromFirearm.animEvent
 function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
-    if event == 'playReloadSound' then
-        if parameter == 'ejectAmmoStart' then
+    if event == "playReloadSound" then
+        if parameter == "ejectAmmoStart" then
             return ISUnloadBulletsFromFirearm_animEvent(self, event, parameter)
         end
 

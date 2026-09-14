@@ -21,9 +21,9 @@ OrdnanceFactory.Defaults             = {
     detonateOnImpact    = false,
     detonationDelay     = 0,
     soundDetonate       = nil,
-    parentItem          = nil, -- ammo only: item whose script stats are used for detonation
-    explosionFXObject   = nil, -- item type to spawn as 3D FX (e.g. "MWA.nade_explosion")
-    explosionFXDuration = 5,   -- ms the FX object remains visible before being removed
+    parentItem          = nil,   -- ammo only: item whose script stats are used for detonation
+    explosionFXObject   = nil,   -- item type to spawn as 3D FX (e.g. "MWA.nade_explosion")
+    explosionFXDuration = 5,     -- ms the FX object remains visible before being removed
     directProjectile    = false, -- true = lock world item rotation to the player's facing angle at launch instead of it spinning in flight (e.g. rockets)
 }
 

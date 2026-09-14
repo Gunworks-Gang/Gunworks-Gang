@@ -1,6 +1,6 @@
 local Ammo = require("WeaponSystems/Utils/Ammo")
 local Animations = require("WeaponSystems/Utils/Animations")
-local RateOfFire = require('WeaponSystems/Utils/RateOfFire')
+local RateOfFire = require("WeaponSystems/Utils/RateOfFire")
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
 require("WeaponSystems/ReloadAnim/Props")

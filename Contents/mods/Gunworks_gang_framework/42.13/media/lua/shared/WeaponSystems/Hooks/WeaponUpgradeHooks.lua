@@ -1,10 +1,10 @@
 require("TimedActions/ISUpgradeWeapon")
 require("TimedActions/ISRemoveWeaponUpgrade")
 
-local StatsFactory                      = require("WeaponSystems/Utils/StatsFactory")
-local Underbarrel                       = require("WeaponSystems/Utils/Underbarrel")
-local RequiredAttachment                = require("WeaponSystems/Utils/RequiredAttachment")
-local UniversalAttachment               = require("WeaponSystems/Utils/UniversalAttachment")
+local StatsFactory            = require("WeaponSystems/Utils/StatsFactory")
+local Underbarrel             = require("WeaponSystems/Utils/Underbarrel")
+local RequiredAttachment      = require("WeaponSystems/Utils/RequiredAttachment")
+local UniversalAttachment     = require("WeaponSystems/Utils/UniversalAttachment")
 
 -------------------------------------------------
 -- INSTALLATION/REMOVAL VALIDATION

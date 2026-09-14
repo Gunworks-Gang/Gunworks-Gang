@@ -26,9 +26,9 @@
 -- a BRAND-NEW id ("GunworksReloadHand") that no item model references -- so it cannot disturb existing
 -- item rendering.
 
-local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
+local ReloadAnim     = require("WeaponSystems/Utils/ReloadAnim")
 
-local HAND_ATTACH_ID = ReloadAnim.RELOAD_HAND_ATTACH_LOCATION  -- "GunworksReloadHand"
+local HAND_ATTACH_ID = ReloadAnim.RELOAD_HAND_ATTACH_LOCATION -- "GunworksReloadHand"
 local HAND_BONE      = "Bip01_R_Hand"
 
 -- Palm offset / rotation of the held prop relative to Bip01_R_Hand. (0,0,0)/(0,0,0) sits the prop at
@@ -36,12 +36,12 @@ local HAND_BONE      = "Bip01_R_Hand"
 -- attachment is first created, so a value tuned live in the AttachmentEditor is never clobbered by a
 -- later re-registration. To move the prop for all players, change these constants (every client bakes
 -- them in at creation) -- offset units are model-space and small (~0.05 is a visible nudge).
-local OFFSET = { x = 0.0, y = 0.0, z = 0.0 }
-local ROTATE = { x = 0.0, y = 0.0, z = 0.0 }
+local OFFSET         = { x = 0.0, y = 0.0, z = 0.0 }
+local ROTATE         = { x = 0.0, y = 0.0, z = 0.0 }
 
-local BODY_MODELS = { "FemaleBody", "MaleBody" }
+local BODY_MODELS    = { "FemaleBody", "MaleBody" }
 
-local RETRY_LIMIT = 600  -- ~10s at 60fps; a backstop so a genuinely absent model never spins forever
+local RETRY_LIMIT    = 600 -- ~10s at 60fps; a backstop so a genuinely absent model never spins forever
 
 --- Ensure the attachment exists on one body ModelScript. Returns true if it is present afterwards
 --- (already there, or freshly added), false if the ModelScript is not available yet (retry later).
@@ -53,13 +53,13 @@ local function ensureOne(modelName)
     local ms = sm:getModelScript(modelName)
     if not ms then return false end
     if ms:getAttachmentById(HAND_ATTACH_ID) then
-        return true  -- present already: do NOT re-apply the offset (would clobber an editor-tuned value)
+        return true -- present already: do NOT re-apply the offset (would clobber an editor-tuned value)
     end
 
     local att = ModelAttachment.new(HAND_ATTACH_ID)
     if not att then return false end
     att:setBone(HAND_BONE)
-    att:getOffset():set(OFFSET.x, OFFSET.y, OFFSET.z)  -- Vector3f, mutate in place -- creation default only
+    att:getOffset():set(OFFSET.x, OFFSET.y, OFFSET.z) -- Vector3f, mutate in place -- creation default only
     att:getRotate():set(ROTATE.x, ROTATE.y, ROTATE.z)
     ms:addAttachment(att)
     return ms:getAttachmentById(HAND_ATTACH_ID) ~= nil
@@ -71,7 +71,7 @@ local function ensureAll()
     local allPresent = true
     for i = 1, #BODY_MODELS do
         local present = false
-        local ok = pcall(function() present = ensureOne(BODY_MODELS[i]) end)  -- isolate a per-model failure
+        local ok = pcall(function() present = ensureOne(BODY_MODELS[i]) end) -- isolate a per-model failure
         if not ok then
             present = false
         end
@@ -107,7 +107,7 @@ local function startEnsure()
 end
 
 Events.OnGameBoot.Add(startEnsure)
-Events.OnGameStart.Add(startEnsure)  -- re-covers ResetLua / MP join, which OnGameBoot does not re-fire
-startEnsure()                        -- also run at (re)load time so a reloadLuaFile re-applies it live
+Events.OnGameStart.Add(startEnsure) -- re-covers ResetLua / MP join, which OnGameBoot does not re-fire
+startEnsure()                       -- also run at (re)load time so a reloadLuaFile re-applies it live
 
 return ReloadAnim

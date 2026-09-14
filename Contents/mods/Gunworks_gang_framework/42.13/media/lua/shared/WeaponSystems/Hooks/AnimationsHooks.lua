@@ -12,9 +12,9 @@ local Magazine = require("WeaponSystems/Utils/Magazine")
 --------------------------------------------------------------------------
 local ISReloadWeaponAction_animEvent = ISReloadWeaponAction.animEvent
 function ISReloadWeaponAction:animEvent(event, parameter)
-    if event == 'changeWeaponSprite' then
-        if parameter and parameter ~= '' and self.gun:getFullType() ~= 'Base.DoubleBarrelShotgun' then
-            local open = parameter ~= 'original'
+    if event == "changeWeaponSprite" then
+        if parameter and parameter ~= "" and self.gun:getFullType() ~= "Base.DoubleBarrelShotgun" then
+            local open = parameter ~= "original"
             return Animations.CallAnimate(self.character, self.gun, open)
         end
     end
@@ -62,15 +62,15 @@ Events.OnWeaponSwingHitPoint.Add(ISReloadWeaponAction.onShoot)
 --------------------------------------------------------------------------
 local ISRackFirearm_animEvent = ISRackFirearm.animEvent
 function ISRackFirearm:animEvent(event, parameter)
-    if event == 'rackStart' then
+    if event == "rackStart" then
         Animations.rackAction(self.character, self.gun, true)
     end
-    if event == 'rackEnd' then
+    if event == "rackEnd" then
         Animations.rackAction(self.character, self.gun, false)
     end
-    if event == 'changeWeaponSprite' then
-        if parameter and parameter ~= '' and self.gun:getFullType() ~= 'Base.DoubleBarrelShotgun' then
-            local open = parameter ~= 'original'
+    if event == "changeWeaponSprite" then
+        if parameter and parameter ~= "" and self.gun:getFullType() ~= "Base.DoubleBarrelShotgun" then
+            local open = parameter ~= "original"
             return Animations.CallAnimate(self.character, self.gun, open)
         end
     end
@@ -97,9 +97,9 @@ end
 --------------------------------------------------------------------------
 local ISUnloadBulletsFromFirearm_animEvent = ISUnloadBulletsFromFirearm.animEvent
 function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
-    if event == 'changeWeaponSprite' then
-        if parameter and parameter ~= '' and self.gun:getFullType() ~= 'Base.DoubleBarrelShotgun' then
-            local open = parameter ~= 'original'
+    if event == "changeWeaponSprite" then
+        if parameter and parameter ~= "" and self.gun:getFullType() ~= "Base.DoubleBarrelShotgun" then
+            local open = parameter ~= "original"
             return Animations.CallAnimate(self.character, self.gun, open)
         end
     end
