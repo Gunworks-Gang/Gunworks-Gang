@@ -311,4 +311,16 @@ module SWMG {
         Tags             = base:ammo,
         AmmoType         = swmg:round_40mm_incendiary,
     }
+
+    item Rocket_PG7V {
+        DisplayCategory  = Ammo,
+        ItemType         = base:normal,
+        Weight           = 0,
+        Icon             = RifleAmmo308loose,
+        count            = 6,
+        MetalValue       = 1.0,
+        WorldStaticModel = RifleAmmo,
+        Tags             = base:ammo,
+        AmmoType         = swmg:rocket_pg7v,
+    }
 }

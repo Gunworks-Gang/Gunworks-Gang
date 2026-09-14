@@ -44,3 +44,5 @@ SWMG_AmmoTypes.BULLET_3006 = AmmoType.register("swmg:bullet_3006", "SWMG.3006_Bu
 SWMG_AmmoTypes.ROUND_40MM_BUCKSHOT = AmmoType.register("swmg:round_40mm_buckshot", "SWMG.40mm_Round_Buckshot")
 SWMG_AmmoTypes.ROUND_40MM_HE = AmmoType.register("swmg:round_40mm_he", "SWMG.40mm_Round_HE")
 SWMG_AmmoTypes.ROUND_40MM_INCENDIARY = AmmoType.register("swmg:round_40mm_incendiary", "SWMG.40mm_Round_Incendiary")
+
+SWMG_AmmoTypes.ROCKET_PG7V = AmmoType.register("swmg:rocket_pg7v", "SWMG.Rocket_PG7V")
