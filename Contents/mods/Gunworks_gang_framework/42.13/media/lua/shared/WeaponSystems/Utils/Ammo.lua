@@ -211,7 +211,20 @@ function Ammo.RegisterMultipleItemsWithFamilies(entriesTable)
     end
 end
 
---- Register a new ammo family or add bullets to an existing one
+function Ammo.FindBulletIndexInFamily(family, bulletType)
+    local list = Ammo.AmmoFamilies[family]
+    if not list then return nil end
+    for i, entry in ipairs(list) do
+        if entry.type == bulletType then
+            return i
+        end
+    end
+    return nil
+end
+
+--- Register a new ammo family or add bullets to an existing one.
+--- Two mods can independently register the same round into the same family
+--- A new entry whose `type` already exists in the family replaces the earlier one in place - last mod to load wins.
 --- @param family string  e.g. "5.56x45mm"
 --- @param bullets table  array of { type, enum, profile? }
 function Ammo.RegisterAmmoFamily(family, bullets)
@@ -220,7 +233,12 @@ function Ammo.RegisterAmmoFamily(family, bullets)
     end
     local list = Ammo.AmmoFamilies[family]
     for _, entry in ipairs(bullets) do
-        list[#list + 1] = entry
+        local index = Ammo.FindBulletIndexInFamily(family, entry.type)
+        if index then
+            list[index] = entry
+        else
+            list[#list + 1] = entry
+        end
     end
 end
 
