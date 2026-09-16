@@ -66,6 +66,12 @@ function Ammo.GetBulletTypesForFamily(family)
     return types
 end
 
+local function checkIfMagazine(part)
+    local partType = part:getPartType()
+    if partType == "Clip" or partType == "Magazine" then return true end
+    return false
+end
+
 --- Resolve the ammo family for an item. For a weapon, an installed part that is
 --- registered with its own family (a caliber-conversion kit, a swap barrel)
 --- overrides the weapon's own family, so the part dictates what the weapon
@@ -81,7 +87,8 @@ function Ammo.GetFamilyForItem(item)
         if parts then
             for i = 0, parts:size() - 1 do
                 local part = parts:get(i)
-                if part then
+                -- TODO: I need to patch this better but this will do for now
+                if part and not checkIfMagazine(part) then
                     local family = Ammo.ItemAmmoFamily[part:getFullType()]
                     if family then return family end
                 end
