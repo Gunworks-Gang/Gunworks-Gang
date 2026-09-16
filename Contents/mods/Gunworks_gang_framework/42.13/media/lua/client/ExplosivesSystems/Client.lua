@@ -1,5 +1,7 @@
-local ExplosivesSystems = require("ExplosivesSystems/Init")
-local OrdnanceFactory   = require("ExplosivesSystems/OrdnanceFactory")
+local ExplosivesSystems          = require("ExplosivesSystems/PhysicsCore")
+local OrdnanceFactory            = require("ExplosivesSystems/OrdnanceFactory")
+
+ExplosivesSystems.visualOrdnance = {}
 
 local function suppressVanillaThrow(weapon)
     weapon:setMaxHitCount(0)
@@ -63,12 +65,6 @@ function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
     local pz          = player:getZ()
     local aimOffset   = params.aimOffset or 0
 
-    -- Target is resolved on the THROWER's own plane, same as vanilla mouse targeting.
-    -- We do not try to guess a lower destination tier here: guessing from the cursor
-    -- alone is fragile (the projected pixel drifts at every Z candidate, and a wrong
-    -- guess fights the real terrain mid-flight). The server-side flight instead detects
-    -- any actual drop in the terrain tick-by-tick as it travels, the same way Hot Brass
-    -- casings do.
     local mouseX      = screenToIsoX(playerIndex, mx, my, pz) + aimOffset
     local mouseY      = screenToIsoY(playerIndex, mx, my, pz) + aimOffset
     local destZ       = pz
@@ -102,6 +98,122 @@ function ExplosivesSystems.onPlayerUpdate(player)
     suppressRegisteredThrowable(player:getSecondaryHandItem())
 end
 
+function ExplosivesSystems.spawnVisualOrdnance(args)
+    if not args or not args.sourceWeapon then return end
+
+    local params
+    if args.isAmmoLaunch then
+        params = OrdnanceFactory.GetAmmoParams(args.sourceWeapon)
+    else
+        params = OrdnanceFactory.GetParams(args.sourceWeapon)
+    end
+    if not params then return end
+
+    local sq = getCell():getGridSquare(
+        math.floor(args.originX), math.floor(args.originY), math.floor(args.originZ))
+    if not sq then return end
+
+    local itemType = params.worldModel or args.sourceWeapon
+    local itemObj = instanceItem(itemType)
+    if not itemObj then return end
+
+    local seedVelX, seedVelY, seedVelZ = ExplosivesSystems.computeLaunchVelocity(
+        params, args.originX, args.originY, args.originZ, args.destX, args.destY, args.destZ)
+
+    local player = getPlayer()
+    local isOwnOrdnance = player ~= nil and player:getOnlineID() == args.shooterOnlineID
+
+    local visual = {
+        ordnanceId       = args.ordnanceId,
+        square           = sq,
+        x                = args.originX - sq:getX(),
+        y                = args.originY - sq:getY(),
+        z                = args.originZ - sq:getZ(),
+        velocityX        = seedVelX,
+        velocityY        = seedVelY,
+        velocityZ        = seedVelZ,
+        hasHitFloor      = false,
+        remainingBounces = args.remainingBounces or 0,
+        prevWorldZ       = args.originZ,
+        params           = params,
+        itemObj          = itemObj,
+        rotation         = (params.directProjectile and args.directRotation) or 0,
+        isOwnOrdnance    = isOwnOrdnance,
+    }
+
+    local list = ExplosivesSystems.visualOrdnance
+    list[#list + 1] = visual
+end
+
+function ExplosivesSystems.removeVisualOrdnance(ordnanceId)
+    local list = ExplosivesSystems.visualOrdnance
+    for i = #list, 1, -1 do
+        if list[i].ordnanceId == ordnanceId then
+            list[i] = list[#list]
+            list[#list] = nil
+        end
+    end
+end
+
+function ExplosivesSystems.playVisualBounceSound(visual)
+    if not visual.isOwnOrdnance then return end
+    local soundBounce = visual.params.soundBounce
+    if not soundBounce then return end
+
+    local player = getPlayer()
+    if player and player.getEmitter then
+        player:getEmitter():playSound(soundBounce)
+    end
+end
+
+function ExplosivesSystems.updateVisualOrdnance()
+    local list = ExplosivesSystems.visualOrdnance
+    local n = #list
+    if n == 0 then return end
+
+    local dt = ExplosivesSystems.GT():getTimeDelta()
+    local scale = dt * 60
+
+    local i = 1
+    while i <= n do
+        local visual = list[i]
+        local status = ExplosivesSystems.stepOrdnance(visual, scale)
+        local remove = false
+
+        if status == "floorbounce" then
+            ExplosivesSystems.playVisualBounceSound(visual)
+        elseif status == "wallhit" or status == "floorimpact" then
+            remove = visual.params.detonateOnImpact == true
+        elseif status == "rest" then
+            remove = not (visual.params.detonateOnImpact
+                or (visual.params.detonationDelay or 0) > 0)
+        end
+
+        if remove then
+            list[i] = list[n]
+            list[n] = nil
+            n = n - 1
+        else
+            i = i + 1
+        end
+    end
+end
+
+function ExplosivesSystems.renderVisualOrdnance()
+    local list = ExplosivesSystems.visualOrdnance
+    for i = 1, #list do
+        local visual = list[i]
+        Render3DItem(
+            visual.itemObj,
+            visual.square,
+            visual.square:getX() + visual.x,
+            visual.square:getY() + visual.y,
+            visual.square:getZ() + visual.z,
+            visual.rotation
+        )
+    end
+end
+
 function ExplosivesSystems.onServerCommand(module, command, args)
     if module ~= ExplosivesSystems.MODULE_NAME then return end
     if not args then return end
@@ -111,7 +223,10 @@ function ExplosivesSystems.onServerCommand(module, command, args)
         if player and args.sound then
             player:getEmitter():playSound(args.sound)
         end
-        return
+    elseif command == "spawnOrdnanceVisual" then
+        ExplosivesSystems.spawnVisualOrdnance(args)
+    elseif command == "removeOrdnanceVisual" then
+        ExplosivesSystems.removeVisualOrdnance(args.ordnanceId)
     end
 end
 
@@ -119,3 +234,5 @@ Events.OnWeaponSwing.Add(ExplosivesSystems.onWeaponSwingEarly)
 Events.OnWeaponSwingHitPoint.Add(ExplosivesSystems.onWeaponSwingHitPoint)
 Events.OnPlayerUpdate.Add(ExplosivesSystems.onPlayerUpdate)
 Events.OnServerCommand.Add(ExplosivesSystems.onServerCommand)
+Events.OnTick.Add(ExplosivesSystems.updateVisualOrdnance)
+Events.RenderOpaqueObjectsInWorld.Add(ExplosivesSystems.renderVisualOrdnance)
