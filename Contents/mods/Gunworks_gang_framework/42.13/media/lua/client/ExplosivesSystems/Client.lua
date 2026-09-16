@@ -69,9 +69,9 @@ function ExplosivesSystems.onWeaponSwingHitPoint(player, weapon)
     -- guess fights the real terrain mid-flight). The server-side flight instead detects
     -- any actual drop in the terrain tick-by-tick as it travels, the same way Hot Brass
     -- casings do.
-    local mouseX = screenToIsoX(playerIndex, mx, my, pz) + aimOffset
-    local mouseY = screenToIsoY(playerIndex, mx, my, pz) + aimOffset
-    local destZ  = pz
+    local mouseX      = screenToIsoX(playerIndex, mx, my, pz) + aimOffset
+    local mouseY      = screenToIsoY(playerIndex, mx, my, pz) + aimOffset
+    local destZ       = pz
 
     if isClient() then
         sendClientCommand(player, ExplosivesSystems.MODULE_NAME, "throwOrdnance", {

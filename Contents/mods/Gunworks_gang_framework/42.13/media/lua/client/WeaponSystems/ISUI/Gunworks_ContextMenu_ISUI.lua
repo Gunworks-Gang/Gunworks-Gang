@@ -781,7 +781,9 @@ Events.OnFillInventoryObjectContextMenu.Add(filterRequiredAttachmentRemovals)
 -- their PartType -> tool map with Gunworks_AttachAndDetach.RegisterPartTools
 -- and must not override onUpgradeWeapon / onRemoveUpgradeWeapon themselves.
 -------------------------------------------------
+local ISInventoryPaneContextMenu_onRemoveUpgradeWeapon = ISInventoryPaneContextMenu.onRemoveUpgradeWeapon
 ISInventoryPaneContextMenu.onRemoveUpgradeWeapon = function(weapon, part, player)
+    if not Gunworks_AttachAndDetach then return ISInventoryPaneContextMenu_onRemoveUpgradeWeapon(weapon, part, player) end
     if not weapon or not part then return end
 
     if PreventRemoval.IsPermanent(part:getFullType()) then
@@ -806,7 +808,9 @@ ISInventoryPaneContextMenu.onRemoveUpgradeWeapon = function(weapon, part, player
     ISTimedActionQueue.add(ISRemoveWeaponUpgrade:new(player, weapon, part:getPartType()))
 end
 
+local ISInventoryPaneContextMenu_onUpgradeWeapon = ISInventoryPaneContextMenu.onUpgradeWeapon
 ISInventoryPaneContextMenu.onUpgradeWeapon = function(weapon, part, player)
+    if not Gunworks_AttachAndDetach then return ISInventoryPaneContextMenu_onUpgradeWeapon(weapon, part, player) end
     if not weapon or not part then return end
 
     ISInventoryPaneContextMenu.transferIfNeeded(player, weapon)
@@ -822,7 +826,7 @@ end
 -------------------------------------------------
 -- Original Magazine Profile Menu Overrides
 -------------------------------------------------
-local ISInventoryPaneContextMenu_doReloadMenuForMagazine_Original = ISInventoryPaneContextMenu.doReloadMenuForMagazine
+local ISInventoryPaneContextMenu_doReloadMenuForMagazine = ISInventoryPaneContextMenu.doReloadMenuForMagazine
 ISInventoryPaneContextMenu.doReloadMenuForMagazine = function(playerObj, magazine, context)
     local magType = magazine:getFullType()
     local weapons = playerObj:getInventory():getItemsFromCategory("Weapon")
@@ -846,15 +850,16 @@ ISInventoryPaneContextMenu.doReloadMenuForMagazine = function(playerObj, magazin
     end
 
     if not handledByProfile then
-        ISInventoryPaneContextMenu_doReloadMenuForMagazine_Original(playerObj, magazine, context)
+        ISInventoryPaneContextMenu_doReloadMenuForMagazine(playerObj, magazine, context)
     end
 end
 
-local ISInventoryPaneContextMenu_doMagazineMenu_Original = ISInventoryPaneContextMenu.doMagazineMenu
+local ISInventoryPaneContextMenu_doMagazineMenu = ISInventoryPaneContextMenu.doMagazineMenu
 ISInventoryPaneContextMenu.doMagazineMenu = function(playerObj, magazine, context)
-    if Ammo.ItemAmmoFamily[magazine:getFullType()] then
+    local magFamily = Ammo.GetFamilyForItem(magazine)
+    if magFamily then
         if magazine:getCurrentAmmoCount() < magazine:getMaxAmmo() then
-            local typeList = Ammo.GetBulletTypesForFamily(Ammo.ItemAmmoFamily[magazine:getFullType()])
+            local typeList = Ammo.GetBulletTypesForFamily(magFamily)
             local freeSpace = magazine:getMaxAmmo() - magazine:getCurrentAmmoCount()
 
             -- Build entries and count how many have ammo available
@@ -907,7 +912,7 @@ ISInventoryPaneContextMenu.doMagazineMenu = function(playerObj, magazine, contex
                 ISInventoryPaneContextMenu.onUnloadBulletsFromMagazine, magazine)
         end
     else
-        ISInventoryPaneContextMenu_doMagazineMenu_Original(playerObj, magazine, context)
+        ISInventoryPaneContextMenu_doMagazineMenu(playerObj, magazine, context)
     end
 end
 
@@ -921,10 +926,11 @@ ISInventoryPaneContextMenu.onLoadBulletsInMagazineFromDiffAmmoType = function(pl
     end
 end
 
-local ISInventoryPaneContextMenu_doBulletMenu_Original = ISInventoryPaneContextMenu.doBulletMenu
+local ISInventoryPaneContextMenu_doBulletMenu = ISInventoryPaneContextMenu.doBulletMenu
 ISInventoryPaneContextMenu.doBulletMenu = function(playerObj, weapon, context)
-    if Ammo.ItemAmmoFamily[weapon:getFullType()] then
-        local typeList = Ammo.GetBulletTypesForFamily(Ammo.ItemAmmoFamily[weapon:getFullType()])
+    local weaponFamily = Ammo.GetFamilyForItem(weapon)
+    if weaponFamily then
+        local typeList = Ammo.GetBulletTypesForFamily(weaponFamily)
         local freeSpace = weapon:getMaxAmmo() - weapon:getCurrentAmmoCount()
 
         local entries = {}
@@ -973,7 +979,7 @@ ISInventoryPaneContextMenu.doBulletMenu = function(playerObj, weapon, context)
                 ISInventoryPaneContextMenu.onUnloadBulletsFromFirearm, weapon)
         end
     else
-        ISInventoryPaneContextMenu_doBulletMenu_Original(playerObj, weapon, context)
+        ISInventoryPaneContextMenu_doBulletMenu(playerObj, weapon, context)
     end
 end
 

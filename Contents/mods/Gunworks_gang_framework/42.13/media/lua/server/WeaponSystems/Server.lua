@@ -2,7 +2,7 @@ local Server = {}
 
 local Ammo = require("WeaponSystems/Utils/Ammo")
 local Bayonet = require("WeaponSystems/Utils/Bayonet")
-local RateOfFire = require('WeaponSystems/Utils/RateOfFire')
+local RateOfFire = require("WeaponSystems/Utils/RateOfFire")
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
 require("WeaponSystems/ReloadAnim/Props")

@@ -236,7 +236,7 @@ end
 
 -- Returns {bulletType, name, count} for each ammo type the player can load into magItem.
 local function getAvailableAmmoTypesForMag(playerObj, magItem)
-    local family = Ammo.ItemAmmoFamily[magItem:getFullType()]
+    local family = Ammo.GetFamilyForItem(magItem)
     if not family then return {} end
     local typeList = Ammo.GetBulletTypesForFamily(family)
     if not typeList then return {} end
@@ -356,7 +356,7 @@ end
 -- Returns {bulletType, name, count, tex} for each Gunworks ammo type
 -- the player can load directly into a non-magazine weapon.
 local function getAvailableAmmoTypesForWeapon(playerObj, weapon)
-    local family = Ammo.ItemAmmoFamily[weapon:getFullType()]
+    local family = Ammo.GetFamilyForItem(weapon)
     if not family then return {} end
     local typeList = Ammo.GetBulletTypesForFamily(family)
     if not typeList then return {} end
@@ -498,10 +498,10 @@ end
 -- Calls vanilla first so reload slices are built,
 -- then appends applicable Gunworks slices.
 -------------------------------------------------
-local ISFirearmRadialMenu_fillMenu_orig = ISFirearmRadialMenu.fillMenu
+local ISFirearmRadialMenu_fillMenu = ISFirearmRadialMenu.fillMenu
 
 function ISFirearmRadialMenu:fillMenu()
-    ISFirearmRadialMenu_fillMenu_orig(self)
+    ISFirearmRadialMenu_fillMenu(self)
 
     local weapon = self.character:getPrimaryHandItem()
     if not weapon or not instanceof(weapon, "HandWeapon") or not weapon:isRanged() then return end
@@ -532,10 +532,10 @@ end
 -- Ensures the R-key radial activates for weapons
 -- that have Gunworks features.
 -------------------------------------------------
-local ISFirearmRadialMenu_checkWeapon_orig = ISFirearmRadialMenu.checkWeapon
+local ISFirearmRadialMenu_checkWeapon = ISFirearmRadialMenu.checkWeapon
 
 function ISFirearmRadialMenu.checkWeapon(playerObj)
-    if ISFirearmRadialMenu_checkWeapon_orig(playerObj) then return true end
+    if ISFirearmRadialMenu_checkWeapon(playerObj) then return true end
     local weapon = playerObj:getPrimaryHandItem()
     if not weapon or not instanceof(weapon, "HandWeapon") or not weapon:isRanged() then return false end
     return hasGunworksFeature(weapon, playerObj)

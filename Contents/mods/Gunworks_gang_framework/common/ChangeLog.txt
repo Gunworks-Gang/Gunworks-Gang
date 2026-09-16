@@ -1,6 +1,6 @@
 [ 22/June/2026 ]
 B42.19:
-- Rework the arcing of grenades and not it takes into account Z levels
+[*] Rework the arcing of grenades and not it takes into account Z levels
 [ ------ ]
 
 [ 24/August/2026 ]
@@ -13,17 +13,28 @@ B42.20.3:
 [ ------ ]
 
 [ 27/August/2026 ]
-- Fixed the two failing requires throwing warnings
+[*] Fixed the two failing requires throwing warnings
 [ ------ ]
 
 [ 31/August/2026 ]
-- Implement new ammo priority systems
-- Fix Underbarrel system removing the player hotbar items preferences
-- Bayonet system despect requiredparts system and allow flagging a weapon as modular
-- Underbarrel allow look up of weapon parts outside of Underbarrel PartType
-- New Endpoint for conditional adjustments of weapon models
+[*] Implement new ammo priority systems
+[*] Fix Underbarrel system removing the player hotbar items preferences
+[*] Bayonet system despect requiredparts system and allow flagging a weapon as modular
+[*] Underbarrel allow look up of weapon parts outside of Underbarrel PartType
+[*] New Endpoint for conditional adjustments of weapon models
 [ ------ ]
 
-[ 7/Septiembre/2026 ]
-- Add a check for replacers to flag retry during replace operations
+[ 7/September/2026 ]
+[*] Add a check for replacers to flag retry during replace operations
+[ ------ ]
+
+[ 15/September/2026 ]
+[*] New Attach and Deatch endpoint to provide quick functions for attachmetns install
+[*] New features in explosive system to allow multiple models to act as frames, and direct firing explosives (straight flying rockets)
+[*] New ammunition definitions
+[*] Refactor cleanout and standarize some of the code accross all systems
+[*] Ammunition system will prevent registering identical objects
+[*] New expansion to magazine and ammo system to allow weaponParts to change weapon profiles for magazine and calibers.
+[*] Add check to detect Hot Brass, and load HB Hooks before Gunworks, hoping to prevent users that do not respect load order from breaking Gunworks systems.
+[*] Move hooks from ongamestart to lessen load times
 [ ------ ]

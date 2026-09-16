@@ -510,7 +510,7 @@ function AmmoLoaderUI:populateAmmoList()
         return
     end
 
-    self.currentAmmoFamily = Ammo.ItemAmmoFamily[targetItem:getFullType()]
+    self.currentAmmoFamily = Ammo.GetFamilyForItem(targetItem)
 
     local ammoTypes = self:getAvailableAmmoTypes(targetItem)
 
@@ -533,7 +533,7 @@ function AmmoLoaderUI:getAvailableAmmoTypes(targetItem)
     local result = {}
     local inventory = self.player:getInventory()
 
-    local family = Ammo.ItemAmmoFamily[targetItem:getFullType()]
+    local family = Ammo.GetFamilyForItem(targetItem)
     local bulletTypes = family and Ammo.GetOrderedBulletTypesForFamily(self.player, family)
     if bulletTypes then
         for _, ammoTypeKey in ipairs(bulletTypes) do

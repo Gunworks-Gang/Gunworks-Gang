@@ -1,7 +1,7 @@
-require('ISUI/ISInventoryPaneContextMenu')
-local GunworksKeybinds = require('WeaponSystems/ISUI/GunworksKeybinds')
-local RateOfFire_ClientSide = require('WeaponSystems/Client')
-local RateOfFire = require('WeaponSystems/Utils/RateOfFire')
+require("ISUI/ISInventoryPaneContextMenu")
+local GunworksKeybinds = require("WeaponSystems/ISUI/GunworksKeybinds")
+local RateOfFire_ClientSide = require("WeaponSystems/Client")
+local RateOfFire = require("WeaponSystems/Utils/RateOfFire")
 local RateOfFire_ISUI = {}
 
 local KEYBIND_SWITCH_FIRERATE = "Gunworks_SwitchFirerate"
@@ -152,11 +152,15 @@ function RateOfFire_ISUI.CycleFiremode(playerObj, weapon)
     return RateOfFire_ISUI.ApplyFiremode(playerObj, weapon, nextEntry.mode, nextEntry.rpmStage)
 end
 
-ISInventoryPaneContextMenu.onChangefiremode = function(playerObj, weapon, newfiremode, rpmStage)
+local ISInventoryPaneContextMenu_onChangefiremode     = ISInventoryPaneContextMenu.onChangefiremode
+ISInventoryPaneContextMenu.onChangefiremode           = function(playerObj, weapon, newfiremode, rpmStage)
+    if not RateOfFire_ISUI then return ISInventoryPaneContextMenu_onChangefiremode(playerObj, weapon, newfiremode) end
     return RateOfFire_ISUI.ApplyFiremode(playerObj, weapon, newfiremode, rpmStage)
 end
 
-ISInventoryPaneContextMenu.doChangeFireModeMenu = function(playerObj, weapon, context)
+local ISInventoryPaneContextMenu_doChangeFireModeMenu = ISInventoryPaneContextMenu.doChangeFireModeMenu
+ISInventoryPaneContextMenu.doChangeFireModeMenu       = function(playerObj, weapon, context)
+    if not RateOfFire_ISUI then return ISInventoryPaneContextMenu_doChangeFireModeMenu(playerObj, weapon, context) end
     local entries = RateOfFire_ISUI.GetSelectableFiremodeEntries(weapon)
     if #entries == 0 then return end
 

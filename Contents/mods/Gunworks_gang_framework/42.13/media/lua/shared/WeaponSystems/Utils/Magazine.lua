@@ -2,10 +2,17 @@ local Magazine = {}
 local Ammo = require("WeaponSystems/Utils/Ammo")
 
 -------------------------------------------------
--- Table 1: Weapon -> Magazine Profile
+-- Table 1.a: Weapon -> Magazine Profile
 -- Maps weapon fullType to a magazine profile name
 -------------------------------------------------
 Magazine.WeaponMagazineProfile = {}
+
+-------------------------------------------------
+-- Table 1.b: WeaponPart -> Magazine Profile
+-- Maps a weapon-part fullType to a magazine profile name. When the part is
+-- installed on a weapon this profile overrides the weapon's own (Table 1.a).
+-------------------------------------------------
+Magazine.WeaponPartMagazineProfile = {}
 
 -------------------------------------------------
 -- Table 2: Magazine Profiles
@@ -41,6 +48,27 @@ function Magazine.RegisterMultipleWeaponsWithProfiles(entriesTable)
 
     for profileName, weaponTypes in pairs(entriesTable) do
         Magazine.RegisterWeaponWithProfile(profileName, weaponTypes)
+    end
+end
+
+--- Register one or more weaponPart to a magazine profile.
+---@param profileName string
+---@param weaponPartType string|string[]  single fullType or array of fullTypes
+function Magazine.RegisterWeaponPartWithProfile(profileName, weaponPartType)
+    if type(weaponPartType) == "string" then
+        Magazine.WeaponPartMagazineProfile[weaponPartType] = profileName
+    else
+        for i = 1, #weaponPartType do
+            Magazine.WeaponPartMagazineProfile[weaponPartType[i]] = profileName
+        end
+    end
+end
+
+function Magazine.RegisterMultipleWeaponPartsWithProfiles(entriesTable)
+    if not entriesTable then return end
+
+    for profileName, weaponPartType in pairs(entriesTable) do
+        Magazine.RegisterWeaponPartWithProfile(profileName, weaponPartType)
     end
 end
 
@@ -80,18 +108,51 @@ end
 -- Query helpers
 -------------------------------------------------
 
---- Get the magazine profile name for a weapon.
+--- Get the magazine profile name for a weapon part.
+---@param weaponPart WeaponPart
+---@return string|nil
+function Magazine.GetProfileForWeaponPart(weaponPart)
+    return Magazine.WeaponPartMagazineProfile[weaponPart:getFullType()]
+end
+
+--- Scan the weapon's installed parts for one registered with its own magazine
+--- profile. An installed part's profile overrides the weapon's own profile, so a
+--- magwell adapter / conversion part can change which magazines (and therefore
+--- which ammo) the weapon accepts. The first registered part found wins.
+---@param gun HandWeapon
+---@return string|nil profileName
+---@return WeaponPart|nil part
+function Magazine.GetPartProfileForGun(gun)
+    if not gun or not gun.getAllWeaponParts then return nil end
+
+    local parts = gun:getAllWeaponParts()
+    if not parts then return nil end
+
+    for i = 0, parts:size() - 1 do
+        local part = parts:get(i)
+        if part then
+            local profile = Magazine.WeaponPartMagazineProfile[part:getFullType()]
+            if profile then return profile, part end
+        end
+    end
+    return nil
+end
+
+--- Get the effective magazine profile name for a weapon. An installed weapon
+--- part registered with its own profile takes priority over the weapon's own
+--- WeaponMagazineProfile entry.
 ---@param gun HandWeapon
 ---@return string|nil
 function Magazine.GetProfileForGun(gun)
-    return Magazine.WeaponMagazineProfile[gun:getFullType()]
+    if not gun then return nil end
+    return Magazine.GetPartProfileForGun(gun) or Magazine.WeaponMagazineProfile[gun:getFullType()]
 end
 
---- Get the magazine type list for a weapon.
+--- Get the magazine type list for a weapon (part profile takes priority).
 ---@param gun HandWeapon
 ---@return string[]|nil
 function Magazine.GetMagazineTypesForGun(gun)
-    local profile = Magazine.WeaponMagazineProfile[gun:getFullType()]
+    local profile = Magazine.GetProfileForGun(gun)
     return profile and Magazine.MagazineProfiles[profile]
 end
 
@@ -108,15 +169,14 @@ end
 -- Predicate & comparator for getBestEvalArgRecurse
 -------------------------------------------------
 
---- Predicate: returns true if item belongs to the gun's magazine profile.
+--- Predicate: returns true if the item is a magazine in the given profile set.
+--- The set is resolved once by the caller (part profile takes priority) and
+--- passed straight through, so this runs cheaply per inventory item.
 ---@param item InventoryItem
----@param gun HandWeapon
+---@param profileSet table<string, boolean>
 ---@return boolean
-function Magazine.predicateInProfile(item, gun)
-    local profile = Magazine.WeaponMagazineProfile[gun:getFullType()]
-    if not profile then return false end
-    local set = Magazine.ProfileMagazineSet[profile]
-    return set and set[item:getFullType()] or false
+function Magazine.predicateInProfile(item, profileSet)
+    return profileSet and profileSet[item:getFullType()] or false
 end
 
 --- Comparator: higher ammo count = better.
@@ -183,10 +243,11 @@ function Magazine.getBestMagazineFromList(playerObj, gun, typeList)
 end
 
 function Magazine.getBestMagazineForGun(playerObj, gun)
-    local profile = Magazine.WeaponMagazineProfile[gun:getFullType()]
-    if not profile or not Magazine.ProfileMagazineSet[profile] then return nil end
+    local profile = Magazine.GetProfileForGun(gun)
+    local profileSet = profile and Magazine.ProfileMagazineSet[profile]
+    if not profileSet then return nil end
     return playerObj:getInventory():getBestEvalArgRecurse(
-        Magazine.predicateInProfile, Magazine.compareAmmoCount, gun
+        Magazine.predicateInProfile, Magazine.compareAmmoCount, profileSet
     )
 end
 

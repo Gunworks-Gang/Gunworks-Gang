@@ -1,6 +1,6 @@
-require('TimedActions/ISReloadWeaponAction')
-require('TimedActions/ISLoadBulletsInMagazine')
-require('TimedActions/ISUnloadBulletsFromMagazine')
+require("TimedActions/ISReloadWeaponAction")
+require("TimedActions/ISLoadBulletsInMagazine")
+require("TimedActions/ISUnloadBulletsFromMagazine")
 require("TimedActions/ISInsertMagazine")
 require("TimedActions/ISEjectMagazine")
 require("TimedActions/ISRackFirearm")
@@ -12,6 +12,10 @@ local Bayonet = require("WeaponSystems/Utils/Bayonet")
 local OrdnanceFactory = require("ExplosivesSystems/OrdnanceFactory")
 local RateOfFire = require("WeaponSystems/Utils/RateOfFire")
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
+
+if getActivatedMods():contains("HBVCEFb42") then
+    require("SpentCasingPhysics/TimedActionsHooks")
+end
 
 -------------------------------------------------
 -- Multi-item reload: a gun whose reload handler declares `consumes` requires those extra items
@@ -54,7 +58,7 @@ end
 -------------------------------------------------
 -- BeginAutomaticReload (MagazineProfile + SpeedLoader support)
 -------------------------------------------------
-local ISReloadWeaponAction_BeginAutomaticReload_Original = ISReloadWeaponAction.BeginAutomaticReload
+local ISReloadWeaponAction_BeginAutomaticReload = ISReloadWeaponAction.BeginAutomaticReload
 local function ReloadBestMagazineForGun(playerObj, gun)
     local magazine = gun:getBestMagazine(playerObj)
     local ammoCount = Magazine.reloadMagazine(playerObj, magazine)
@@ -184,7 +188,7 @@ ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
     local reloadAmmoType = Ammo.GetAutomaticReloadAmmoType(playerObj, gun)
 
     if not reloadAmmoType or reloadAmmoType == currentItemKey then
-        ISReloadWeaponAction_BeginAutomaticReload_Original(playerObj, gun)
+        ISReloadWeaponAction_BeginAutomaticReload(playerObj, gun)
         return
     end
 
@@ -211,7 +215,7 @@ end
 -------------------------------------------------
 -- Rack: remove AmmoList[#], set ammo type from new last
 -------------------------------------------------
-local ISRackFirearm_removeBullet_original = ISRackFirearm.removeBullet
+local ISRackFirearm_removeBullet = ISRackFirearm.removeBullet
 function ISRackFirearm:removeBullet()
     local ammoList = self.gun:getModData().AmmoList
     if ammoList and #ammoList > 0 then
@@ -225,7 +229,7 @@ function ISRackFirearm:removeBullet()
         end
         Ammo.SyncAmmoListToClient(self.character, self.gun)
     elseif self.gun:getAmmoType() then
-        ISRackFirearm_removeBullet_original(self)
+        ISRackFirearm_removeBullet(self)
     end
     -- else: no AmmoList and no current ammo type. Vanilla removeBullet dereferences
     -- self.gun:getAmmoType():getItemKey(), so calling it with a nil ammo type (e.g. a
@@ -237,25 +241,25 @@ end
 -------------------------------------------------
 -- Insert Magazine: Transfer AmmoList mag -> gun
 -------------------------------------------------
-local ISInsertMagazine_start_original = ISInsertMagazine.start
+local ISInsertMagazine_start = ISInsertMagazine.start
 function ISInsertMagazine:start()
-    ISInsertMagazine_start_original(self)
+    ISInsertMagazine_start(self)
 
     if self.magazine and SpeedLoader.IsCompatibleTypeForGun(self.magazine:getFullType(), self.gun) then
         ISReloadWeaponAction.ejectSpentRounds(self)
     end
 end
 
-local ISInsertMagazine_serverStart_original = ISInsertMagazine.serverStart
+local ISInsertMagazine_serverStart = ISInsertMagazine.serverStart
 function ISInsertMagazine:serverStart()
-    ISInsertMagazine_serverStart_original(self)
+    ISInsertMagazine_serverStart(self)
 
     if self.magazine and SpeedLoader.IsCompatibleTypeForGun(self.magazine:getFullType(), self.gun) then
         ISReloadWeaponAction.ejectSpentRounds(self)
     end
 end
 
-local ISInsertMagazine_loadAmmo_original = ISInsertMagazine.loadAmmo
+local ISInsertMagazine_loadAmmo = ISInsertMagazine.loadAmmo
 function ISInsertMagazine:loadAmmo()
     if self.magazine and SpeedLoader.IsCompatibleTypeForGun(self.magazine:getFullType(), self.gun) then
         local transferredCount = SpeedLoader.TransferAmmoToGun(self.gun, self.magazine)
@@ -303,7 +307,7 @@ function ISInsertMagazine:loadAmmo()
         end
         Ammo.SyncAmmoListToClient(self.character, self.gun)
     end
-    return ISInsertMagazine_loadAmmo_original(self)
+    return ISInsertMagazine_loadAmmo(self)
 end
 
 -------------------------------------------------
@@ -350,15 +354,15 @@ local function getNewInventoryItemByType(inventory, itemType, knownIds)
     return nil
 end
 
-local ISEjectMagazine_unloadAmmo_original = ISEjectMagazine.unloadAmmo
+local ISEjectMagazine_unloadAmmo = ISEjectMagazine.unloadAmmo
 function ISEjectMagazine:unloadAmmo()
     local savedMagType = self._actualMagType or Magazine.GetMagazineType(self.gun)
     if not savedMagType then
-        return ISEjectMagazine_unloadAmmo_original(self)
+        return ISEjectMagazine_unloadAmmo(self)
     end
     local magazineInstance = instanceItem(savedMagType)
     if not magazineInstance then
-        return ISEjectMagazine_unloadAmmo_original(self)
+        return ISEjectMagazine_unloadAmmo(self)
     end
     local inventory = self.character and self.character:getInventory()
     local ammoListForMag = Ammo.SplitAmmoListOnEject(self.gun)
@@ -373,7 +377,7 @@ function ISEjectMagazine:unloadAmmo()
         knownMagazineIds = getInventoryItemIdsByType(inventory, savedMagType)
     end
 
-    ISEjectMagazine_unloadAmmo_original(self)
+    ISEjectMagazine_unloadAmmo(self)
 
     if ammoListForMag and knownMagazineIds and inventory then
         local ejectedMag = getNewInventoryItemByType(inventory, savedMagType, knownMagazineIds)
@@ -392,10 +396,10 @@ end
 -- Load and Unload Bullets from Magazine update AmmoList
 -------------------------------------------------
 
-local ISLoadBulletsInMagazine_start_Original = ISLoadBulletsInMagazine.start
+local ISLoadBulletsInMagazine_start = ISLoadBulletsInMagazine.start
 function ISLoadBulletsInMagazine:start()
     if not self.ammoTypeOverride then
-        return ISLoadBulletsInMagazine_start_Original(self)
+        return ISLoadBulletsInMagazine_start(self)
     end
 
     if not self.character:getInventory():containsWithModule(self.ammoTypeOverride) then
@@ -413,9 +417,9 @@ function ISLoadBulletsInMagazine:start()
     self.character:setVariable("UpdateLoadBulletsTime", 0.0)
 end
 
-local ISLoadBulletsInMagazine_animEvent_Original = ISLoadBulletsInMagazine.animEvent
+local ISLoadBulletsInMagazine_animEvent = ISLoadBulletsInMagazine.animEvent
 function ISLoadBulletsInMagazine:animEvent(event, parameter)
-    if event == 'InsertBullet' then
+    if event == "InsertBullet" then
         if self.ammoTypeOverride then
             if self:isLoadFinished() then
                 return
@@ -456,10 +460,10 @@ function ISLoadBulletsInMagazine:animEvent(event, parameter)
         end
 
         if self:isLoadFinished() then
-            return ISLoadBulletsInMagazine_animEvent_Original(self, event, parameter)
+            return ISLoadBulletsInMagazine_animEvent(self, event, parameter)
         end
         if self:isLocal() and self.loadedThisLoop then
-            return ISLoadBulletsInMagazine_animEvent_Original(self, event, parameter)
+            return ISLoadBulletsInMagazine_animEvent(self, event, parameter)
         end
 
         if not isClient() then
@@ -474,10 +478,10 @@ function ISLoadBulletsInMagazine:animEvent(event, parameter)
             Ammo.SyncAmmoListToClient(self.character, self.magazine)
         end
     end
-    ISLoadBulletsInMagazine_animEvent_Original(self, event, parameter)
+    ISLoadBulletsInMagazine_animEvent(self, event, parameter)
 end
 
-local ISUnloadBulletsFromMagazine_animEvent_Original = ISUnloadBulletsFromMagazine.animEvent
+local ISUnloadBulletsFromMagazine_animEvent = ISUnloadBulletsFromMagazine.animEvent
 function ISUnloadBulletsFromMagazine:animEvent(event, parameter)
     if event == "RemoveBullet" or event == "removeBullet" then
         local mag = self.magazine
@@ -506,10 +510,10 @@ function ISUnloadBulletsFromMagazine:animEvent(event, parameter)
         end
     end
 
-    ISUnloadBulletsFromMagazine_animEvent_Original(self, event, parameter)
+    ISUnloadBulletsFromMagazine_animEvent(self, event, parameter)
 end
 
-local ISLoadBulletsInMagazine_isLoadFinished_Original = ISLoadBulletsInMagazine.isLoadFinished
+local ISLoadBulletsInMagazine_isLoadFinished = ISLoadBulletsInMagazine.isLoadFinished
 function ISLoadBulletsInMagazine:isLoadFinished()
     local loadedThisSession = self.magazine:getCurrentAmmoCount() - (self.ammoCountStart or 0)
 
@@ -522,12 +526,12 @@ function ISLoadBulletsInMagazine:isLoadFinished()
             or not self.character:getInventory():containsWithModule(self.ammoTypeOverride)
     end
 
-    return ISLoadBulletsInMagazine_isLoadFinished_Original(self)
+    return ISLoadBulletsInMagazine_isLoadFinished(self)
 end
 
-local ISLoadBulletsInMagazine_new_Original = ISLoadBulletsInMagazine.new
+local ISLoadBulletsInMagazine_new = ISLoadBulletsInMagazine.new
 function ISLoadBulletsInMagazine:new(character, magazine, ammoCount, ammoLimit, ammoTypeOverride)
-    local o = ISLoadBulletsInMagazine_new_Original(self, character, magazine, ammoCount)
+    local o = ISLoadBulletsInMagazine_new(self, character, magazine, ammoCount)
     o.ammoLimit = ammoLimit
     o.ammoTypeOverride = ammoTypeOverride
     if ammoTypeOverride then
@@ -536,10 +540,10 @@ function ISLoadBulletsInMagazine:new(character, magazine, ammoCount, ammoLimit, 
     return o
 end
 
-local ISReloadWeaponAction_initVars_Original = ISReloadWeaponAction.initVars
+local ISReloadWeaponAction_initVars = ISReloadWeaponAction.initVars
 function ISReloadWeaponAction:initVars()
     if not self.ammoTypeOverride then
-        return ISReloadWeaponAction_initVars_Original(self)
+        return ISReloadWeaponAction_initVars(self)
     end
 
     ISReloadWeaponAction.setReloadSpeed(self.character, false)
@@ -560,10 +564,10 @@ end
 -------------------------------------------------
 -- Bullet reload with no magazine: add to AmmoList
 -------------------------------------------------
-local ISReloadWeaponAction_loadAmmo_Original = ISReloadWeaponAction.loadAmmo
+local ISReloadWeaponAction_loadAmmo = ISReloadWeaponAction.loadAmmo
 function ISReloadWeaponAction:loadAmmo()
     if not self.bullets then
-        return ISReloadWeaponAction_loadAmmo_Original(self)
+        return ISReloadWeaponAction_loadAmmo(self)
     end
 
     local loadedThisSession = self.gun:getCurrentAmmoCount() - (self.ammoCountStart or 0)
@@ -647,9 +651,9 @@ function ISReloadWeaponAction:loadAmmo()
     end
 end
 
-local ISReloadWeaponAction_new_Original = ISReloadWeaponAction.new
+local ISReloadWeaponAction_new = ISReloadWeaponAction.new
 function ISReloadWeaponAction:new(character, gun, ammoLimit, ammoTypeOverride)
-    local o = ISReloadWeaponAction_new_Original(self, character, gun)
+    local o = ISReloadWeaponAction_new(self, character, gun)
     o.ammoLimit = ammoLimit
     o.ammoCountStart = gun:getCurrentAmmoCount()
     o.ammoTypeOverride = ammoTypeOverride
@@ -659,11 +663,11 @@ end
 -------------------------------------------------
 -- Unload Bullets from Gun: Remove from AmmoList
 -------------------------------------------------
-local ISUnloadBulletsFromFirearm_animEvent_Original = ISUnloadBulletsFromFirearm.animEvent
+local ISUnloadBulletsFromFirearm_animEvent = ISUnloadBulletsFromFirearm.animEvent
 function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
-    if event == 'playReloadSound' then
-        if parameter == 'ejectAmmoStart' then
-            return ISUnloadBulletsFromFirearm_animEvent_Original(self, event, parameter)
+    if event == "playReloadSound" then
+        if parameter == "ejectAmmoStart" then
+            return ISUnloadBulletsFromFirearm_animEvent(self, event, parameter)
         end
 
         local gun = self.gun
@@ -711,13 +715,13 @@ function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
         end
     end
 
-    ISUnloadBulletsFromFirearm_animEvent_Original(self, event, parameter)
+    ISUnloadBulletsFromFirearm_animEvent(self, event, parameter)
 end
 
 ------------------------------------------------
 -- Attack_Hook: set ammo type BEFORE original, then remove from AmmoList array and handle bayonet attack case
 -------------------------------------------------
-local Attack_Hook_Original = ISReloadWeaponAction.attackHook
+local ISReloadWeaponAction_attackHook = ISReloadWeaponAction.attackHook
 Hook.Attack.Remove(ISReloadWeaponAction.attackHook)
 ISReloadWeaponAction.attackHook = function(character, chargeDelta, weapon)
     if weapon:isRanged() and not character:isDoShove() then
@@ -757,13 +761,13 @@ ISReloadWeaponAction.attackHook = function(character, chargeDelta, weapon)
                 end
             end
         end
-        Attack_Hook_Original(character, chargeDelta, weapon)
+        ISReloadWeaponAction_attackHook(character, chargeDelta, weapon)
     elseif (not character:getVehicle() or character:isDoShove()) then
         local isBayonetDeployed = Bayonet.IsBayonetDeployed(weapon)
         if isBayonetDeployed then
-            Bayonet.BayonetAttack(character, chargeDelta, weapon, Attack_Hook_Original)
+            Bayonet.BayonetAttack(character, chargeDelta, weapon, ISReloadWeaponAction_attackHook)
         else
-            Attack_Hook_Original(character, chargeDelta, weapon)
+            ISReloadWeaponAction_attackHook(character, chargeDelta, weapon)
         end
     end
 end
@@ -773,8 +777,8 @@ Hook.Attack.Add(ISReloadWeaponAction.attackHook)
 ------------------------------------------------
 -- RAF_Hook: Right on game start ensure the hook takes over after picking all attack hooks
 -------------------------------------------------
-Events.OnGameStart.Add(function()
-    local Original_Attack_Hook = ISReloadWeaponAction.attackHook
+Events.OnInitGlobalModData.Add(function()
+    local ISReloadWeaponAction_attackHook_wrapped = ISReloadWeaponAction.attackHook
 
     ISReloadWeaponAction.RAFattackHook = function(character, chargeDelta, weapon)
         if weapon:isRanged() and not character:isDoShove() and RateOfFire.IsWeaponRegistered(weapon) then
@@ -787,13 +791,13 @@ Events.OnGameStart.Add(function()
                 if RateOfFire.burstState[character:getPlayerNum()] then return end
                 if not RateOfFire.canStartBurst(character) then return end
 
-                local result = Original_Attack_Hook(character, chargeDelta, weapon)
-                RateOfFire.startBurst(character, weapon, intervalMs, Original_Attack_Hook, chargeDelta)
+                local result = ISReloadWeaponAction_attackHook_wrapped(character, chargeDelta, weapon)
+                RateOfFire.startBurst(character, weapon, intervalMs, ISReloadWeaponAction_attackHook_wrapped, chargeDelta)
                 return result
             end
         end
 
-        return Original_Attack_Hook(character, chargeDelta, weapon)
+        return ISReloadWeaponAction_attackHook_wrapped(character, chargeDelta, weapon)
     end
 
     Hook.Attack.Remove(ISReloadWeaponAction.attackHook)
