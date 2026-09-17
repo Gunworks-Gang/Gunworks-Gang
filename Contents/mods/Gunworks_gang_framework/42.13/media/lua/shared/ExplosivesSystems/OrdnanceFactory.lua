@@ -26,6 +26,7 @@ OrdnanceFactory.Defaults             = {
     explosionFXDuration = 5,     -- ticks the FX object remains visible before being removed; or a per-frame table {frame1Ticks, frame2Ticks, ...} matched to `frames`, missing trailing entries default to 3 ticks
     frames              = nil,   -- optional {startIndex, endIndex} range; when set, explosionFXObject is treated as a prefix and played as an animated sequence (e.g. explosionFXObject="MWA.explosion_", frames={0,15} plays MWA.explosion_0 .. MWA.explosion_15)
     directProjectile    = false, -- true = lock world item rotation to the player's facing angle at launch instead of it spinning in flight (e.g. rockets)
+    spinForce           = { 10, 30 }, -- {min, max} degrees of spin per tick while tumbling in flight (ignored when directProjectile = true)
 }
 
 --------------------------------------------------------------------

@@ -48,10 +48,18 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
     local localY = originY - sq:getY()
     local localZ = originZ - sq:getZ()
 
-    local playerDirection = player:getDirectionAngle()
-    local directRotation = playerDirection < 0 and (playerDirection + 360) or playerDirection
-
     local remainingBounces = ExplosivesSystems.randomizeBounces(params.floorBounces or 1)
+
+    local initialRotation, spinSpeed
+    if params.directProjectile then
+        local playerDirection = player:getDirectionAngle()
+        initialRotation = playerDirection < 0 and (playerDirection + 360) or playerDirection
+        spinSpeed = 0
+    else
+        local spinForce = params.spinForce or { 10, 30 }
+        initialRotation = r:random(0, 359)
+        spinSpeed = r:random(spinForce[1], spinForce[2])
+    end
 
     ExplosivesSystems.nextOrdnanceId = ExplosivesSystems.nextOrdnanceId + 1
     local ordnanceId = ExplosivesSystems.nextOrdnanceId
@@ -68,7 +76,8 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         destZ            = destZ,
         remainingBounces = remainingBounces,
         shooterOnlineID  = player and player:getOnlineID() or -1,
-        directRotation   = directRotation,
+        rotation         = initialRotation,
+        spinSpeed        = spinSpeed,
     }
 
     if isServer() then
@@ -96,7 +105,8 @@ function ExplosivesSystems.doSpawnOrdnance(player, sourceWeapon, originX, origin
         velocityX        = seedVelX,
         velocityY        = seedVelY,
         velocityZ        = seedVelZ,
-        directRotation   = directRotation,
+        rotation         = initialRotation,
+        spinSpeed        = spinSpeed,
     }
 
     local list = ExplosivesSystems.activeOrdnance
@@ -199,6 +209,7 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale)
     end
 
     local status = ExplosivesSystems.stepOrdnance(ord, scale)
+    ord.rotation = (ord.rotation + ord.spinSpeed * scale) % 360
 
     if status == "wallhit" or status == "floorimpact" then
         return ExplosivesSystems.forceDetonate(ord, index)
@@ -216,8 +227,8 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale)
                 ord.params.worldModel or ord.sourceWeapon,
                 ord.x, ord.y, ord.z
             )
-            if ord.directRotation and ord.worldItem then
-                ord.worldItem:setWorldZRotation(ord.directRotation)
+            if ord.worldItem then
+                ord.worldItem:setWorldZRotation(ord.rotation)
             end
             return false
         end
@@ -226,8 +237,8 @@ function ExplosivesSystems.updateOrdnance(ord, index, scale)
             ord.params.worldModel or ord.sourceWeapon,
             ord.x, ord.y, ord.z
         )
-        if ord.directRotation and ord.worldItem then
-            ord.worldItem:setWorldZRotation(ord.directRotation)
+        if ord.worldItem then
+            ord.worldItem:setWorldZRotation(ord.rotation)
         end
 
         Payloads.ResolveImpact(ord)

@@ -137,7 +137,8 @@ function ExplosivesSystems.spawnVisualOrdnance(args)
         prevWorldZ       = args.originZ,
         params           = params,
         itemObj          = itemObj,
-        rotation         = (params.directProjectile and args.directRotation) or 0,
+        rotation         = args.rotation or 0,
+        spinSpeed        = args.spinSpeed or 0,
         isOwnOrdnance    = isOwnOrdnance,
     }
 
@@ -178,6 +179,9 @@ function ExplosivesSystems.updateVisualOrdnance()
     while i <= n do
         local visual = list[i]
         local status = ExplosivesSystems.stepOrdnance(visual, scale)
+        if not visual.atRest then
+            visual.rotation = (visual.rotation + visual.spinSpeed * scale) % 360
+        end
         local remove = false
 
         if status == "floorbounce" then
@@ -185,6 +189,7 @@ function ExplosivesSystems.updateVisualOrdnance()
         elseif status == "wallhit" or status == "floorimpact" then
             remove = visual.params.detonateOnImpact == true
         elseif status == "rest" then
+            visual.atRest = true
             remove = not (visual.params.detonateOnImpact
                 or (visual.params.detonationDelay or 0) > 0)
         end
