@@ -12,11 +12,9 @@ local Magazine = require("WeaponSystems/Utils/Magazine")
 --------------------------------------------------------------------------
 local ISReloadWeaponAction_animEvent = ISReloadWeaponAction.animEvent
 function ISReloadWeaponAction:animEvent(event, parameter)
-    if event == "changeWeaponSprite" then
-        if parameter and parameter ~= "" and self.gun:getFullType() ~= "Base.DoubleBarrelShotgun" then
-            local open = parameter ~= "original"
-            return Animations.CallAnimate(self.character, self.gun, open)
-        end
+    if event == "openWeapon" then
+        local open = parameter == "open"
+        return Animations.CallAnimate(self.character, self.gun, open)
     end
     ISReloadWeaponAction_animEvent(self, event, parameter)
 end
@@ -68,11 +66,9 @@ function ISRackFirearm:animEvent(event, parameter)
     if event == "rackEnd" then
         Animations.rackAction(self.character, self.gun, false)
     end
-    if event == "changeWeaponSprite" then
-        if parameter and parameter ~= "" and self.gun:getFullType() ~= "Base.DoubleBarrelShotgun" then
-            local open = parameter ~= "original"
-            return Animations.CallAnimate(self.character, self.gun, open)
-        end
+    if event == "openWeapon" then
+        local open = parameter == "open"
+        return Animations.CallAnimate(self.character, self.gun, open)
     end
     ISRackFirearm_animEvent(self, event, parameter)
 end
@@ -97,11 +93,9 @@ end
 --------------------------------------------------------------------------
 local ISUnloadBulletsFromFirearm_animEvent = ISUnloadBulletsFromFirearm.animEvent
 function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
-    if event == "changeWeaponSprite" then
-        if parameter and parameter ~= "" and self.gun:getFullType() ~= "Base.DoubleBarrelShotgun" then
-            local open = parameter ~= "original"
-            return Animations.CallAnimate(self.character, self.gun, open)
-        end
+    if event == "openWeapon" then
+        local open = parameter == "open"
+        return Animations.CallAnimate(self.character, self.gun, open)
     end
     ISUnloadBulletsFromFirearm_animEvent(self, event, parameter)
 end
