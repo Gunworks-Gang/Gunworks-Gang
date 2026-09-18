@@ -193,7 +193,6 @@ function StatsFactory.RestoreStats(weapon, baseStats, statSet)
     for name in pairs(statSet) do
         local reg = StatsFactory.Registry[name]
         if reg then
-            print(reg)
             weapon[reg.set](weapon, baseStats[reg.get](baseStats))
         end
     end
