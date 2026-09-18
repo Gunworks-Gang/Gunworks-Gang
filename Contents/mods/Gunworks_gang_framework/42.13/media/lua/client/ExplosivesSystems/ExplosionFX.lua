@@ -1,24 +1,9 @@
-local ExplosionFX = {}
+local ExplosivesSystems      = require("ExplosivesSystems/Init")
+local ExplosionFX            = {}
 
-ExplosionFX.activeEffects = {}
+ExplosionFX.activeEffects    = {}
 
--- fallback duration (in ticks, pre-/60) for a frame missing from a per-frame explosionFXDuration table
 local DEFAULT_FRAME_DURATION = 3
-
-local function removeWorldItem(fx)
-    if not fx.worldItem then return end
-    local wobj = fx.worldItem:getWorldItem()
-    if wobj then
-        local wSquare = wobj:getSquare()
-        if wSquare then
-            if isServer() then
-                wSquare:transmitRemoveItemFromSquare(wobj)
-            end
-            wSquare:removeWorldObject(wobj)
-        end
-    end
-    fx.worldItem = nil
-end
 
 local function buildSequence(itemType, frames)
     if type(frames) ~= "table" then return nil end
@@ -57,17 +42,31 @@ local function currentFrameStep(fx)
     return fx.frameStep
 end
 
+local function instantiateFrameItems(itemType, sequence)
+    if not sequence then
+        local itemObj = instanceItem(itemType)
+        return itemObj and { itemObj } or nil
+    end
+
+    local items = {}
+    for i = 1, #sequence do
+        items[i] = instanceItem(sequence[i])
+    end
+    return items
+end
+
 function ExplosionFX.PlayEffect(square, itemType, lx, ly, lz, duration, frames)
     if not square then return end
     if not itemType then return end
 
     local sequence              = buildSequence(itemType, frames)
     local frameStep, timeToLive = buildFrameStep(duration, sequence)
+    local frameItems            = instantiateFrameItems(itemType, sequence)
+    if not frameItems then return end
 
-    local fx                    = {
+    local fx        = {
         square     = square,
-        itemType   = itemType,
-        sequence   = sequence,
+        frameItems = frameItems,
         frameIndex = 1,
         frameTimer = 0,
         frameStep  = frameStep,
@@ -75,12 +74,11 @@ function ExplosionFX.PlayEffect(square, itemType, lx, ly, lz, duration, frames)
         ly         = ly or 0.5,
         lz         = lz or 0,
         timeToLive = timeToLive,
-        worldItem  = square:AddWorldInventoryItem(sequence and sequence[1] or itemType, lx or 0.5, ly or 0.5, lz or 0),
         active     = true,
     }
 
-    local list                  = ExplosionFX.activeEffects
-    list[#list + 1]             = fx
+    local list      = ExplosionFX.activeEffects
+    list[#list + 1] = fx
 end
 
 function ExplosionFX.tick()
@@ -89,25 +87,18 @@ function ExplosionFX.tick()
     while i >= 1 do
         local fx = ExplosionFX.activeEffects[i]
         if fx and fx.active then
-            removeWorldItem(fx)
             fx.timeToLive = fx.timeToLive - dt
             if fx.timeToLive <= 0 then
                 fx.active = false
                 local lastIndex = #ExplosionFX.activeEffects
                 ExplosionFX.activeEffects[i] = ExplosionFX.activeEffects[lastIndex]
                 ExplosionFX.activeEffects[lastIndex] = nil
-            else
-                local currentType = fx.itemType
-                if fx.sequence then
-                    fx.frameTimer = fx.frameTimer + dt
-                    while fx.frameTimer >= currentFrameStep(fx) and fx.frameIndex < #fx.sequence do
-                        fx.frameTimer = fx.frameTimer - currentFrameStep(fx)
-                        fx.frameIndex = fx.frameIndex + 1
-                    end
-                    currentType = fx.sequence[fx.frameIndex]
+            elseif #fx.frameItems > 1 then
+                fx.frameTimer = fx.frameTimer + dt
+                while fx.frameTimer >= currentFrameStep(fx) and fx.frameIndex < #fx.frameItems do
+                    fx.frameTimer = fx.frameTimer - currentFrameStep(fx)
+                    fx.frameIndex = fx.frameIndex + 1
                 end
-                fx.worldItem = fx.square:AddWorldInventoryItem(currentType, fx.lx, fx.ly, fx.lz)
-                fx.worldItem:setWorldZRotation(0)
             end
         else
             local lastIndex = #ExplosionFX.activeEffects
@@ -118,6 +109,37 @@ function ExplosionFX.tick()
     end
 end
 
+function ExplosionFX.render()
+    local list = ExplosionFX.activeEffects
+    for i = 1, #list do
+        local fx = list[i]
+        local itemObj = fx.frameItems[fx.frameIndex]
+        if itemObj then
+            Render3DItem(
+                itemObj,
+                fx.square,
+                fx.square:getX() + fx.lx,
+                fx.square:getY() + fx.ly,
+                fx.square:getZ() + fx.lz,
+                0
+            )
+        end
+    end
+end
+
+local function onServerCommand(module, command, args)
+    if module ~= ExplosivesSystems.MODULE_NAME then return end
+    if command ~= "playExplosionFX" then return end
+    if not args then return end
+
+    local square = getCell():getGridSquare(args.sqX, args.sqY, args.sqZ)
+    ExplosionFX.PlayEffect(square, args.itemType, args.lx, args.ly, args.lz, args.duration, args.frames)
+end
+
+ExplosivesSystems.PlayExplosionFXLocal = ExplosionFX.PlayEffect
+
+Events.OnServerCommand.Add(onServerCommand)
 Events.OnTick.Add(ExplosionFX.tick)
+Events.RenderOpaqueObjectsInWorld.Add(ExplosionFX.render)
 
 return ExplosionFX
