@@ -1,4 +1,4 @@
-local ExplosivesSystems          = require("ExplosivesSystems/PhysicsCore")
+local ExplosivesSystems          = require("ExplosivesSystems/Physics")
 local OrdnanceFactory            = require("ExplosivesSystems/OrdnanceFactory")
 
 ExplosivesSystems.visualOrdnance = {}

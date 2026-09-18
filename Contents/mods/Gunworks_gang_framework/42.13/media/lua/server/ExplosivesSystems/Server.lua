@@ -1,4 +1,4 @@
-local ExplosivesSystems          = require("ExplosivesSystems/PhysicsCore")
+local ExplosivesSystems          = require("ExplosivesSystems/Physics")
 local Payloads                   = require("ExplosivesSystems/Payloads")
 local OrdnanceFactory            = require("ExplosivesSystems/OrdnanceFactory")
 local r                          = newrandom()
