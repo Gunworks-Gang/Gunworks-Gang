@@ -46,6 +46,8 @@ function ISRemoveWeaponUpgrade:isValid()
         return false
     end
 
+    if Underbarrel.IsWeaponInUnderbarrelMode(self.weapon) then return false end
+
     if self.weapon and self.partType then
         local parentPart = self.weapon:getWeaponPart(self.partType)
         if parentPart then

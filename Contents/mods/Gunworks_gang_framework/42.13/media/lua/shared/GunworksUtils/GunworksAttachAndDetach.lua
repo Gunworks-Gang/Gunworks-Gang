@@ -1,5 +1,7 @@
-Gunworks_AttachAndDetach = {}
+Gunworks_AttachAndDetach                       = {}
 Gunworks_AttachAndDetach.weaponPartToolMapping = Gunworks_AttachAndDetach.weaponPartToolMapping or {}
+
+local Underbarrel                              = require("WeaponSystems/Utils/Underbarrel")
 
 local function predicateNotBroken(item)
     return not item:isBroken()
@@ -47,6 +49,8 @@ function Gunworks_AttachAndDetach.requiredTools(character, weapon, weaponPart)
     if not character or not weapon or not weaponPart then
         return false
     end
+
+    if Underbarrel.IsWeaponInUnderbarrelMode(weapon) then return false end
 
     local toolChecks = Gunworks_AttachAndDetach.weaponPartToolMapping[weaponPart:getPartType()]
     if not toolChecks then

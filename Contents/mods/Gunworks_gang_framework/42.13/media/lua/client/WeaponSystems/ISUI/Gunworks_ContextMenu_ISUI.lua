@@ -14,6 +14,7 @@ local UniversalAttachment = require("WeaponSystems/Utils/UniversalAttachment")
 local PreventRemoval = require("WeaponSystems/Utils/PreventRemovals")
 local UpgradeExclusives = require("WeaponSystems/Utils/UpgradeExclusives")
 local RequiredAttachment = require("WeaponSystems/Utils/RequiredAttachment")
+local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 
 local function predicateNotBroken(item)
     return not item:isBroken()
@@ -772,6 +773,22 @@ local function filterRequiredAttachmentRemovals(playerid, context, items)
 end
 
 Events.OnFillInventoryObjectContextMenu.Add(filterRequiredAttachmentRemovals)
+
+local function filterUnderbarrelModeUpgrades(playerid, context, items)
+    for _, v in ipairs(items) do
+        local item = v
+        if not instanceof(v, "InventoryItem") then
+            item = v.items[1]
+        end
+        if instanceof(item, "HandWeapon") and Underbarrel.IsWeaponInUnderbarrelMode(item) then
+            context:removeOptionByName(getText("ContextMenu_Add_Weapon_Upgrade"))
+            context:removeOptionByName(getText("ContextMenu_Remove_Weapon_Upgrade"))
+            return
+        end
+    end
+end
+
+Events.OnFillInventoryObjectContextMenu.Add(filterUnderbarrelModeUpgrades)
 
 -------------------------------------------------
 -- Weapon Upgrade / Remove Upgrade
