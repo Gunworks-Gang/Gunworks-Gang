@@ -131,11 +131,13 @@ end
 -------------------------------------------------
 -- Register modifier layer with StatsFactory
 -------------------------------------------------
-StatsFactory.RegisterModifierLayer("FoldingBipod", function(weapon)
+local function getModifiers(weapon)
     local entry = FoldingBipod.WeaponsWithFoldableBipod[weapon:getFullType()]
     if not entry or not entry.modifiers then return nil end
     local state = FoldingBipod.IsBipodDeployed(weapon) and "deployed" or "folded"
     return entry.modifiers[state]
-end, FoldingBipod.RestoreStats)
+end
+
+StatsFactory.RegisterModifierLayer("FoldingBipod", getModifiers, FoldingBipod.RestoreStats, FoldingBipod.HasFoldableBipod)
 
 return FoldingBipod

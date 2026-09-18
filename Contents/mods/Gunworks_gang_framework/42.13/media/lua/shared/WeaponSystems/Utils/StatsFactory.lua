@@ -193,6 +193,7 @@ function StatsFactory.RestoreStats(weapon, baseStats, statSet)
     for name in pairs(statSet) do
         local reg = StatsFactory.Registry[name]
         if reg then
+            print(reg)
             weapon[reg.set](weapon, baseStats[reg.get](baseStats))
         end
     end
@@ -240,11 +241,13 @@ end
 ---@param id string                           unique layer name
 ---@param getModifiersFn fun(weapon):table|nil  returns modifier array or nil if inactive
 ---@param restoreStats table|nil  { StatName = true, ... }
-function StatsFactory.RegisterModifierLayer(id, getModifiersFn, restoreStats)
+---@param isApplicableFn fun(weapon):boolean|nil
+function StatsFactory.RegisterModifierLayer(id, getModifiersFn, restoreStats, isApplicableFn)
     StatsFactory.ModifierLayers[#StatsFactory.ModifierLayers + 1] = {
         id = id,
         getModifiers = getModifiersFn,
         restoreStats = restoreStats or {},
+        isApplicable = isApplicableFn,
     }
 end
 
@@ -258,13 +261,15 @@ function StatsFactory.ReapplyAllModifiers(weapon)
     local toRestore = {}
     local activeLayers = {}
     for _, layer in ipairs(StatsFactory.ModifierLayers) do
-        for name in pairs(layer.restoreStats) do
-            toRestore[name] = true
-        end
+        if not layer.isApplicable or layer.isApplicable(weapon) then
+            for name in pairs(layer.restoreStats) do
+                toRestore[name] = true
+            end
 
-        local modifiers = layer.getModifiers(weapon)
-        if modifiers then
-            activeLayers[#activeLayers + 1] = modifiers
+            local modifiers = layer.getModifiers(weapon)
+            if modifiers then
+                activeLayers[#activeLayers + 1] = modifiers
+            end
         end
     end
 

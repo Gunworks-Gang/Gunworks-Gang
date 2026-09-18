@@ -121,6 +121,10 @@ local function getModifiers(weapon)
     return { StatsFactory.Set("WeaponSprite", model) }
 end
 
-StatsFactory.RegisterModifierLayer("ConditionalModel", getModifiers, { WeaponSprite = true })
+local function isApplicable(weapon)
+    return weapon ~= nil and ConditionalModel.IsRegistered(weapon:getFullType())
+end
+
+StatsFactory.RegisterModifierLayer("ConditionalModel", getModifiers, { WeaponSprite = true }, isApplicable)
 
 return ConditionalModel
