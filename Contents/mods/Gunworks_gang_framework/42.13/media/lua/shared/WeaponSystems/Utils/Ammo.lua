@@ -281,7 +281,11 @@ end
 
 function Ammo.AmmoAdjustWeaponStats(weapon, bulletType, ammoEnum)
     local profileName = Ammo.GetAmmoCharacteristics(bulletType)
-    weapon:getModData().ActiveAmmoProfile = profileName
+    local md = weapon:getModData()
+    md.ActiveAmmoProfile = profileName
+    if profileName then
+        md.GW_AmmoProfileEverActive = true
+    end
     weapon:setAmmoType(ammoEnum)
     StatsFactory.ReapplyAllModifiers(weapon)
 end
@@ -382,11 +386,19 @@ end
 -------------------------------------------------
 -- Register modifier layer with StatsFactory
 -------------------------------------------------
-StatsFactory.RegisterModifierLayer("Ammo", function(weapon)
+local function isApplicable(weapon)
+    if not weapon then return false end
+    local md = weapon:getModData()
+    return md.ActiveAmmoProfile ~= nil or md.GW_AmmoProfileEverActive == true
+end
+
+local function getModifiers(weapon)
     local profileName = weapon:getModData().ActiveAmmoProfile
     if not profileName then return nil end
     return Ammo.AmmoStats[profileName]
-end, Ammo.RestoreStats)
+end
+
+StatsFactory.RegisterModifierLayer("Ammo", getModifiers, Ammo.RestoreStats, isApplicable)
 
 function Ammo.RestoreOnLoad(player)
     local inv = player:getInventory()

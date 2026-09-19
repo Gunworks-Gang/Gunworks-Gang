@@ -379,13 +379,15 @@ function RateOfFire.GetWeaponById(player, itemId)
     return nil
 end
 
-StatsFactory.RegisterModifierLayer("RateOfFire", function(weapon)
+local function getModifiers(weapon)
     if not weapon or not weapon:isRanged() then return nil end
     local mode = weapon:getFireMode()
     if mode == "RealAuto" or mode == "RealBurst" then
         return { StatsFactory.Set("RecoilDelay", 1) }
     end
     return nil
-end, { RecoilDelay = true })
+end
+
+StatsFactory.RegisterModifierLayer("RateOfFire", getModifiers, { RecoilDelay = true }, RateOfFire.IsWeaponRegistered)
 
 return RateOfFire

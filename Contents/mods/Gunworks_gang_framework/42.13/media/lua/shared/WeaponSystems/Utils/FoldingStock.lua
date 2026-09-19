@@ -131,11 +131,13 @@ end
 -------------------------------------------------
 -- Register modifier layer with StatsFactory
 -------------------------------------------------
-StatsFactory.RegisterModifierLayer("FoldingStock", function(weapon)
+local function getModifiers(weapon)
     local entry = FoldingStock.WeaponsWithFoldableStock[weapon:getFullType()]
     if not entry or not entry.modifiers then return nil end
     local state = FoldingStock.IsStockFolded(weapon) and "folded" or "deployed"
     return entry.modifiers[state]
-end, FoldingStock.RestoreStats)
+end
+
+StatsFactory.RegisterModifierLayer("FoldingStock", getModifiers, FoldingStock.RestoreStats, FoldingStock.HasFoldableStock)
 
 return FoldingStock

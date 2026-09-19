@@ -50,6 +50,20 @@ end
 -- Modifier layer callback
 -------------------------------------------------
 
+--- Does this weapon currently have any registered part attached?
+local function hasRegisteredPartAttached(weapon)
+    local parts = weapon:getAllWeaponParts()
+    if not parts then return false end
+
+    for i = 0, parts:size() - 1 do
+        local part = parts:get(i)
+        if part and CustomStatsAttachments.RegisteredParts[part:getFullType()] then
+            return true
+        end
+    end
+    return false
+end
+
 --- Collect modifiers from every currently-attached registered part.
 --- Returns nil when no registered parts are present (layer inactive).
 local function getModifiers(weapon)
@@ -69,7 +83,18 @@ local function getModifiers(weapon)
             end
         end
     end
+
+    if combined then
+        weapon:getModData().GW_CustomStatsAttachmentEverActive = true
+    end
+
     return combined
+end
+
+local function isApplicable(weapon)
+    if not weapon then return false end
+    if weapon:getModData().GW_CustomStatsAttachmentEverActive then return true end
+    return hasRegisteredPartAttached(weapon)
 end
 
 -------------------------------------------------
@@ -78,7 +103,8 @@ end
 StatsFactory.RegisterModifierLayer(
     "CustomStatsAttachments",
     getModifiers,
-    CustomStatsAttachments.RestoreStats
+    CustomStatsAttachments.RestoreStats,
+    isApplicable
 )
 
 return CustomStatsAttachments
