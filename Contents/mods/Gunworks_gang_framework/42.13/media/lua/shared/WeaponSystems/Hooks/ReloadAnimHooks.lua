@@ -13,6 +13,7 @@ require("TimedActions/ISEjectMagazine")
 require("TimedActions/ISInsertMagazine")
 require("TimedActions/ISRackFirearm")
 require("TimedActions/ISReloadWeaponAction")
+require("TimedActions/ISUnloadBulletsFromFirearm")
 
 ---@class GunworksReloadAnim
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
@@ -398,6 +399,37 @@ function ISReloadWeaponAction:perform()
     prevReloadPerform(self)
     if handler then
         ReloadAnim.resetWeaponModel(self, handler)
+    end
+end
+
+-------------------------------------------------
+-- ISUnloadBulletsFromFirearm (non-magazine unload: shotgun / revolver / bolt / dbl-barrel / lever)
+-------------------------------------------------
+-- Vanilla start() sets the WeaponReloadType anim variable to the gun's engine reload type
+-- (e.g. "doublebarrelshotgun"), exactly like ISReloadWeaponAction did before the override
+-- above. A registered non-mag gun's custom Unload AnimSet node is gated on WeaponReloadType
+-- == handler.animId (mirroring its Load/Rack nodes), so without this same override that node
+-- can never match and a vanilla/unrelated Unload node plays instead - most visibly on
+-- break-action guns, whose vanilla node fires changeWeaponSprite to the OPEN vanilla model,
+-- silently swapping the held weapon to vanilla's double barrel for the whole unload action.
+--
+-- Gated on handler.customUnload (opt-in per profile), NOT just animId+isNonMagArchetype.
+-- Unlike Load - where every non-mag profile ships a Load*_HB.xml keyed to animId, or the
+-- profile wouldn't animate at all - a matching Unload*_HB.xml node is not guaranteed to exist,
+-- or to be the ONLY node keyed to that animId's archetype, for every registered profile across
+-- every pack on this shared framework. A concrete case: Guns of Marz's lever archetype has TWO
+-- parallel Unload node families (UnloadLever_HB.xml keyed to the animId "lever", and
+-- UnloadLeverAction_HB.xml keyed to the gun's real engine value "leveraction", which is what
+-- plays today since nothing currently overrides WeaponReloadType at unload) - an unconditional
+-- override here would silently switch which one plays, an unverified behavior change nobody
+-- asked for. An author sets customUnload = true on a profile only after confirming their pack's
+-- Unload*_HB.xml is the one node meant to win once WeaponReloadType == animId during unload.
+local prevUnloadStart = ISUnloadBulletsFromFirearm.start
+function ISUnloadBulletsFromFirearm:start()
+    local handler = ReloadAnim.getHandlerForAction(self)
+    prevUnloadStart(self)
+    if handler and handler.animId and handler.customUnload and ReloadAnim.isNonMagArchetype(handler.archetype) then
+        self:setAnimVariable("WeaponReloadType", handler.animId)
     end
 end
 

@@ -33,6 +33,14 @@ function ReloadAnim.normalizeWeaponReloadOptions(fullType, options)
         magItem = options.magItem,
         shortRackAfterInsert = options.shortRackAfterInsert,
         autoRack = options.autoRack,
+        -- Opt-in: true only when this profile ships a matching Unload*_HB.xml AnimSet node
+        -- gated on WeaponReloadType == animId (mirroring its Load node). The
+        -- ISUnloadBulletsFromFirearm:start hook in ReloadAnimHooks.lua only overrides
+        -- WeaponReloadType during unload when this is true - a non-mag archetype with no
+        -- matching Unload node would otherwise match no AnimSet node at all (raised-arms
+        -- fallback, round never visually ejected). Left unset (default false/nil), unload
+        -- behaves exactly as it did before this flag existed.
+        customUnload = options.customUnload,
         partState = options.partState,
         matches = options.matches,
         -- Extra inventory items required + consumed PER ROUND on top of the valued bullet
@@ -631,6 +639,7 @@ function ReloadAnim.createNonMagReloadHandler(options)
         rackDuration = options.rackDuration,
         partState = options.partState,
         autoRack = options.autoRack,
+        customUnload = options.customUnload,
         matches = options.matches,
         consumes = options.consumes,
         onReloadStart = function(action)
