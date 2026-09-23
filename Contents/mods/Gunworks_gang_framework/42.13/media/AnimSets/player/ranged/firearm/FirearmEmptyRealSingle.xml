@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <animNode>
-	<m_Name>FirearmEmptyRealAuto</m_Name>
+	<m_Name>FirearmEmptyRealSingle</m_Name>
 	<m_AnimName>Bob_IdleAimRifle</m_AnimName>
 	<m_Looped>false</m_Looped>
 	<m_BlendTime>0.05</m_BlendTime>
