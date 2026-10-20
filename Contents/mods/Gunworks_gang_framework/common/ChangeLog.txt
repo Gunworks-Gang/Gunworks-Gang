@@ -44,3 +44,8 @@ B42.20.3:
 [*] New ammunition definition, 2 Bore Rounds
 [*] Small adjustment to the Real Single Fire XML
 [ ------ ]
+
+[ 20/October/2026 ]
+[*] Bayonet Charge possible with rifles that have bayonet deployed/installed
+[*] Thworing and Bayonet Animations now sync in MP to other clients
+[ ------ ]
