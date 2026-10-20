@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode x_extends="SWMG-observer-SpearStabOnFloor">
+    <m_Name>GW_RemoteSpearStabOnFloor</m_Name>
+    <m_Conditions x_name="88ccd811-d0fa-4969-a5e4-310120f26b10">
+        <m_Name>GW_RemoteAttackType</m_Name>
+    </m_Conditions>
+    <m_Conditions x_name="gunworks-remote-bayonet">
+        <m_Name>bRemote</m_Name>
+        <m_Type>BOOL</m_Type>
+        <m_Value>true</m_Value>
+    </m_Conditions>
+</animNode>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<fileGuidTable>
+    <files>
+        <path>media/AnimSets/player/melee/2handed/SpearDefault.xml</path>
+        <guid>observer-SpearDefault</guid>
+    </files>
+    <files>
+        <path>media/AnimSets/player/melee/2handed/SpearDefaultCrit.xml</path>
+        <guid>observer-SpearDefaultCrit</guid>
+    </files>
+    <files>
+        <path>media/AnimSets/player/melee/2handed/SpearMiss.xml</path>
+        <guid>observer-SpearMiss</guid>
+    </files>
+    <files>
+        <path>media/AnimSets/player/melee/2handed/SpearOnFloor.xml</path>
+        <guid>observer-SpearOnFloor</guid>
+    </files>
+    <files>
+        <path>media/AnimSets/player/melee/2handed/SpearOverhead.xml</path>
+        <guid>observer-SpearOverhead</guid>
+    </files>
+    <files>
+        <path>media/AnimSets/player/melee/2handed/SpearOverheadCrit.xml</path>
+        <guid>observer-SpearOverheadCrit</guid>
+    </files>
+    <files>
+        <path>media/AnimSets/player/melee/2handed/SpearStab.xml</path>
+        <guid>observer-SpearStab</guid>
+    </files>
+    <files>
+        <path>media/AnimSets/player/melee/2handed/SpearStabOnFloor.xml</path>
+        <guid>observer-SpearStabOnFloor</guid>
+    </files>
+    <files>
+        <path>media/AnimSets/player/melee/2handed/SpearCharge.xml</path>
+        <guid>observer-SpearCharge</guid>
+    </files>
+</fileGuidTable>

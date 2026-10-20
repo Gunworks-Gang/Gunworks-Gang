@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode x_extends="SWMG-observer-SpearCharge">
+    <m_Name>GW_RemoteSpearCharge</m_Name>
+    <m_Conditions x_name="be48bd13-dab0-44d3-9d20-4ec3883dfd5e">
+        <m_Name>GW_RemoteAttackType</m_Name>
+    </m_Conditions>
+    <m_Conditions x_name="gunworks-remote-bayonet">
+        <m_Name>bRemote</m_Name>
+        <m_Type>BOOL</m_Type>
+        <m_Value>true</m_Value>
+    </m_Conditions>
+</animNode>

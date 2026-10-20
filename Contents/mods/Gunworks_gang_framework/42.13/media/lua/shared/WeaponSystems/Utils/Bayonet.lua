@@ -512,7 +512,11 @@ function Bayonet.BayonetAttack(character, chargeDelta, weapon, callback)
         weaponWearProcessed = false,
         needsWeaponSync = false,
     }
-    callback(character, chargeDelta, bayonetTempWeapon)
+    if callback then
+        callback(character, chargeDelta, bayonetTempWeapon)
+    else
+        character:DoAttack(chargeDelta)
+    end
 end
 
 -------------------------------------------------
