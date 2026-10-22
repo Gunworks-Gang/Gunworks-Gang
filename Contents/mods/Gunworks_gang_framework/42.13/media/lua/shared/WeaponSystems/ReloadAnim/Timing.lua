@@ -47,6 +47,26 @@ function ReloadAnim.getActionDurationMs(action, seconds, fallbackMs)
     return math.max(0, math.floor((scaledSeconds * 1000) + 0.5))
 end
 
+--- Choose the duration for the animation variant used by this action. Fields left
+--- unset retain the profile's ordinary timing, then the caller's existing fallback.
+---@param action ISBaseTimedAction
+---@param handler GunworksReloadAnimHandler
+---@param stage string
+---@return number|nil
+function ReloadAnim.getProfileDuration(action, handler, stage)
+    local character = action.character
+    local vehicle = character and character:getVehicle() and handler.vehicleDurations
+    local seconds = vehicle and vehicle[stage] or handler[stage .. "Duration"]
+    if stage == "rack" and character and character:isAiming() then
+        if vehicle then
+            seconds = vehicle.rackAim or vehicle.rack or handler.rackAimDuration or seconds
+        else
+            seconds = handler.rackAimDuration or seconds
+        end
+    end
+    return seconds
+end
+
 ---@param action ISInsertMagazine
 ---@nodiscard
 ---@return boolean

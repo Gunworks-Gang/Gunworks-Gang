@@ -30,6 +30,8 @@ local table_remove = table.remove
 ---@field loadShortDuration number|nil
 ---@field unloadDuration number|nil
 ---@field rackDuration number|nil
+---@field rackAimDuration number|nil
+---@field vehicleDurations table|nil
 ---@field partState GunworksReloadPartStateProfile|nil
 ---@field matches fun(gun:HandWeapon):boolean|nil
 ---@field autoRack boolean|nil

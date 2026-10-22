@@ -67,7 +67,7 @@ function ISEjectMagazine:serverStart()
     end
 
     self:initVars()
-    local durationMs = ReloadAnim.getActionDurationMs(self, handler.unloadDuration, 1200)
+    local durationMs = ReloadAnim.getActionDurationMs(self, ReloadAnim.getProfileDuration(self, handler, "unload"), 1200)
     emulateAnimEventOnce(self.netAction, durationMs, "unloadFinished", nil)
 end
 
@@ -164,9 +164,9 @@ function ISInsertMagazine:serverStart()
         ISReloadWeaponAction.ejectSpentRounds(self)
     end
 
-    local loadSeconds = handler.loadDuration
+    local loadSeconds = ReloadAnim.getProfileDuration(self, handler, "load")
     if ReloadAnim.shouldUseShortLoad(self, handler) then
-        loadSeconds = handler.loadShortDuration or handler.loadDuration
+        loadSeconds = ReloadAnim.getProfileDuration(self, handler, "loadShort") or loadSeconds
     end
     local durationMs = ReloadAnim.getActionDurationMs(self, loadSeconds, 1500)
     emulateAnimEventOnce(self.netAction, durationMs, "loadFinished", nil)
@@ -275,7 +275,7 @@ function ISRackFirearm:serverStart()
 
     self:ejectSpentRounds()
     self:initVars()
-    local durationMs = ReloadAnim.getActionDurationMs(self, handler.rackDuration, 1200)
+    local durationMs = ReloadAnim.getActionDurationMs(self, ReloadAnim.getProfileDuration(self, handler, "rack"), 1200)
     emulateAnimEventOnce(self.netAction, math.min(100, durationMs), "rackBullet", nil)
     emulateAnimEventOnce(self.netAction, durationMs, "rackingFinished", nil)
 end
@@ -335,7 +335,8 @@ local prevReloadServerStart = ISReloadWeaponAction.serverStart
 ---@param self ISReloadWeaponAction
 function ISReloadWeaponAction:serverStart()
     local handler = ReloadAnim.getHandlerForAction(self)
-    if not handler or not ReloadAnim.isNonMagArchetype(handler.archetype) or handler.loadDuration == nil then
+    local loadSeconds = handler and ReloadAnim.getProfileDuration(self, handler, "load")
+    if not handler or not ReloadAnim.isNonMagArchetype(handler.archetype) or loadSeconds == nil then
         return prevReloadServerStart(self)
     end
 
@@ -348,7 +349,7 @@ function ISReloadWeaponAction:serverStart()
     end
 
     -- emulateAnimEvent REPEATS: each loadFinished loads one round, so this is the per-round interval.
-    emulateAnimEvent(self.netAction, ReloadAnim.getActionDurationMs(self, handler.loadDuration, 0), "loadFinished", nil)
+    emulateAnimEvent(self.netAction, ReloadAnim.getActionDurationMs(self, loadSeconds, 0), "loadFinished", nil)
 end
 
 local prevReloadAnimEvent = ISReloadWeaponAction.animEvent
@@ -431,6 +432,31 @@ function ISUnloadBulletsFromFirearm:start()
     if handler and handler.animId and handler.customUnload and ReloadAnim.isNonMagArchetype(handler.archetype) then
         self:setAnimVariable("WeaponReloadType", handler.animId)
     end
+end
+
+local prevUnloadServerStart = ISUnloadBulletsFromFirearm.serverStart
+function ISUnloadBulletsFromFirearm:serverStart()
+    local handler = ReloadAnim.getHandlerForAction(self)
+    local unloadSeconds = handler and ReloadAnim.getProfileDuration(self, handler, "unload")
+    if not handler or not ReloadAnim.isNonMagArchetype(handler.archetype) or unloadSeconds == nil then
+        return prevUnloadServerStart(self)
+    end
+
+    self:initVars()
+    self.gunworksTimedUnload = true
+    -- Vanilla removes a round every 500 ms regardless of the animation length.
+    -- For an authored duration, remove one round/batch at each full clip boundary
+    -- and then let vanilla test whether unloading has finished. Keep this repeating
+    -- for shell-by-shell guns; insert-all guns empty in a single cycle.
+    emulateAnimEvent(self.netAction, ReloadAnim.getActionDurationMs(self, unloadSeconds, 0), "unloadFinished", nil)
+end
+
+local prevUnloadAnimEvent = ISUnloadBulletsFromFirearm.animEvent
+function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
+    if event == "unloadFinished" and self.gunworksTimedUnload and isServer() then
+        prevUnloadAnimEvent(self, "playReloadSound", "unload")
+    end
+    return prevUnloadAnimEvent(self, event, parameter)
 end
 
 return ReloadAnim
