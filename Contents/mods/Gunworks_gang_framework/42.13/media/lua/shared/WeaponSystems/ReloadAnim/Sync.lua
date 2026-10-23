@@ -1,29 +1,21 @@
 -- Gunworks reload-animation framework: multiplayer variable propagation.
 --
--- The per-gun selector GunworksReloadAnim is a character anim variable. Anim variables
--- are a per-machine local map (AnimState evaluates conditions locally) and are NOT
--- networked unless whitelisted + set on the local player, so a value set on the
--- reloader does not reach observers. Vanilla never relies on WeaponReloadType remotely
--- (it rides the synced PerformingAction state instead). We make GunworksReloadAnim
--- present on every rendering machine by RE-DERIVING it locally: the registry is shared
--- data on all clients + the server, so any machine can map a reloading player's equipped
--- weapon fullType to its animId. This sidesteps the proximity/whitelist limits of the
--- engine VariableSync path entirely.
+-- Timed actions replicate their animation variables when PlayerActionsState is entered.
+-- Observers do not run the reloader's Lua start hooks, and custom selectors set after
+-- that snapshot are not included. Derive GunworksReloadAnim on every rendering machine
+-- from the synced PerformingAction state and the equipped gun's shared registry profile.
+-- This also supports profiles whose XML nodes use WeaponReloadType directly.
 --
--- This per-tick pass is the SINGLE source of truth for the variable, for EVERY player the
--- machine updates (the local reloader, MP observer clients, and the dedicated server's view
--- of connected players). It derives the value purely from synced state: PerformingAction
--- (set to "Reload" by every reload/rack/eject timed action) plus the equipped weapon's
--- registered animId. The timed-action hooks deliberately do NOT set/clear this variable -
--- doing so at action boundaries raced across the eject->insert->rack chain and left the
--- character stuck in the raised-arms fallback when a clear ran without a matching re-set.
--- Deriving it continuously is self-healing: while a reload is active and a registered gun is
--- held the variable is always present, and it clears the moment the reload ends.
+-- Compare against the actual variables on each pass: successive eject/insert/rack actions
+-- can reset them while the desired animId stays the same. Caching only the last animId
+-- misses both those resets and phase changes. Write only mismatches, and clear the custom
+-- selector when the reload ends; this also avoids sharing a cache across SP/split-screen
+-- players whose online IDs may be identical.
 
 ---@class GunworksReloadAnim
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
 
---- Set the selector on the reloader (called by the hooks at action start).
+--- Set the selector on a character.
 ---@param character IsoGameCharacter|nil
 ---@param animId string|nil
 ---@return nil
@@ -35,7 +27,7 @@ function ReloadAnim.setReloadAnimVar(character, animId)
     character:setVariable(ReloadAnim.ANIM_VARIABLE, animId)
 end
 
---- Clear the selector (called by the hooks at action stop/perform).
+--- Clear the selector on a character.
 ---@param character IsoGameCharacter|nil
 ---@return nil
 function ReloadAnim.clearReloadAnimVar(character)
@@ -46,11 +38,6 @@ function ReloadAnim.clearReloadAnimVar(character)
     character:clearVariable(ReloadAnim.ANIM_VARIABLE)
 end
 
--- Transition cache: last value applied per remote player (keyed by onlineID) so the
--- per-tick pass only writes the variable on a change, never every frame.
----@type table<number, string|false>
-local lastAnimByOnlineId = {}
-
 --- Per-player tick pass: derive GunworksReloadAnim for EVERY player (local reloader + remote
 --- observers + the server's view) from their synced reload state + equipped weapon.
 ---@param player IsoPlayer|nil
@@ -60,40 +47,33 @@ local function deriveReloadAnimForPlayer(player)
         return
     end
 
-    local onlineId = player:getOnlineID()
-    ---@type string|false
-    local desired = false
+    local handler = nil
 
     if player:getVariableString("PerformingAction") == "Reload" then
         local item = player:getPrimaryHandItem()
-        local handler = ReloadAnim.GetHandlerForGun(item)
-        if handler then
-            desired = handler.animId
+        handler = ReloadAnim.GetHandlerForGun(item)
+    end
+
+    local current = player:getVariableString(ReloadAnim.ANIM_VARIABLE)
+    if handler then
+        local desired = handler.animId
+        if current ~= desired then
+            player:setVariable(ReloadAnim.ANIM_VARIABLE, desired)
         end
-    end
 
-    if lastAnimByOnlineId[onlineId] == desired then
-        return
-    end
-    lastAnimByOnlineId[onlineId] = desired
-
-    if desired then
-        player:setVariable(ReloadAnim.ANIM_VARIABLE, desired)
-        -- Overwrite the engine WeaponReloadType anim variable so the vanilla reload node
-        -- (LoadRifleNoMag / LoadDblBarrel / ...) stops matching and only our custom node plays.
-        -- This is the remote/self-healing counterpart to the same override in the
-        -- ISReloadWeaponAction start hook: it covers MP observers, who render a remote reloader
-        -- without ever running that action's start. Node-matching only - the reload mechanics read
-        -- gun:getWeaponReloadType() directly, never this variable.
-        --
-        -- Gate on isLoading: the UNLOAD action (ISUnloadBulletsFromFirearm) also sets
-        -- PerformingAction=Reload, but with isUnloading (not isLoading), and it has its own vanilla
-        -- node (UnloadRifleNoMag) still keyed on the real WeaponReloadType. We must NOT override it
-        -- there, or the unload would match no node (raised-arms fallback, round never ejected).
-        if player:getVariableBoolean("isLoading") then
+        -- RackAiming and the reload phase flags already ride the action snapshot. Select
+        -- the custom family during rack as well as load, without changing those flags.
+        -- Non-magazine unload still requires the profile's explicit customUnload opt-in;
+        -- packs without a matching Unload node must retain their engine reload type.
+        local useCustomType = player:getVariableBoolean("isLoading")
+            or player:getVariableBoolean("isLoadingShort")
+            or player:getVariableBoolean("isRacking")
+            or (player:getVariableBoolean("isUnloading")
+                and (not ReloadAnim.isNonMagArchetype(handler.archetype) or handler.customUnload))
+        if useCustomType and player:getVariableString("WeaponReloadType") ~= desired then
             player:setVariable("WeaponReloadType", desired)
         end
-    else
+    elseif current and current ~= "" then
         player:clearVariable(ReloadAnim.ANIM_VARIABLE)
     end
 end

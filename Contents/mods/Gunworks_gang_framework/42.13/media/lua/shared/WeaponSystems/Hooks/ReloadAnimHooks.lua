@@ -235,6 +235,19 @@ end
 -------------------------------------------------
 -- ISRackFirearm
 -------------------------------------------------
+-- Vanilla start sets the engine reload type, then setActionAnim enters PlayerActionsState
+-- and snapshots the action variables for observers. Correct the type BEFORE that call;
+-- overriding it only after prevRackStart returns changes the local animation too late
+-- for the snapshot. This also covers handleShortRackStart's early-return path.
+local prevRackSetActionAnim = ISRackFirearm.setActionAnim
+function ISRackFirearm:setActionAnim(actionAnim, displayItemModels)
+    local handler = ReloadAnim.getHandlerForAction(self)
+    if handler and handler.animId then
+        self:setAnimVariable("WeaponReloadType", handler.animId)
+    end
+    return prevRackSetActionAnim(self, actionAnim, displayItemModels)
+end
+
 local prevRackStart = ISRackFirearm.start
 ---@param self ISRackFirearm
 function ISRackFirearm:start()
