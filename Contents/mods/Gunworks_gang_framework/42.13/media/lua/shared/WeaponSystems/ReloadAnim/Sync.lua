@@ -14,6 +14,9 @@
 
 ---@class GunworksReloadAnim
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
+-- Register the input repair AFTER vanilla's reload/rack handlers, including when
+-- this module is required directly rather than through ReloadAnimHooks.
+require("TimedActions/ISReloadWeaponAction")
 
 --- Set the selector on a character.
 ---@param character IsoGameCharacter|nil
@@ -82,6 +85,14 @@ end
 -- rendering machine - crucially including SINGLEPLAYER, where getOnlinePlayers() returns an empty
 -- list (LuaManager: SP is neither GameServer.server nor GameClient.client).
 Events.OnPlayerUpdate.Add(deriveReloadAnimForPlayer)
+
+-- IsoPlayer.checkReloading runs AFTER OnPlayerUpdate and resets WeaponReloadType
+-- before firing either key event. If a rack is already active, the vanilla handler
+-- only queues the next action: its start hook cannot repair the active selector.
+-- Restore it before animation evaluation so repeated key presses cannot switch the
+-- current clip to vanilla and re-fire rackBullet's Start event mid-rack.
+Events.OnPressRackButton.Add(deriveReloadAnimForPlayer)
+Events.OnPressReloadButton.Add(deriveReloadAnimForPlayer)
 
 -- REMOTE players (MP observers watching someone else reload) never get an OnPlayerUpdate - a remote
 -- player's IsoPlayer.update returns early via updateRemotePlayer before the trigger - so the custom
