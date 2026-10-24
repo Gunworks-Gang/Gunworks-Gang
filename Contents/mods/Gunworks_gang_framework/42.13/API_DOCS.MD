@@ -1316,18 +1316,20 @@ The weapon model should use the `Clip` part slot for the magazine visual.
 Two optional anim events show the magazine in the left hand during a reload, instead of it just appearing on the gun.
 They work on reload profiles with style `"none"`/`"simple"` and on non-magazine archetypes.
 
-| Event | Value | Effect |
-|---|---|---|
-| `attachToHand` | optional item fullType | Puts the magazine being inserted (load) or ejected (unload) into the off-hand slot (`Bip01_Prop2`). A value forces that item instead. |
-| `detachFromHand` | none | Empties the off-hand slot. |
+| Event            | Value                  | Effect                                                                                                                                |
+| ---------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `attachToHand`   | optional item fullType | Puts the magazine being inserted (load) or ejected (unload) into the off-hand slot (`Bip01_Prop2`). A value forces that item instead. |
+| `detachFromHand` | none                   | Empties the off-hand slot.                                                                                                            |
 
 Event names are case-insensitive.
 
 **Placement on a load**
+
 - `attachToHand`: where the hand takes the magazine from the pouch.
 - `detachFromHand`: on the same frame as `InsertMag`, when the magazine seats.
 
 **Placement on an unload**
+
 - `attachToHand`: on the same frame as `InsertMag`, when the hand starts pulling the magazine out.
 - `detachFromHand`: when the hand reaches the pouch.
 
@@ -1352,7 +1354,6 @@ Times are playback fractions (`m_TimePc`). On a reversed clip, playback time run
 
 The engine draws the magazine at the `Bip01_Prop2` bone, then applies the magazine model's own `attachment Bip01_Prop2` (offset and rotate, not inverted).
 Calibrate that attachment so the hand-held magazine lands exactly on the gun's `magazine` attachment on the frame the magazine seats; the swap is then invisible.
-The Guns of Marz STANAG magazines are calibrated for `Ithaca_Reload_Rifle_Load`.
 
 **Multiplayer and cleanup**
 
@@ -1939,7 +1940,7 @@ Underbarrel.Register({
   `Underbarrel` (attachment) or `UnderbarrelIntegrated` (built-in / permanent).
 - `weapon`: full item type of the standalone underbarrel weapon that gets equipped.
 - `model`:
-  - `"host"` *(default)* — the swapped-in weapon takes on the host weapon's model/sprite, so
+  - `"host"` _(default)_ — the swapped-in weapon takes on the host weapon's model/sprite, so
     you still visually hold your rifle. Use this for a true underbarrel launcher.
   - `"self"` — the swapped-in weapon shows its own script model. Use this when the underbarrel
     weapon should look like its own thing.
