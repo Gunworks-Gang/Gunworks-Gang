@@ -1311,6 +1311,55 @@ Visible magazine syncing does not need a separate registry function.
 If your weapon uses a visible detachable magazine, add the `InsertMag` anim event to the reload anim when the hand reaches the magazine well.
 The weapon model should use the `Clip` part slot for the magazine visual.
 
+### Magazine in the hand: `attachToHand` / `detachFromHand`
+
+Two optional anim events show the magazine in the left hand during a reload, instead of it just appearing on the gun.
+They work on reload profiles with style `"none"`/`"simple"` and on non-magazine archetypes.
+
+| Event | Value | Effect |
+|---|---|---|
+| `attachToHand` | optional item fullType | Puts the magazine being inserted (load) or ejected (unload) into the off-hand slot (`Bip01_Prop2`). A value forces that item instead. |
+| `detachFromHand` | none | Empties the off-hand slot. |
+
+Event names are case-insensitive.
+
+**Placement on a load**
+- `attachToHand`: where the hand takes the magazine from the pouch.
+- `detachFromHand`: on the same frame as `InsertMag`, when the magazine seats.
+
+**Placement on an unload**
+- `attachToHand`: on the same frame as `InsertMag`, when the hand starts pulling the magazine out.
+- `detachFromHand`: when the hand reaches the pouch.
+
+Times are playback fractions (`m_TimePc`). On a reversed clip, playback time runs backwards through the clip.
+
+```xml
+<m_Events>
+	<m_EventName>attachToHand</m_EventName>
+	<m_TimePc>0.20</m_TimePc>
+</m_Events>
+<m_Events>
+	<m_EventName>InsertMag</m_EventName>
+	<m_TimePc>0.64</m_TimePc>
+</m_Events>
+<m_Events>
+	<m_EventName>detachFromHand</m_EventName>
+	<m_TimePc>0.64</m_TimePc>
+</m_Events>
+```
+
+**How the magazine sits in the hand**
+
+The engine draws the magazine at the `Bip01_Prop2` bone, then applies the magazine model's own `attachment Bip01_Prop2` (offset and rotate, not inverted).
+Calibrate that attachment so the hand-held magazine lands exactly on the gun's `magazine` attachment on the frame the magazine seats; the swap is then invisible.
+The Guns of Marz STANAG magazines are calibrated for `Ithaca_Reload_Rifle_Load`.
+
+**Multiplayer and cleanup**
+
+- These events are aliases of `gwSetProp`: the server creates the prop item, attaches it, and relays it to observers.
+- The server only accepts an item that is the gun's `MagazineType`, a type in the gun's magazine profile, or the profile's `magItem`.
+- An interrupted reload (stop or perform before `detachFromHand`) empties the hand.
+
 # Prevent Removal System
 
 This lets you mark weapon parts as permanent.

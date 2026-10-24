@@ -11,6 +11,15 @@
 -- the hand side can never drift apart. There is exactly one off-hand slot, so a prop must be cleared
 -- before the next one arrives.
 --
+-- Magazine hand events (aliases of gwSetProp, names compared case-insensitively):
+--   attachToHand    value = optional item fullType -> show the reload magazine in the off-hand. With no
+--                   value it is the magazine actually being inserted / ejected (resolveReloadMagItem).
+--   detachFromHand  (no value)                     -> empty the off-hand
+-- Pair them with InsertMag (Gunworks' gun-side magazine visual): on a LOAD put detachFromHand on the same
+-- frame as InsertMag (the hand lets go as the mag seats); on an UNLOAD put attachToHand on the same frame as
+-- InsertMag (the hand takes the mag as it leaves the gun). The magazine model positions itself in the hand
+-- with its own `attachment Bip01_Prop2` in its model script. An interrupted reload clears the hand.
+--
 -- Authority in MP. Lua animEvent only fires for the LOCAL action (LuaTimedActionNew.java:208), so
 -- these markers run on the reloading client, never on observers. The client therefore asks the
 -- server to make the change:
@@ -24,11 +33,28 @@
 ---@class GunworksReloadAnim
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
 require("WeaponSystems/ReloadAnim/Visuals")
+local Magazine = require("WeaponSystems/Utils/Magazine")
 
 ReloadAnim.PROP_SET_EVENT = "gwSetProp"          -- item -> off-hand slot (Bip01_Prop2)
 ReloadAnim.PROP_SET_HAND_EVENT = "gwSetHandProp" -- item -> right-hand slot (Bip01_R_Hand)
 ReloadAnim.PART_TO_HAND_EVENT = "gwPartToHand"
 ReloadAnim.PART_TO_GUN_EVENT = "gwPartToGun"
+ReloadAnim.ATTACH_TO_HAND_EVENT = "attachToHand"     -- reload magazine -> off-hand (alias of gwSetProp)
+ReloadAnim.DETACH_FROM_HAND_EVENT = "detachFromHand" -- empty the off-hand (alias of gwSetProp "")
+
+--- "attach" / "detach" for the magazine hand events (case-insensitive), nil for anything else.
+---@type table<string,string>
+local HAND_EVENTS = {
+    [string.lower(ReloadAnim.ATTACH_TO_HAND_EVENT)] = "attach",
+    [string.lower(ReloadAnim.DETACH_FROM_HAND_EVENT)] = "detach",
+}
+
+---@param event string|nil
+---@nodiscard
+---@return string|nil
+function ReloadAnim.handEventKind(event)
+    return event and HAND_EVENTS[string.lower(event)] or nil
+end
 
 ---@type table<string,boolean>
 local PROP_EVENTS = {
@@ -56,14 +82,47 @@ function ReloadAnim.isPropEvent(event)
     return event ~= nil and PROP_EVENTS[event] == true
 end
 
---- Is this an item the gun's profile is allowed to put in the off-hand? The value arrives from a
---- client command, so an unvalidated one would let a client spawn any item into its inventory.
----@param handler GunworksReloadAnimHandler|nil
----@param itemType string|nil
+--- Is itemType a magazine this gun takes (its own MagazineType or any type of its magazine profile)?
+---@param gun HandWeapon|nil
+---@param itemType string
 ---@nodiscard
 ---@return boolean
-function ReloadAnim.isAllowedPropValue(handler, itemType)
+local function isGunMagazineType(gun, itemType)
+    if not gun or not instanceof(gun, "HandWeapon") then
+        return false
+    end
+    if gun:getMagazineType() == itemType then
+        return true
+    end
+    local list = Magazine.GetMagazineTypesForGun(gun)
+    if list then
+        for i = 1, #list do
+            if list[i] == itemType then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+--- Is this an item the gun's profile is allowed to put in the off-hand? The value arrives from a
+--- client command, so an unvalidated one would let a client spawn any item into its inventory.
+--- Allowed: the profile's partState lists, its magItem, and (when the gun is given) any magazine type
+--- the gun takes - the attachToHand magazine.
+---@param handler GunworksReloadAnimHandler|nil
+---@param itemType string|nil
+---@param gun HandWeapon|nil
+---@nodiscard
+---@return boolean
+function ReloadAnim.isAllowedPropValue(handler, itemType, gun)
     if not itemType or itemType == "" then
+        return true
+    end
+
+    if handler and handler.magItem == itemType then
+        return true
+    end
+    if isGunMagazineType(gun, itemType) then
         return true
     end
 
@@ -330,6 +389,33 @@ function ReloadAnim.applyOwnerProp(character, itemId, location)
     character:resetEquippedHandsModels()
 end
 
+--- The action ended (finished or interrupted): drop a magazine that attachToHand put in the off-hand and
+--- that no detachFromHand removed. No-op unless this action attached one.
+---@param action ISBaseTimedAction|nil
+---@return nil
+function ReloadAnim.clearActionHandProp(action)
+    if not action or not action._gwHandProp then
+        return
+    end
+    action._gwHandProp = nil
+
+    local character = action.character
+    if not character then
+        return
+    end
+
+    -- Drop our own attachment at once on a client (the server round-trip clears the item), exactly like
+    -- restoreReloadPartState does for the ramrod.
+    if isClient() then
+        local held = character:getAttachedItem(ReloadAnim.RELOAD_MAGAZINE_ATTACH_LOCATION)
+        if held then
+            character:removeAttachedItem(held)
+            character:resetEquippedHandsModels()
+        end
+    end
+    ReloadAnim.clearOffHandProp(character)
+end
+
 --- Timed-action entry point: handle a prop/transfer marker fired by the reload clip.
 ---@param action ISBaseTimedAction
 ---@param handler GunworksReloadAnimHandler|nil
@@ -337,6 +423,24 @@ end
 ---@param parameter string
 ---@return boolean
 function ReloadAnim.handlePropAnimEvent(action, handler, event, parameter)
+    -- attachToHand / detachFromHand are gwSetProp with the magazine resolved here, so the server, the
+    -- observers and the cleanup all go through the one tested off-hand prop path.
+    local handKind = ReloadAnim.handEventKind(event)
+    if handKind == "attach" then
+        local value = parameter
+        if (not value or value == "") and handler then
+            value = ReloadAnim.resolveReloadMagItem(action, handler)
+        end
+        if not value or value == "" then
+            return true
+        end
+        event, parameter = ReloadAnim.PROP_SET_EVENT, value
+        action._gwHandProp = true
+    elseif handKind == "detach" then
+        event, parameter = ReloadAnim.PROP_SET_EVENT, ""
+        action._gwHandProp = nil
+    end
+
     if not PROP_EVENTS[event] then
         return false
     end

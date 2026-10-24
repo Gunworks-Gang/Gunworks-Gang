@@ -424,9 +424,11 @@ function ReloadAnim.createSimpleReloadHandler(options)
         end,
         onEjectStop = function(action)
             ReloadAnim.detachReloadMagazine(action)
+            ReloadAnim.clearActionHandProp(action)   -- attachToHand without its detachFromHand
         end,
         onEjectPerform = function(action)
             ReloadAnim.detachReloadMagazine(action)
+            ReloadAnim.clearActionHandProp(action)
         end,
         onInsertStart = function(action)
             ReloadAnim.setShortRackAfterInsert(action, options.shortRackAfterInsert)
@@ -442,6 +444,7 @@ function ReloadAnim.createSimpleReloadHandler(options)
         end,
         onInsertStop = function(action)
             ReloadAnim.detachReloadMagazine(action)
+            ReloadAnim.clearActionHandProp(action)
             ReloadAnim.setShortRackAfterInsert(action, false)
         end,
         onInsertLoadAmmo = function(action)
@@ -453,6 +456,7 @@ function ReloadAnim.createSimpleReloadHandler(options)
         end,
         onInsertPerform = function(action)
             ReloadAnim.detachReloadMagazine(action)
+            ReloadAnim.clearActionHandProp(action)
             ReloadAnim.setShortRackAfterInsert(action, false)
 
             if options.shortRackAfterInsert and isClient() then
