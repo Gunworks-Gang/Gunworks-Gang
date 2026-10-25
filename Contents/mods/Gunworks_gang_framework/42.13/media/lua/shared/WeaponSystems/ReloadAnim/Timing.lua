@@ -47,6 +47,17 @@ function ReloadAnim.getActionDurationMs(action, seconds, fallbackMs)
     return math.max(0, math.floor((scaledSeconds * 1000) + 0.5))
 end
 
+--- Save the owner's aim state once. The constructor argument with this same name carries
+--- the value to the server, independently of the observer animation snapshot.
+---@param action ISBaseTimedAction
+---@return boolean
+function ReloadAnim.captureReloadAiming(action)
+    if action.gunworksReloadAiming == nil then
+        action.gunworksReloadAiming = action.character ~= nil and action.character:isAiming()
+    end
+    return action.gunworksReloadAiming
+end
+
 --- Choose the duration for the animation variant used by this action. Fields left
 --- unset retain the profile's ordinary timing, then the caller's existing fallback.
 ---@param action ISBaseTimedAction
@@ -57,7 +68,14 @@ function ReloadAnim.getProfileDuration(action, handler, stage)
     local character = action.character
     local vehicle = character and character:getVehicle() and handler.vehicleDurations
     local seconds = vehicle and vehicle[stage] or handler[stage .. "Duration"]
-    if stage == "rack" and character and character:isAiming() then
+    if (stage == "load" or stage == "unload") and ReloadAnim.captureReloadAiming(action) then
+        local aimStage = stage .. "Aim"
+        if vehicle then
+            seconds = vehicle[aimStage] or vehicle[stage] or handler[aimStage .. "Duration"] or seconds
+        else
+            seconds = handler[aimStage .. "Duration"] or seconds
+        end
+    elseif stage == "rack" and character and character:isAiming() then
         if vehicle then
             seconds = vehicle.rackAim or vehicle.rack or handler.rackAimDuration or seconds
         else

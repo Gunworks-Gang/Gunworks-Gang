@@ -33,6 +33,60 @@ local SpeedLoader = require("WeaponSystems/Utils/SpeedLoader")
 -- Capturing the current (already Gunworks+vanilla-wrapped) method as "prev" each load is
 -- safe because PZ runs this file once per VM via the module loader.
 
+-- NetTimedAction serializes fields named by the final constructor's parameters. Keep
+-- existing parameters (including Gunworks' ammo overrides) and append the captured aim
+-- flag. Capture at start, not construction: actions can spend time waiting in a queue.
+local prevEjectNew = ISEjectMagazine.new
+function ISEjectMagazine:new(character, gun, gunworksReloadAiming)
+    local action = prevEjectNew(self, character, gun)
+    action.gunworksReloadAiming = gunworksReloadAiming
+    return action
+end
+
+local prevInsertNew = ISInsertMagazine.new
+function ISInsertMagazine:new(character, gun, magazine, gunworksReloadAiming)
+    local action = prevInsertNew(self, character, gun, magazine)
+    action.gunworksReloadAiming = gunworksReloadAiming
+    return action
+end
+
+local prevReloadNew = ISReloadWeaponAction.new
+function ISReloadWeaponAction:new(character, gun, ammoLimit, ammoTypeOverride, gunworksReloadAiming)
+    local action = prevReloadNew(self, character, gun, ammoLimit, ammoTypeOverride)
+    action.gunworksReloadAiming = gunworksReloadAiming
+    return action
+end
+
+local prevUnloadNew = ISUnloadBulletsFromFirearm.new
+function ISUnloadBulletsFromFirearm:new(character, gun, gunworksReloadAiming)
+    local action = prevUnloadNew(self, character, gun)
+    action.gunworksReloadAiming = gunworksReloadAiming
+    return action
+end
+
+-- Vanilla sets its reload type immediately before setActionAnim snapshots the action.
+-- Set our selectors and the fixed aim flag before that snapshot, for owners and observers.
+-- setAnimVariable also lets the engine clear the flag when the action stops or completes.
+local function wrapReloadActionAnim(actionClass, nonMagazine, customUnload)
+    local previous = actionClass.setActionAnim
+    function actionClass:setActionAnim(actionAnim, displayItemModels)
+        local handler = ReloadAnim.getHandlerForAction(self)
+        if handler and handler.animId
+            and (not nonMagazine or ReloadAnim.isNonMagArchetype(handler.archetype))
+            and (not customUnload or handler.customUnload) then
+            self:setAnimVariable(ReloadAnim.AIM_VARIABLE, ReloadAnim.captureReloadAiming(self))
+            self:setAnimVariable(ReloadAnim.ANIM_VARIABLE, handler.animId)
+            self:setAnimVariable("WeaponReloadType", handler.animId)
+        end
+        return previous(self, actionAnim, displayItemModels)
+    end
+end
+
+wrapReloadActionAnim(ISEjectMagazine, false, false)
+wrapReloadActionAnim(ISInsertMagazine, false, false)
+wrapReloadActionAnim(ISReloadWeaponAction, true, false)
+wrapReloadActionAnim(ISUnloadBulletsFromFirearm, true, true)
+
 -------------------------------------------------
 -- ISEjectMagazine
 -------------------------------------------------
