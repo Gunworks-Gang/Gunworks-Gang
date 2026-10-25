@@ -19,6 +19,10 @@
 -- frame as InsertMag (the hand lets go as the mag seats); on an UNLOAD put attachToHand on the same frame as
 -- InsertMag (the hand takes the mag as it leaves the gun). The magazine model positions itself in the hand
 -- with its own `attachment Bip01_Prop2` in its model script. An interrupted reload clears the hand.
+-- On a NON-MAGAZINE reload (shotgun / revolver / bolt / lever: ISReloadWeaponAction, one round per clip loop)
+-- attachToHand shows the ROUND being loaded instead (resolveReloadRoundItem): put attachToHand early in the
+-- loop and detachFromHand where the round goes into the gun; both fire again on every loop. The round's
+-- item needs a StaticModel (attached items render it) whose model script has the `attachment Bip01_Prop2`.
 --
 -- Authority in MP. Lua animEvent only fires for the LOCAL action (LuaTimedActionNew.java:208), so
 -- these markers run on the reloading client, never on observers. The client therefore asks the
@@ -34,6 +38,7 @@
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
 require("WeaponSystems/ReloadAnim/Visuals")
 local Magazine = require("WeaponSystems/Utils/Magazine")
+local Ammo = require("WeaponSystems/Utils/Ammo")
 
 ReloadAnim.PROP_SET_EVENT = "gwSetProp"          -- item -> off-hand slot (Bip01_Prop2)
 ReloadAnim.PROP_SET_HAND_EVENT = "gwSetHandProp" -- item -> right-hand slot (Bip01_R_Hand)
@@ -105,10 +110,74 @@ local function isGunMagazineType(gun, itemType)
     return false
 end
 
+--- Is itemType a round this gun loads (its AmmoType item, or any bullet type of its Gunworks ammo family)?
+---@param gun HandWeapon|nil
+---@param itemType string
+---@nodiscard
+---@return boolean
+local function isGunAmmoType(gun, itemType)
+    if not gun or not instanceof(gun, "HandWeapon") then
+        return false
+    end
+    local ammoType = gun:getAmmoType()
+    if ammoType and ammoType:getItemKey() == itemType then
+        return true
+    end
+    local family = Ammo.GetFamilyForItem(gun)
+    local list = family and Ammo.GetBulletTypesForFamily(family)
+    if list then
+        for i = 1, #list do
+            if list[i] == itemType then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+--- The round a non-magazine reload (ISReloadWeaponAction) is putting in: the type Gunworks chose for this
+--- reload (ammoTypeOverride), else the next round of the action's own list, else the gun's AmmoType.
+---@param action ISBaseTimedAction
+---@param handler GunworksReloadAnimHandler|nil
+---@nodiscard
+---@return string|nil
+function ReloadAnim.resolveReloadRoundItem(action, handler)
+    local override = action.ammoTypeOverride
+    if override and override ~= "" then
+        return override
+    end
+
+    local bullets = action.bullets
+    if bullets and not bullets:isEmpty() then
+        local bullet = bullets:get(0)
+        local bulletType = bullet and bullet:getFullType()
+        if bulletType and bulletType ~= "" then
+            return bulletType
+        end
+    end
+
+    local gun = ReloadAnim.resolveActionGun(action, handler, true)
+    local ammoType = gun and gun:getAmmoType()
+    return ammoType and ammoType:getItemKey() or nil
+end
+
+--- The item attachToHand shows when the marker names none: the round being loaded for a non-magazine
+--- archetype (falling back to the profile's prop item), the magazine otherwise.
+---@param action ISBaseTimedAction
+---@param handler GunworksReloadAnimHandler
+---@nodiscard
+---@return string|nil
+local function resolveHandItem(action, handler)
+    if ReloadAnim.isNonMagArchetype(handler.archetype) then
+        return ReloadAnim.resolveReloadRoundItem(action, handler) or handler.magItem
+    end
+    return ReloadAnim.resolveReloadMagItem(action, handler)
+end
+
 --- Is this an item the gun's profile is allowed to put in the off-hand? The value arrives from a
 --- client command, so an unvalidated one would let a client spawn any item into its inventory.
 --- Allowed: the profile's partState lists, its magItem, and (when the gun is given) any magazine type
---- the gun takes - the attachToHand magazine.
+--- the gun takes - the attachToHand magazine - or, for a non-magazine archetype, any round it loads.
 ---@param handler GunworksReloadAnimHandler|nil
 ---@param itemType string|nil
 ---@param gun HandWeapon|nil
@@ -123,6 +192,9 @@ function ReloadAnim.isAllowedPropValue(handler, itemType, gun)
         return true
     end
     if isGunMagazineType(gun, itemType) then
+        return true
+    end
+    if handler and ReloadAnim.isNonMagArchetype(handler.archetype) and isGunAmmoType(gun, itemType) then
         return true
     end
 
@@ -427,9 +499,9 @@ function ReloadAnim.handlePropAnimEvent(action, handler, event, parameter)
     -- observers and the cleanup all go through the one tested off-hand prop path.
     local handKind = ReloadAnim.handEventKind(event)
     if handKind == "attach" then
-        local value = parameter
+        local value = parameter ---@type string|nil
         if (not value or value == "") and handler then
-            value = ReloadAnim.resolveReloadMagItem(action, handler)
+            value = resolveHandItem(action, handler)
         end
         if not value or value == "" then
             return true

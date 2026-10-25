@@ -681,10 +681,12 @@ function ReloadAnim.createNonMagReloadHandler(options)
         onReloadStop = function(action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.restoreReloadPartState(action)
+            ReloadAnim.clearActionHandProp(action)   -- a round attachToHand put in the hand, not yet detached
         end,
         onReloadPerform = function(action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.restoreReloadPartState(action)
+            ReloadAnim.clearActionHandProp(action)
         end,
     }
 end
