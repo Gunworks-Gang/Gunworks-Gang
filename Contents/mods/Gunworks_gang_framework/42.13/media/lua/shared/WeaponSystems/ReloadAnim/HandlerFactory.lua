@@ -701,6 +701,65 @@ function ReloadAnim.createNonMagReloadHandler(options)
     }
 end
 
+--- True when `whenParts` is a list of { weaponPart, reloadAnimation } entries rather than a part
+--- condition (a string, an array of strings, or { all/any/none = {...} }).
+---@param whenParts any
+---@nodiscard
+---@return boolean
+function ReloadAnim.isPartVariantList(whenParts)
+    return type(whenParts) == "table" and type(whenParts[1]) == "table"
+end
+
+--- Register a gun whose reload changes with the weapon parts installed. The profile's own fields
+--- are the default reload, and `whenParts` lists the alternatives:
+---
+---     ["MyPack.SPAS12"] = {
+---         animId = "shotgun_reload", archetype = "shotgun", durations = ...,
+---         whenParts = {
+---             {
+---                 weaponPart = "MyPack.SPAS12_Selector_Semi",
+---                 reloadAnimation = { animId = "shotgunsemi_reload", archetype = "shotgun", durations = ... },
+---             },
+---         },
+---     }
+---
+--- `weaponPart` takes any part condition: an item fullType or partType slot, an array of them (all
+--- must be attached), or { all = {...}, any = {...}, none = {...} }. Each `reloadAnimation` is a
+--- complete profile; nothing is inherited from the default. The first entry whose parts are installed
+--- wins, so list the most specific first. Without any of them the default plays. A profile with no
+--- animId of its own registers only the alternatives, so without a part the gun keeps vanilla.
+---@param fullType string|nil
+---@param profile table
+---@return nil
+function ReloadAnim.registerPartVariants(fullType, profile)
+    local entries = profile.whenParts
+    for i = 1, #entries do
+        local entry = entries[i]
+        local variant = type(entry) == "table" and entry.reloadAnimation
+        if type(variant) ~= "table" or entry.weaponPart == nil or variant.whenParts ~= nil then
+            ReloadAnim.logInvalidOptions(profile,
+                "whenParts[" .. i .. "] needs a weaponPart and a reloadAnimation profile without its own whenParts")
+        else
+            local options = {}
+            for key, value in pairs(variant) do
+                options[key] = value
+            end
+            options.whenParts = entry.weaponPart
+            ReloadAnim.RegisterWeapon(fullType, options)
+        end
+    end
+
+    if profile.animId then
+        local base = {}
+        for key, value in pairs(profile) do
+            if key ~= "whenParts" then
+                base[key] = value
+            end
+        end
+        ReloadAnim.RegisterWeapon(fullType, base)
+    end
+end
+
 --- Public API: register a per-gun reload animation profile.
 --- Magazine guns (no archetype, or archetype "magazine") use the eject/insert/rack chain.
 --- Set archetype to a non-mag value ("shotgun"/"revolver"/"boltactionnomag"/"doublebarrel"/
@@ -739,6 +798,12 @@ function ReloadAnim.RegisterWeapon(fullType, profile)
         for i = 1, #profile do
             ReloadAnim.RegisterWeapon(fullType, profile[i])
         end
+        return
+    end
+
+    -- A default reload plus per-part alternatives (see registerPartVariants).
+    if type(profile) == "table" and ReloadAnim.isPartVariantList(profile.whenParts) then
+        ReloadAnim.registerPartVariants(fullType, profile)
         return
     end
 
