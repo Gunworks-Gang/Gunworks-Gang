@@ -48,6 +48,9 @@ function ReloadAnim.normalizeWeaponReloadOptions(fullType, options)
         -- cap for a cap-lock. Array of item fullTypes. Consumed server-authoritatively during
         -- the reload; see CustomSystemHooks loadAmmo. Opt-in: nil = vanilla single-item reload.
         consumes = options.consumes,
+        -- Two-stroke rack (open, then close) with durations.rackOpen; see ReloadAnim/RackPhases.lua.
+        splitRack = options.splitRack,
+        rackOpenDuration = type(options.durations) == "table" and options.durations.rackOpen or nil,
     }
 
     -- A non-magazine gun's off-hand prop (a shell/round/speedloader) reuses the same
@@ -841,6 +844,8 @@ function ReloadAnim.RegisterWeapon(fullType, profile)
         return
     end
 
+    handler.splitRack = normalized.splitRack
+    handler.rackOpenDuration = normalized.rackOpenDuration
     ReloadAnim.registerHandler(handler)
 end
 

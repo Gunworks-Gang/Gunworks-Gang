@@ -23,7 +23,10 @@ require("WeaponSystems/ReloadAnim/Visuals")
 require("WeaponSystems/ReloadAnim/Sync")
 require("WeaponSystems/ReloadAnim/PartState")
 require("WeaponSystems/ReloadAnim/PartSwap")
+require("WeaponSystems/ReloadAnim/RackPhases")
 local SpeedLoader = require("WeaponSystems/Utils/SpeedLoader")
+local Animations = require("WeaponSystems/Utils/Animations")
+local Magazine = require("WeaponSystems/Utils/Magazine")
 
 -- Re-wrap on every load. A Core.ResetLua (e.g. a client joining a modded MP server)
 -- resets the vanilla timed-action classes to unwrapped, so these hooks MUST re-apply
@@ -299,7 +302,46 @@ function ISRackFirearm:setActionAnim(actionAnim, displayItemModels)
     if handler and handler.animId then
         self:setAnimVariable("WeaponReloadType", handler.animId)
     end
+    if ReloadAnim.isSplitRackHandler(handler) and self.gunworksRackPhase then
+        self:setAnimVariable(ReloadAnim.RACK_PHASE_VARIABLE, self.gunworksRackPhase)
+    end
     return prevRackSetActionAnim(self, actionAnim, displayItemModels)
+end
+
+-- Split-rack guns (RackPhases.lua) carry the stroke to the server as a constructor argument, so
+-- the server times the same stroke the owner plays.
+local prevRackNew = ISRackFirearm.new
+function ISRackFirearm:new(character, gun, gunworksRackPhase)
+    local action = prevRackNew(self, character, gun)
+    action.gunworksRackPhase = gunworksRackPhase
+    return action
+end
+
+-- An open bolt can always be closed, even on an empty gun.
+local prevCanRack = ISReloadWeaponAction.canRack
+ISReloadWeaponAction.canRack = function(weapon)
+    if prevCanRack(weapon) then
+        return true
+    end
+    return ReloadAnim.isBoltOpen(weapon) and ReloadAnim.isSplitRackHandler(ReloadAnim.GetHandlerForGun(weapon))
+end
+
+-- An empty reload of a split-rack gun starts by locking the bolt back. Queued first, so it plays
+-- before the eject/insert the reload adds; skipped when a rack is already queued (repeated presses).
+local function bestMagazineForGun(playerObj, gun)
+    if Magazine.GetProfileForGun(gun) then
+        return Magazine.getBestMagazineForGun(playerObj, gun)
+    end
+    return gun:getBestMagazine(playerObj)
+end
+
+local prevBeginAutomaticReload = ISReloadWeaponAction.BeginAutomaticReload
+ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
+    if ReloadAnim.shouldOpenBoltBeforeReload(playerObj, gun, bestMagazineForGun)
+        and not ISTimedActionQueue.hasActionType(playerObj, "ISRackFirearm") then
+        ISTimedActionQueue.add(ISRackFirearm:new(playerObj, gun, ReloadAnim.RACK_PHASE_OPEN))
+    end
+    return prevBeginAutomaticReload(playerObj, gun)
 end
 
 local prevRackStart = ISRackFirearm.start
@@ -314,6 +356,12 @@ function ISRackFirearm:start()
     end
 
     local handler = ReloadAnim.getHandlerForAction(self)
+    if ReloadAnim.isSplitRackHandler(handler)
+        and ReloadAnim.chooseRackPhase(self) == ReloadAnim.RACK_PHASE_OPEN then
+        ReloadAnim.startOpeningStroke(self)
+        return
+    end
+
     if handler and handler.onRackStart then
         if handler.onRackStart(self) then
             return
@@ -338,6 +386,15 @@ function ISRackFirearm:serverStart()
     local handler = ReloadAnim.getHandlerForAction(self)
     if not handler then
         return prevRackServerStart(self)
+    end
+
+    -- The opening stroke only animates: no ejectSpentRounds or rackBullet, the closing stroke racks.
+    if ReloadAnim.isSplitRackHandler(handler) and self.gunworksRackPhase == ReloadAnim.RACK_PHASE_OPEN then
+        self:initVars()
+        local openSeconds = ReloadAnim.getProfileDuration(self, handler, "rackOpen")
+            or ReloadAnim.getProfileDuration(self, handler, "rack")
+        emulateAnimEventOnce(self.netAction, ReloadAnim.getActionDurationMs(self, openSeconds, 1200), "rackingFinished", nil)
+        return
     end
 
     self:ejectSpentRounds()
@@ -366,7 +423,20 @@ function ISRackFirearm:perform()
         handler.onRackPerform(self)
     end
 
+    ReloadAnim.finishRackStroke(self)
     prevRackPerform(self)
+end
+
+-- complete runs on the server and in singleplayer. The Gunworks visual hook closes the bolt there;
+-- after an opening stroke, put it back so it stays locked open through the magazine change.
+local prevRackComplete = ISRackFirearm.complete
+---@param self ISRackFirearm
+function ISRackFirearm:complete()
+    local result = prevRackComplete(self)
+    if ReloadAnim.finishRackStroke(self) then
+        Animations.CallAnimate(self.character, self.gun, true)
+    end
+    return result
 end
 
 -------------------------------------------------
