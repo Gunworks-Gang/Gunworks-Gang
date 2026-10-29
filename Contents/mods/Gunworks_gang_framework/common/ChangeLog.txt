@@ -49,3 +49,7 @@ B42.20.3:
 [*] Bayonet Charge possible with rifles that have bayonet deployed/installed
 [*] Thworing and Bayonet Animations now sync in MP to other clients
 [ ------ ]
+
+[ 29/October/2026 ]
+[*] new split rack system to allow custom animations and more control for racking
+[ ------ ]
