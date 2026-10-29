@@ -6,9 +6,10 @@
 --   reload with a round chambered:      eject -> insert
 --   manual rack:                        open -> close
 --
--- The opening stroke only animates. The closing stroke is an ordinary rack and keeps all the round
--- handling (vanilla rackBullet, or Hot Brass on ejectCasing), so a manual rack still ejects one round
--- and chambers one. The gun remembers an open bolt in its mod data: the rack the insert queues then
+-- The round handling comes from the AnimSet events, so a manual rack still ejects one round and
+-- chambers one: with Hot Brass the opening stroke's ejectCasing ejects and the closing stroke's
+-- chamberRound chambers; without it the closing stroke's vanilla rackBullet does both and the opening
+-- stroke only animates. The gun remembers an open bolt in its mod data: the rack the insert queues then
 -- only closes, and an interrupted reload resumes with a closing stroke. Every choice is made when an
 -- action starts, so the stroke rides the anim snapshot to observers and the constructor argument to
 -- the server, like the aim flag. Gate the AnimSet nodes on GunworksRackPhase = "open" / "close".

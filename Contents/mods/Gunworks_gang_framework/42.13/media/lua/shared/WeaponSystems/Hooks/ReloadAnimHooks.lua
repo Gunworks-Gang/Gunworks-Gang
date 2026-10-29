@@ -556,7 +556,7 @@ end
 -- profile wouldn't animate at all - a matching Unload*_HB.xml node is not guaranteed to exist,
 -- or to be the ONLY node keyed to that animId's archetype, for every registered profile across
 -- every pack on this shared framework. A concrete case: Guns of Marz's lever archetype has TWO
--- parallel Unload node families (UnloadLever_HB.xml keyed to the animId "lever", and
+-- parallel Unload node families (UnloadLeverMarz_HB.xml keyed to the animId "lever_reload", and
 -- UnloadLeverAction_HB.xml keyed to the gun's real engine value "leveraction", which is what
 -- plays today since nothing currently overrides WeaponReloadType at unload) - an unconditional
 -- override here would silently switch which one plays, an unverified behavior change nobody
