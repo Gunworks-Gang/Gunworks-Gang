@@ -335,8 +335,13 @@ local function bestMagazineForGun(playerObj, gun)
     return gun:getBestMagazine(playerObj)
 end
 
+-- An open-to-load gun whose magazine and chamber already hold maxAmmo has nothing to gain from a
+-- reload: opening would eject the chambered round only to chamber it again.
 local prevBeginAutomaticReload = ISReloadWeaponAction.BeginAutomaticReload
 ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
+    if ReloadAnim.isFullForOpenToLoad(gun) then
+        return
+    end
     if ReloadAnim.shouldOpenBoltBeforeReload(playerObj, gun, bestMagazineForGun)
         and not ISTimedActionQueue.hasActionType(playerObj, "ISRackFirearm") then
         ISTimedActionQueue.add(ISRackFirearm:new(playerObj, gun, ReloadAnim.RACK_PHASE_OPEN))
@@ -447,7 +452,20 @@ end
 -- perform add ONLY the optional off-hand prop and model swaps; the vanilla action keeps full
 -- ownership of the shell-by-shell loadFinished/loadAmmo loop. serverStart additionally applies
 -- the profile's authored load duration, but only when one is set - a registered gun without
--- durations.load keeps byte-for-byte vanilla timing.
+-- durations.load keeps byte-for-byte vanilla timing. Open-to-load guns (RackPhases.lua) also open
+-- the bolt in begin, close it after perform, and keep its visual open through complete/stop.
+
+-- The queue calls begin for every load, however it was queued, before the action exists in the
+-- engine or on the server, so an opening stroke can still go in front of it here.
+local prevReloadBegin = ISReloadWeaponAction.begin
+---@param self ISReloadWeaponAction
+function ISReloadWeaponAction:begin()
+    if ReloadAnim.openBoltBeforeLoad(self) then
+        return
+    end
+    return prevReloadBegin(self)
+end
+
 local prevReloadStart = ISReloadWeaponAction.start
 ---@param self ISReloadWeaponAction
 function ISReloadWeaponAction:start()
@@ -524,6 +542,10 @@ function ISReloadWeaponAction:stop()
     if handler then
         ReloadAnim.resetWeaponModel(self, handler)
     end
+    -- An interrupted load leaves an open-to-load bolt open; a rack or the next reload closes it.
+    if ReloadAnim.isBoltHeldOpenForLoad(self) then
+        Animations.CallAnimate(self.character, self.gun, true)
+    end
 end
 
 local prevReloadPerform = ISReloadWeaponAction.perform
@@ -534,10 +556,24 @@ function ISReloadWeaponAction:perform()
         handler.onReloadPerform(self)
     end
 
+    -- Before prev: its perform hands the queue to the next action, after which addAfter has no anchor.
+    ReloadAnim.closeBoltAfterLoad(self)
     prevReloadPerform(self)
     if handler then
         ReloadAnim.resetWeaponModel(self, handler)
     end
+end
+
+-- complete runs on the server and in singleplayer, where the Gunworks visual hook closes the bolt
+-- after every load. An open-to-load bolt stays open until its closing stroke.
+local prevReloadComplete = ISReloadWeaponAction.complete
+---@param self ISReloadWeaponAction
+function ISReloadWeaponAction:complete()
+    local result = prevReloadComplete(self)
+    if ReloadAnim.isBoltHeldOpenForLoad(self) then
+        Animations.CallAnimate(self.character, self.gun, true)
+    end
+    return result
 end
 
 -------------------------------------------------

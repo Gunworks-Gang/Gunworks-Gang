@@ -39,7 +39,9 @@ local table_remove = table.remove
 ---@field autoRack boolean|nil
 ---@field consumes string[]|nil
 ---@field splitRack boolean|nil
+---@field openToLoad boolean|nil
 ---@field rackOpenDuration number|nil
+---@field rackOpenAimDuration number|nil
 
 ---@class GunworksReloadPartSpec
 ---@field partType string|nil

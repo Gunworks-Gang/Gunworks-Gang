@@ -48,9 +48,12 @@ function ReloadAnim.normalizeWeaponReloadOptions(fullType, options)
         -- cap for a cap-lock. Array of item fullTypes. Consumed server-authoritatively during
         -- the reload; see CustomSystemHooks loadAmmo. Opt-in: nil = vanilla single-item reload.
         consumes = options.consumes,
-        -- Two-stroke rack (open, then close) with durations.rackOpen; see ReloadAnim/RackPhases.lua.
+        -- Two-stroke rack (open, then close) with durations.rackOpen / rackOpenAim; see ReloadAnim/RackPhases.lua.
+        -- openToLoad (with splitRack, non-magazine guns): the bolt always opens before rounds go in.
         splitRack = options.splitRack,
+        openToLoad = options.openToLoad,
         rackOpenDuration = type(options.durations) == "table" and options.durations.rackOpen or nil,
+        rackOpenAimDuration = type(options.durations) == "table" and options.durations.rackOpenAim or nil,
     }
 
     -- A non-magazine gun's off-hand prop (a shell/round/speedloader) reuses the same
@@ -845,7 +848,9 @@ function ReloadAnim.RegisterWeapon(fullType, profile)
     end
 
     handler.splitRack = normalized.splitRack
+    handler.openToLoad = normalized.openToLoad
     handler.rackOpenDuration = normalized.rackOpenDuration
+    handler.rackOpenAimDuration = normalized.rackOpenAimDuration
     ReloadAnim.registerHandler(handler)
 end
 
