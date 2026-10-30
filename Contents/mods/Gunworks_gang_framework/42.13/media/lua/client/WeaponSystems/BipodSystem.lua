@@ -1,7 +1,9 @@
 local BipodSystem = require("WeaponSystems/Utils/BipodSystem")
 local GunworksKeybinds = require("WeaponSystems/ISUI/GunworksKeybinds")
 
-local KEYBIND_BIPOD_STANCE = "Gunworks_BipodStance"
+local KEYBIND_BIPOD_MODE = "Gunworks_BipodMode"
+local KEYBIND_BIPOD_PLACE = "Gunworks_BipodPlace"
+local MODE_MODDATA = "GW_BipodMode"
 
 local BipodSystemClient = {}
 
@@ -18,6 +20,17 @@ BipodSystemClient.MountType = {
     LowWall = "LowWall",
     Window  = "Window",
     Surface = "Surface",
+}
+
+BipodSystemClient.Mode = {
+    Automatic = "Automatic",
+    Toggle    = "Toggle",
+}
+BipodSystemClient.DefaultMode = BipodSystemClient.Mode.Automatic
+
+local MODE_MESSAGES = {
+    [BipodSystemClient.Mode.Automatic] = "IGUI_BipodStanceAutomatic",
+    [BipodSystemClient.Mode.Toggle]    = "IGUI_BipodStanceToggle",
 }
 
 local function isLowWall(obj)
@@ -130,6 +143,7 @@ end
 
 local function canHoldStance(player)
     return player:isAiming()
+        and not player:isPlayerMoving()
         and not player:isDead()
         and not player:getVehicle()
         and not player:isSneaking()
@@ -165,6 +179,19 @@ function BipodSystemClient.ExitStance(player)
     player:setVariable(BipodSystemClient.AnimVariable, false)
 end
 
+function BipodSystemClient.GetMode(player)
+    return player:getModData()[MODE_MODDATA] or BipodSystemClient.DefaultMode
+end
+
+function BipodSystemClient.SwitchMode(player)
+    local mode = BipodSystemClient.Mode.Automatic
+    if BipodSystemClient.GetMode(player) == BipodSystemClient.Mode.Automatic then
+        mode = BipodSystemClient.Mode.Toggle
+    end
+    player:getModData()[MODE_MODDATA] = mode
+    player:Say(getText(MODE_MESSAGES[mode]), 0.55, 0.55, 0.55, UIFont.Dialogue, 0, "default")
+end
+
 function BipodSystemClient.ToggleStance(player)
     if BipodSystemClient.IsInStance(player) then
         BipodSystemClient.ExitStance(player)
@@ -178,6 +205,16 @@ function BipodSystemClient.ToggleStance(player)
         return
     end
     BipodSystemClient.EnterStance(player, mount, mountType)
+end
+
+local function tryAutoDeploy(player)
+    if BipodSystemClient.GetMode(player) ~= BipodSystemClient.Mode.Automatic then return end
+    if not canHoldStance(player) or not getBipodWeapon(player) then return end
+
+    local mount, mountType = BipodSystemClient.FindMountPoint(player)
+    if mount then
+        BipodSystemClient.EnterStance(player, mount, mountType)
+    end
 end
 
 local function followAim(player, stance)
@@ -205,7 +242,10 @@ end
 local function onPlayerUpdate(player)
     if not player:isLocalPlayer() then return end
     local stance = stances[player:getPlayerNum()]
-    if not stance then return end
+    if not stance then
+        tryAutoDeploy(player)
+        return
+    end
 
     if player:getPrimaryHandItem() ~= stance.weapon
         or not getBipodWeapon(player)
@@ -223,10 +263,13 @@ local function onPlayerDeath(player)
 end
 
 local function onKeyPressed(key)
-    if key ~= GunworksKeybinds.GetBoundKey(KEYBIND_BIPOD_STANCE, Keyboard.KEY_L) then return end
-
     local player = getPlayer()
-    if player and not player:isDead() then
+    if not player or player:isDead() then return end
+
+    if key == GunworksKeybinds.GetBoundKey(KEYBIND_BIPOD_MODE, Keyboard.KEY_G) then
+        BipodSystemClient.SwitchMode(player)
+    elseif key == GunworksKeybinds.GetBoundKey(KEYBIND_BIPOD_PLACE, Keyboard.KEY_Y)
+        and BipodSystemClient.GetMode(player) == BipodSystemClient.Mode.Toggle then
         BipodSystemClient.ToggleStance(player)
     end
 end

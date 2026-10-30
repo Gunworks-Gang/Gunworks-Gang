@@ -1,5 +1,7 @@
 {
   "UI_optionscreen_binding_Gunworks_UnderbarrelUse": "Gunworks: Toggle underbarrel",
   "UI_optionscreen_binding_Gunworks_OpenLoaderUI": "Gunworks: Open weapon loader UI",
-  "UI_optionscreen_binding_Gunworks_SwitchFirerate": "Gunworks: Cycle fire mode"
+  "UI_optionscreen_binding_Gunworks_SwitchFirerate": "Gunworks: Cycle fire mode",
+  "UI_optionscreen_binding_Gunworks_BipodMode": "Gunworks: Switch bipod stance mode",
+  "UI_optionscreen_binding_Gunworks_BipodPlace": "Gunworks: Place bipod (toggle mode)"
 }

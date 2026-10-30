@@ -6,7 +6,8 @@ GunworksKeybinds.Bindings = {
     { value = "Gunworks_UnderbarrelUse", key = Keyboard.KEY_U, name = "Gunworks: Toggle underbarrel" },
     { value = "Gunworks_OpenLoaderUI",   key = Keyboard.KEY_O, name = "Gunworks: Open weapon loader UI" },
     { value = "Gunworks_SwitchFirerate", key = Keyboard.KEY_T, name = "Gunworks: Cycle fire mode" },
-    { value = "Gunworks_BipodStance",    key = Keyboard.KEY_L, name = "Gunworks: Toggle bipod stance" },
+    { value = "Gunworks_BipodMode",      key = Keyboard.KEY_G, name = "Gunworks: Switch bipod stance mode" },
+    { value = "Gunworks_BipodPlace",     key = Keyboard.KEY_Y, name = "Gunworks: Place bipod (toggle mode)" },
 }
 
 local options = PZAPI.ModOptions:create(GunworksKeybinds.MOD_OPTIONS_ID, "Gunworks")
