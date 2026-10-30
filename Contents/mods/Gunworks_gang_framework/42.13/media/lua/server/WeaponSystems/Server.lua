@@ -159,7 +159,8 @@ function Server.OnClientCommand(module, command, player, args)
 
         local handler = ReloadAnim.GetHandlerForGun(gun)
         if not handler then return end
-        if not ReloadAnim.isAllowedPropValue(handler, args.value) then return end
+        -- the gun is passed so an attachToHand magazine (any magazine type this gun takes) is allowed
+        if not ReloadAnim.isAllowedPropValue(handler, args.value, gun) then return end
 
         ReloadAnim.applyPropEvent(player, gun, args.event, args.value)
 

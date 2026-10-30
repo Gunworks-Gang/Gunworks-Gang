@@ -23,7 +23,10 @@ require("WeaponSystems/ReloadAnim/Visuals")
 require("WeaponSystems/ReloadAnim/Sync")
 require("WeaponSystems/ReloadAnim/PartState")
 require("WeaponSystems/ReloadAnim/PartSwap")
+require("WeaponSystems/ReloadAnim/RackPhases")
 local SpeedLoader = require("WeaponSystems/Utils/SpeedLoader")
+local Animations = require("WeaponSystems/Utils/Animations")
+local Magazine = require("WeaponSystems/Utils/Magazine")
 
 -- Re-wrap on every load. A Core.ResetLua (e.g. a client joining a modded MP server)
 -- resets the vanilla timed-action classes to unwrapped, so these hooks MUST re-apply
@@ -32,6 +35,60 @@ local SpeedLoader = require("WeaponSystems/Utils/SpeedLoader")
 -- fresh, so a flag would wrongly skip re-wrapping and silently disable the reload anims.
 -- Capturing the current (already Gunworks+vanilla-wrapped) method as "prev" each load is
 -- safe because PZ runs this file once per VM via the module loader.
+
+-- NetTimedAction serializes fields named by the final constructor's parameters. Keep
+-- existing parameters (including Gunworks' ammo overrides) and append the captured aim
+-- flag. Capture at start, not construction: actions can spend time waiting in a queue.
+local prevEjectNew = ISEjectMagazine.new
+function ISEjectMagazine:new(character, gun, gunworksReloadAiming)
+    local action = prevEjectNew(self, character, gun)
+    action.gunworksReloadAiming = gunworksReloadAiming
+    return action
+end
+
+local prevInsertNew = ISInsertMagazine.new
+function ISInsertMagazine:new(character, gun, magazine, gunworksReloadAiming)
+    local action = prevInsertNew(self, character, gun, magazine)
+    action.gunworksReloadAiming = gunworksReloadAiming
+    return action
+end
+
+local prevReloadNew = ISReloadWeaponAction.new
+function ISReloadWeaponAction:new(character, gun, ammoLimit, ammoTypeOverride, gunworksReloadAiming)
+    local action = prevReloadNew(self, character, gun, ammoLimit, ammoTypeOverride)
+    action.gunworksReloadAiming = gunworksReloadAiming
+    return action
+end
+
+local prevUnloadNew = ISUnloadBulletsFromFirearm.new
+function ISUnloadBulletsFromFirearm:new(character, gun, gunworksReloadAiming)
+    local action = prevUnloadNew(self, character, gun)
+    action.gunworksReloadAiming = gunworksReloadAiming
+    return action
+end
+
+-- Vanilla sets its reload type immediately before setActionAnim snapshots the action.
+-- Set our selectors and the fixed aim flag before that snapshot, for owners and observers.
+-- setAnimVariable also lets the engine clear the flag when the action stops or completes.
+local function wrapReloadActionAnim(actionClass, nonMagazine, customUnload)
+    local previous = actionClass.setActionAnim
+    function actionClass:setActionAnim(actionAnim, displayItemModels)
+        local handler = ReloadAnim.getHandlerForAction(self)
+        if handler and handler.animId
+            and (not nonMagazine or ReloadAnim.isNonMagArchetype(handler.archetype))
+            and (not customUnload or handler.customUnload) then
+            self:setAnimVariable(ReloadAnim.AIM_VARIABLE, ReloadAnim.captureReloadAiming(self))
+            self:setAnimVariable(ReloadAnim.ANIM_VARIABLE, handler.animId)
+            self:setAnimVariable("WeaponReloadType", handler.animId)
+        end
+        return previous(self, actionAnim, displayItemModels)
+    end
+end
+
+wrapReloadActionAnim(ISEjectMagazine, false, false)
+wrapReloadActionAnim(ISInsertMagazine, false, false)
+wrapReloadActionAnim(ISReloadWeaponAction, true, false)
+wrapReloadActionAnim(ISUnloadBulletsFromFirearm, true, true)
 
 -------------------------------------------------
 -- ISEjectMagazine
@@ -245,7 +302,51 @@ function ISRackFirearm:setActionAnim(actionAnim, displayItemModels)
     if handler and handler.animId then
         self:setAnimVariable("WeaponReloadType", handler.animId)
     end
+    if ReloadAnim.isSplitRackHandler(handler) and self.gunworksRackPhase then
+        self:setAnimVariable(ReloadAnim.RACK_PHASE_VARIABLE, self.gunworksRackPhase)
+    end
     return prevRackSetActionAnim(self, actionAnim, displayItemModels)
+end
+
+-- Split-rack guns (RackPhases.lua) carry the stroke to the server as a constructor argument, so
+-- the server times the same stroke the owner plays.
+local prevRackNew = ISRackFirearm.new
+function ISRackFirearm:new(character, gun, gunworksRackPhase)
+    local action = prevRackNew(self, character, gun)
+    action.gunworksRackPhase = gunworksRackPhase
+    return action
+end
+
+-- An open bolt can always be closed, even on an empty gun.
+local prevCanRack = ISReloadWeaponAction.canRack
+ISReloadWeaponAction.canRack = function(weapon)
+    if prevCanRack(weapon) then
+        return true
+    end
+    return ReloadAnim.isBoltOpen(weapon) and ReloadAnim.isSplitRackHandler(ReloadAnim.GetHandlerForGun(weapon))
+end
+
+-- An empty reload of a split-rack gun starts by locking the bolt back. Queued first, so it plays
+-- before the eject/insert the reload adds; skipped when a rack is already queued (repeated presses).
+local function bestMagazineForGun(playerObj, gun)
+    if Magazine.GetProfileForGun(gun) then
+        return Magazine.getBestMagazineForGun(playerObj, gun)
+    end
+    return gun:getBestMagazine(playerObj)
+end
+
+-- An open-to-load gun whose magazine and chamber already hold maxAmmo has nothing to gain from a
+-- reload: opening would eject the chambered round only to chamber it again.
+local prevBeginAutomaticReload = ISReloadWeaponAction.BeginAutomaticReload
+ISReloadWeaponAction.BeginAutomaticReload = function(playerObj, gun)
+    if ReloadAnim.isFullForOpenToLoad(gun) then
+        return
+    end
+    if ReloadAnim.shouldOpenBoltBeforeReload(playerObj, gun, bestMagazineForGun)
+        and not ISTimedActionQueue.hasActionType(playerObj, "ISRackFirearm") then
+        ISTimedActionQueue.add(ISRackFirearm:new(playerObj, gun, ReloadAnim.RACK_PHASE_OPEN))
+    end
+    return prevBeginAutomaticReload(playerObj, gun)
 end
 
 local prevRackStart = ISRackFirearm.start
@@ -260,6 +361,12 @@ function ISRackFirearm:start()
     end
 
     local handler = ReloadAnim.getHandlerForAction(self)
+    if ReloadAnim.isSplitRackHandler(handler)
+        and ReloadAnim.chooseRackPhase(self) == ReloadAnim.RACK_PHASE_OPEN then
+        ReloadAnim.startOpeningStroke(self)
+        return
+    end
+
     if handler and handler.onRackStart then
         if handler.onRackStart(self) then
             return
@@ -284,6 +391,15 @@ function ISRackFirearm:serverStart()
     local handler = ReloadAnim.getHandlerForAction(self)
     if not handler then
         return prevRackServerStart(self)
+    end
+
+    -- The opening stroke only animates: no ejectSpentRounds or rackBullet, the closing stroke racks.
+    if ReloadAnim.isSplitRackHandler(handler) and self.gunworksRackPhase == ReloadAnim.RACK_PHASE_OPEN then
+        self:initVars()
+        local openSeconds = ReloadAnim.getProfileDuration(self, handler, "rackOpen")
+            or ReloadAnim.getProfileDuration(self, handler, "rack")
+        emulateAnimEventOnce(self.netAction, ReloadAnim.getActionDurationMs(self, openSeconds, 1200), "rackingFinished", nil)
+        return
     end
 
     self:ejectSpentRounds()
@@ -312,7 +428,20 @@ function ISRackFirearm:perform()
         handler.onRackPerform(self)
     end
 
+    ReloadAnim.finishRackStroke(self)
     prevRackPerform(self)
+end
+
+-- complete runs on the server and in singleplayer. The Gunworks visual hook closes the bolt there;
+-- after an opening stroke, put it back so it stays locked open through the magazine change.
+local prevRackComplete = ISRackFirearm.complete
+---@param self ISRackFirearm
+function ISRackFirearm:complete()
+    local result = prevRackComplete(self)
+    if ReloadAnim.finishRackStroke(self) then
+        Animations.CallAnimate(self.character, self.gun, true)
+    end
+    return result
 end
 
 -------------------------------------------------
@@ -323,7 +452,20 @@ end
 -- perform add ONLY the optional off-hand prop and model swaps; the vanilla action keeps full
 -- ownership of the shell-by-shell loadFinished/loadAmmo loop. serverStart additionally applies
 -- the profile's authored load duration, but only when one is set - a registered gun without
--- durations.load keeps byte-for-byte vanilla timing.
+-- durations.load keeps byte-for-byte vanilla timing. Open-to-load guns (RackPhases.lua) also open
+-- the bolt in begin, close it after perform, and keep its visual open through complete/stop.
+
+-- The queue calls begin for every load, however it was queued, before the action exists in the
+-- engine or on the server, so an opening stroke can still go in front of it here.
+local prevReloadBegin = ISReloadWeaponAction.begin
+---@param self ISReloadWeaponAction
+function ISReloadWeaponAction:begin()
+    if ReloadAnim.openBoltBeforeLoad(self) then
+        return
+    end
+    return prevReloadBegin(self)
+end
+
 local prevReloadStart = ISReloadWeaponAction.start
 ---@param self ISReloadWeaponAction
 function ISReloadWeaponAction:start()
@@ -400,6 +542,10 @@ function ISReloadWeaponAction:stop()
     if handler then
         ReloadAnim.resetWeaponModel(self, handler)
     end
+    -- An interrupted load leaves an open-to-load bolt open; a rack or the next reload closes it.
+    if ReloadAnim.isBoltHeldOpenForLoad(self) then
+        Animations.CallAnimate(self.character, self.gun, true)
+    end
 end
 
 local prevReloadPerform = ISReloadWeaponAction.perform
@@ -410,10 +556,24 @@ function ISReloadWeaponAction:perform()
         handler.onReloadPerform(self)
     end
 
+    -- Before prev: its perform hands the queue to the next action, after which addAfter has no anchor.
+    ReloadAnim.closeBoltAfterLoad(self)
     prevReloadPerform(self)
     if handler then
         ReloadAnim.resetWeaponModel(self, handler)
     end
+end
+
+-- complete runs on the server and in singleplayer, where the Gunworks visual hook closes the bolt
+-- after every load. An open-to-load bolt stays open until its closing stroke.
+local prevReloadComplete = ISReloadWeaponAction.complete
+---@param self ISReloadWeaponAction
+function ISReloadWeaponAction:complete()
+    local result = prevReloadComplete(self)
+    if ReloadAnim.isBoltHeldOpenForLoad(self) then
+        Animations.CallAnimate(self.character, self.gun, true)
+    end
+    return result
 end
 
 -------------------------------------------------
@@ -432,7 +592,7 @@ end
 -- profile wouldn't animate at all - a matching Unload*_HB.xml node is not guaranteed to exist,
 -- or to be the ONLY node keyed to that animId's archetype, for every registered profile across
 -- every pack on this shared framework. A concrete case: Guns of Marz's lever archetype has TWO
--- parallel Unload node families (UnloadLever_HB.xml keyed to the animId "lever", and
+-- parallel Unload node families (UnloadLeverMarz_HB.xml keyed to the animId "lever_reload", and
 -- UnloadLeverAction_HB.xml keyed to the gun's real engine value "leveraction", which is what
 -- plays today since nothing currently overrides WeaponReloadType at unload) - an unconditional
 -- override here would silently switch which one plays, an unverified behavior change nobody

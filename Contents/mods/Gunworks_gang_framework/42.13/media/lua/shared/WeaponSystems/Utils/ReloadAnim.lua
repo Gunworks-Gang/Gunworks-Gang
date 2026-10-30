@@ -27,8 +27,10 @@ local table_remove = table.remove
 ---@field unloadedState string|nil
 ---@field shortRackAfterInsert boolean|nil
 ---@field loadDuration number|nil
+---@field loadAimDuration number|nil
 ---@field loadShortDuration number|nil
 ---@field unloadDuration number|nil
+---@field unloadAimDuration number|nil
 ---@field rackDuration number|nil
 ---@field rackAimDuration number|nil
 ---@field vehicleDurations table|nil
@@ -36,6 +38,10 @@ local table_remove = table.remove
 ---@field matches fun(gun:HandWeapon):boolean|nil
 ---@field autoRack boolean|nil
 ---@field consumes string[]|nil
+---@field splitRack boolean|nil
+---@field openToLoad boolean|nil
+---@field rackOpenDuration number|nil
+---@field rackOpenAimDuration number|nil
 
 ---@class GunworksReloadPartSpec
 ---@field partType string|nil
@@ -69,6 +75,9 @@ local ReloadAnim = {}
 --- replacing the non-extensible engine variable "WeaponReloadType". A weapon pack's
 --- AnimSet nodes must gate on this name with the gun's animId as the string value.
 ReloadAnim.ANIM_VARIABLE = "GunworksReloadAnim"
+
+-- Captured once per load/unload action and replicated with its animation variables.
+ReloadAnim.AIM_VARIABLE = "GunworksReloadAiming"
 
 --- AttachedLocations id for the in-hand reload magazine prop. Registered in
 --- ReloadAnim/AttachLocations.lua (attachmentName = the off-hand prop bone Bip01_Prop2, so the

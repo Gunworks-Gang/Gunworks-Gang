@@ -38,6 +38,7 @@ end
 local ISReloadWeaponAction_canShoot = ISReloadWeaponAction.canShoot
 ISReloadWeaponAction.canShoot = function(player, weapon)
     if weapon:getFireMode() == "Safe" then return false end
+    if weapon:getModData().gunworksBoltOpen == true then return end
     Animations.lockActionOpen(player, weapon)
     return ISReloadWeaponAction_canShoot(player, weapon)
 end

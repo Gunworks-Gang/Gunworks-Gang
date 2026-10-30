@@ -48,6 +48,12 @@ function ReloadAnim.normalizeWeaponReloadOptions(fullType, options)
         -- cap for a cap-lock. Array of item fullTypes. Consumed server-authoritatively during
         -- the reload; see CustomSystemHooks loadAmmo. Opt-in: nil = vanilla single-item reload.
         consumes = options.consumes,
+        -- Two-stroke rack (open, then close) with durations.rackOpen / rackOpenAim; see ReloadAnim/RackPhases.lua.
+        -- openToLoad (with splitRack, non-magazine guns): the bolt always opens before rounds go in.
+        splitRack = options.splitRack,
+        openToLoad = options.openToLoad,
+        rackOpenDuration = type(options.durations) == "table" and options.durations.rackOpen or nil,
+        rackOpenAimDuration = type(options.durations) == "table" and options.durations.rackOpenAim or nil,
     }
 
     -- A non-magazine gun's off-hand prop (a shell/round/speedloader) reuses the same
@@ -61,8 +67,10 @@ function ReloadAnim.normalizeWeaponReloadOptions(fullType, options)
     if type(options.durations) == "table" then
         local durations = options.durations
         normalized.loadDuration = durations.load
+        normalized.loadAimDuration = durations.loadAim
         normalized.loadShortDuration = durations.loadShort
         normalized.unloadDuration = durations.unload
+        normalized.unloadAimDuration = durations.unloadAim
         normalized.rackDuration = durations.rack
         normalized.rackAimDuration = durations.rackAim
         normalized.vehicleDurations = durations.vehicle
@@ -297,8 +305,10 @@ function ReloadAnim.createSpriteReloadHandler(options)
         magItem = options.magItem,
         shortRackAfterInsert = options.shortRackAfterInsert,
         loadDuration = options.loadDuration,
+        loadAimDuration = options.loadAimDuration,
         loadShortDuration = options.loadShortDuration,
         unloadDuration = options.unloadDuration,
+        unloadAimDuration = options.unloadAimDuration,
         rackDuration = options.rackDuration,
         rackAimDuration = options.rackAimDuration,
         vehicleDurations = options.vehicleDurations,
@@ -402,8 +412,10 @@ function ReloadAnim.createSimpleReloadHandler(options)
         magItem = options.magItem,
         shortRackAfterInsert = options.shortRackAfterInsert,
         loadDuration = options.loadDuration,
+        loadAimDuration = options.loadAimDuration,
         loadShortDuration = options.loadShortDuration,
         unloadDuration = options.unloadDuration,
+        unloadAimDuration = options.unloadAimDuration,
         rackDuration = options.rackDuration,
         rackAimDuration = options.rackAimDuration,
         vehicleDurations = options.vehicleDurations,
@@ -424,9 +436,11 @@ function ReloadAnim.createSimpleReloadHandler(options)
         end,
         onEjectStop = function(action)
             ReloadAnim.detachReloadMagazine(action)
+            ReloadAnim.clearActionHandProp(action)   -- attachToHand without its detachFromHand
         end,
         onEjectPerform = function(action)
             ReloadAnim.detachReloadMagazine(action)
+            ReloadAnim.clearActionHandProp(action)
         end,
         onInsertStart = function(action)
             ReloadAnim.setShortRackAfterInsert(action, options.shortRackAfterInsert)
@@ -442,6 +456,7 @@ function ReloadAnim.createSimpleReloadHandler(options)
         end,
         onInsertStop = function(action)
             ReloadAnim.detachReloadMagazine(action)
+            ReloadAnim.clearActionHandProp(action)
             ReloadAnim.setShortRackAfterInsert(action, false)
         end,
         onInsertLoadAmmo = function(action)
@@ -453,6 +468,7 @@ function ReloadAnim.createSimpleReloadHandler(options)
         end,
         onInsertPerform = function(action)
             ReloadAnim.detachReloadMagazine(action)
+            ReloadAnim.clearActionHandProp(action)
             ReloadAnim.setShortRackAfterInsert(action, false)
 
             if options.shortRackAfterInsert and isClient() then
@@ -516,8 +532,10 @@ function ReloadAnim.createAttachmentReloadHandler(options)
         unloadedState = unloadedState,
         shortRackAfterInsert = options.shortRackAfterInsert,
         loadDuration = options.loadDuration,
+        loadAimDuration = options.loadAimDuration,
         loadShortDuration = options.loadShortDuration,
         unloadDuration = options.unloadDuration,
+        unloadAimDuration = options.unloadAimDuration,
         rackDuration = options.rackDuration,
         rackAimDuration = options.rackAimDuration,
         vehicleDurations = options.vehicleDurations,
@@ -642,8 +660,10 @@ function ReloadAnim.createNonMagReloadHandler(options)
         loadedState = loadedState,
         unloadedState = unloadedState,
         loadDuration = options.loadDuration,
+        loadAimDuration = options.loadAimDuration,
         loadShortDuration = options.loadShortDuration,
         unloadDuration = options.unloadDuration,
+        unloadAimDuration = options.unloadAimDuration,
         rackDuration = options.rackDuration,
         rackAimDuration = options.rackAimDuration,
         vehicleDurations = options.vehicleDurations,
@@ -677,12 +697,73 @@ function ReloadAnim.createNonMagReloadHandler(options)
         onReloadStop = function(action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.restoreReloadPartState(action)
+            ReloadAnim.clearActionHandProp(action)   -- a round attachToHand put in the hand, not yet detached
         end,
         onReloadPerform = function(action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.restoreReloadPartState(action)
+            ReloadAnim.clearActionHandProp(action)
         end,
     }
+end
+
+--- True when `whenParts` is a list of { weaponPart, reloadAnimation } entries rather than a part
+--- condition (a string, an array of strings, or { all/any/none = {...} }).
+---@param whenParts any
+---@nodiscard
+---@return boolean
+function ReloadAnim.isPartVariantList(whenParts)
+    return type(whenParts) == "table" and type(whenParts[1]) == "table"
+end
+
+--- Register a gun whose reload changes with the weapon parts installed. The profile's own fields
+--- are the default reload, and `whenParts` lists the alternatives:
+---
+---     ["MyPack.SPAS12"] = {
+---         animId = "shotgun_reload", archetype = "shotgun", durations = ...,
+---         whenParts = {
+---             {
+---                 weaponPart = "MyPack.SPAS12_Selector_Semi",
+---                 reloadAnimation = { animId = "shotgunsemi_reload", archetype = "shotgun", durations = ... },
+---             },
+---         },
+---     }
+---
+--- `weaponPart` takes any part condition: an item fullType or partType slot, an array of them (all
+--- must be attached), or { all = {...}, any = {...}, none = {...} }. Each `reloadAnimation` is a
+--- complete profile; nothing is inherited from the default. The first entry whose parts are installed
+--- wins, so list the most specific first. Without any of them the default plays. A profile with no
+--- animId of its own registers only the alternatives, so without a part the gun keeps vanilla.
+---@param fullType string|nil
+---@param profile table
+---@return nil
+function ReloadAnim.registerPartVariants(fullType, profile)
+    local entries = profile.whenParts
+    for i = 1, #entries do
+        local entry = entries[i]
+        local variant = type(entry) == "table" and entry.reloadAnimation
+        if type(variant) ~= "table" or entry.weaponPart == nil or variant.whenParts ~= nil then
+            ReloadAnim.logInvalidOptions(profile,
+                "whenParts[" .. i .. "] needs a weaponPart and a reloadAnimation profile without its own whenParts")
+        else
+            local options = {}
+            for key, value in pairs(variant) do
+                options[key] = value
+            end
+            options.whenParts = entry.weaponPart
+            ReloadAnim.RegisterWeapon(fullType, options)
+        end
+    end
+
+    if profile.animId then
+        local base = {}
+        for key, value in pairs(profile) do
+            if key ~= "whenParts" then
+                base[key] = value
+            end
+        end
+        ReloadAnim.RegisterWeapon(fullType, base)
+    end
 end
 
 --- Public API: register a per-gun reload animation profile.
@@ -698,8 +779,11 @@ end
 --- style = "none" (alias "simple") for a magazine gun that has no separate texture and no part
 --- swap - just a custom animId, exactly like a non-mag profile's default. See
 --- createSimpleReloadHandler; magItem is still accepted there for an optional off-hand prop.
---- Durations are base seconds at ReloadSpeed = 1. rackAim overrides rack while aiming;
---- vehicle optionally overrides load/loadShort/unload/rack/rackAim for seated animations.
+--- Durations are base seconds at ReloadSpeed = 1. loadAim/unloadAim override load/unload
+--- using the aiming state captured when the action starts. Gate those AnimSet variants on
+--- GunworksReloadAiming = true and the normal nodes on false, under the same animId.
+--- rackAim uses the existing RackAiming variant. vehicle optionally overrides these duration
+--- fields for seated animations; a seated base duration takes precedence over a standing ADS one.
 --- Non-magazine unload consumes one round (or the insert-all batch) per unload duration.
 ---
 --- Installed-part conditions: set `whenParts` to swap the reload animation based on what is
@@ -711,7 +795,7 @@ end
 --- specific one first, matchers are tried in registration order. `profile` may also be an ARRAY of
 --- profiles for one fullType (a base plus whenParts variants).
 ---@param fullType string|nil  weapon fullType key, e.g. "MyPack.M249Rifle" (nil only if profile.matches or profile.whenParts is set)
----@param profile {animId:string,archetype:string|nil,style:string|nil,magItem:string|nil,prop:{item:string|nil}|nil,sprite:{loaded:string|nil,unloaded:string|nil}|nil,attachments:table|nil,durations:{load:number|nil,loadShort:number|nil,unload:number|nil,rack:number|nil,rackAim:number|nil,vehicle:table|nil}|nil,shortRackAfterInsert:boolean|nil,matches:fun(gun:HandWeapon):boolean|nil,whenParts:string|string[]|table|nil,id:string|nil}|table[]
+---@param profile {animId:string,archetype:string|nil,style:string|nil,magItem:string|nil,prop:{item:string|nil}|nil,sprite:{loaded:string|nil,unloaded:string|nil}|nil,attachments:table|nil,durations:{load:number|nil,loadAim:number|nil,loadShort:number|nil,unload:number|nil,unloadAim:number|nil,rack:number|nil,rackAim:number|nil,vehicle:table|nil}|nil,shortRackAfterInsert:boolean|nil,matches:fun(gun:HandWeapon):boolean|nil,whenParts:string|string[]|table|nil,id:string|nil}|table[]
 ---@return nil
 function ReloadAnim.RegisterWeapon(fullType, profile)
     -- An array of profiles for one gun (base + whenParts variants). Each entry carries its own
@@ -720,6 +804,12 @@ function ReloadAnim.RegisterWeapon(fullType, profile)
         for i = 1, #profile do
             ReloadAnim.RegisterWeapon(fullType, profile[i])
         end
+        return
+    end
+
+    -- A default reload plus per-part alternatives (see registerPartVariants).
+    if type(profile) == "table" and ReloadAnim.isPartVariantList(profile.whenParts) then
+        ReloadAnim.registerPartVariants(fullType, profile)
         return
     end
 
@@ -757,6 +847,10 @@ function ReloadAnim.RegisterWeapon(fullType, profile)
         return
     end
 
+    handler.splitRack = normalized.splitRack
+    handler.openToLoad = normalized.openToLoad
+    handler.rackOpenDuration = normalized.rackOpenDuration
+    handler.rackOpenAimDuration = normalized.rackOpenAimDuration
     ReloadAnim.registerHandler(handler)
 end
 
