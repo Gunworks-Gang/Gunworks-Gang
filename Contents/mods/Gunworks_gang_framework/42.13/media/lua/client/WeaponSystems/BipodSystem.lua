@@ -274,6 +274,8 @@ local function onKeyPressed(key)
     end
 end
 
+addVariableToSyncList(BipodSystemClient.AnimVariable)
+
 Events.OnKeyPressed.Add(onKeyPressed)
 Events.OnPlayerUpdate.Add(onPlayerUpdate)
 Events.OnPlayerDeath.Add(onPlayerDeath)
