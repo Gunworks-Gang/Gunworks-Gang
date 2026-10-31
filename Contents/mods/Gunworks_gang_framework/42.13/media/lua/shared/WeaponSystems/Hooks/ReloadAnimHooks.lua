@@ -446,7 +446,7 @@ end
 local prevReloadBegin = ISReloadWeaponAction.begin
 ---@param self ISReloadWeaponAction
 function ISReloadWeaponAction:begin()
-    if ReloadAnim.openBoltBeforeLoad(self) then
+    if ReloadAnim.openBoltBefore(self) then
         return
     end
     return prevReloadBegin(self)
@@ -549,6 +549,16 @@ end
 -------------------------------------------------
 -- ISUnloadBulletsFromFirearm (non-magazine unload: shotgun / revolver / bolt / dbl-barrel / lever)
 -------------------------------------------------
+-- Open-to-load guns open the bolt before unloading too, the same way as before a load.
+local prevUnloadBegin = ISUnloadBulletsFromFirearm.begin
+---@param self ISUnloadBulletsFromFirearm
+function ISUnloadBulletsFromFirearm:begin()
+    if ReloadAnim.openBoltBefore(self) then
+        return
+    end
+    return prevUnloadBegin(self)
+end
+
 -- Vanilla start() sets the WeaponReloadType anim variable to the gun's engine reload type
 -- (e.g. "doublebarrelshotgun"), exactly like ISReloadWeaponAction did before the override
 -- above. A registered non-mag gun's custom Unload AnimSet node is gated on WeaponReloadType

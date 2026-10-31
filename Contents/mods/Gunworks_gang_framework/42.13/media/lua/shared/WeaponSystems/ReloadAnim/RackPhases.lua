@@ -20,10 +20,11 @@
 -- whatever is chambered:
 --
 --   reload:       open -> load the rounds -> close
+--   unload:       open -> unload the rounds (the bolt stays open; the next reload or a rack closes it)
 --   manual rack:  open -> close
 --
--- The opening stroke is put in front of the load when the queue begins it, so every way of starting a
--- load (reload key, radial menu, inventory menu) opens the bolt first. A reload that cannot add a
+-- The opening stroke is put in front of the load or unload when the queue begins it, so every way of
+-- starting one (reload key, radial menu, inventory menu) opens the bolt first. A reload that cannot add a
 -- round (magazine plus chamber already hold maxAmmo) is skipped, because opening ejects the chambered
 -- round.
 
@@ -134,14 +135,14 @@ function ReloadAnim.isFullForOpenToLoad(gun)
     return gun:getCurrentAmmoCount() + chambered >= gun:getMaxAmmo()
 end
 
---- The queue is about to begin a load of an open-to-load gun. With the bolt closed, put an opening
---- stroke in front of the load and begin that instead; once it completes, the queue begins the load
+--- The queue is about to begin a load or an unload of an open-to-load gun. With the bolt closed, put an
+--- opening stroke in front of it and begin that instead; once it completes, the queue begins the action
 --- again and this returns false. Runs where the action queue lives (client or singleplayer), before
---- the load is created or sent to the server.
----@param action ISReloadWeaponAction
----@return boolean true when the opening stroke began in place of the load
-function ReloadAnim.openBoltBeforeLoad(action)
-    if action.gunworksBoltOpenedForLoad or ReloadAnim.isBoltOpen(action.gun)
+--- the action is created or sent to the server.
+---@param action ISReloadWeaponAction|ISUnloadBulletsFromFirearm
+---@return boolean true when the opening stroke began in place of the action
+function ReloadAnim.openBoltBefore(action)
+    if action.gunworksBoltOpenedFirst or ReloadAnim.isBoltOpen(action.gun)
         or not ReloadAnim.isOpenToLoadHandler(ReloadAnim.getHandlerForAction(action)) then
         return false
     end
@@ -153,7 +154,7 @@ function ReloadAnim.openBoltBeforeLoad(action)
     if index == -1 then
         return false
     end
-    action.gunworksBoltOpenedForLoad = true
+    action.gunworksBoltOpenedFirst = true
     local opening = ISRackFirearm:new(action.character, action.gun, ReloadAnim.RACK_PHASE_OPEN)
     table.insert(queue.queue, index, opening)
     queue.current = opening
