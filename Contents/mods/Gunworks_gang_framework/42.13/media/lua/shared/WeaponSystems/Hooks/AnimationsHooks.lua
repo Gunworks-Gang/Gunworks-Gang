@@ -34,7 +34,7 @@ end
 local ISReloadWeaponAction_canShoot = ISReloadWeaponAction.canShoot
 ISReloadWeaponAction.canShoot = function(player, weapon)
     if weapon:getFireMode() == "Safe" then return false end
-    if weapon:getModData().gunworksBoltOpen == true then return player:Say(getText("Weapon in Open Rack it to close"), 0.25, 0.25, 0.25, UIFont.Dialogue, 0, "default") end
+    if weapon:getModData().gunworksBoltOpen == true then return false end
     Animations.lockActionOpen(player, weapon)
     return ISReloadWeaponAction_canShoot(player, weapon)
 end
