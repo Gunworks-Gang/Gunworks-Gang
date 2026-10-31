@@ -24,21 +24,17 @@ function ISReloadWeaponAction:complete()
     if Animations.IsWeaponWithCustomStates(self.gun:getFullType()) then
         Animations.CheckStates(self.gun)
     end
-    Animations.CallAnimate(self.character, self.gun, false)
+    if not self.gun:haveChamber() then
+        Animations.CallAnimate(self.character, self.gun, false)
+    end
     return ISReloadWeaponAction_complete(self)
-end
-
-local ISReloadWeaponAction_stop = ISReloadWeaponAction.stop
-function ISReloadWeaponAction:stop()
-    Animations.CallAnimate(self.character, self.gun, false)
-    return ISReloadWeaponAction_stop(self)
 end
 
 -- I really want my revolvers clicking
 local ISReloadWeaponAction_canShoot = ISReloadWeaponAction.canShoot
 ISReloadWeaponAction.canShoot = function(player, weapon)
     if weapon:getFireMode() == "Safe" then return false end
-    if weapon:getModData().gunworksBoltOpen == true then return end
+    if weapon:getModData().gunworksBoltOpen == true then return player:Say(getText("Weapon in Open Rack it to close"), 0.25, 0.25, 0.25, UIFont.Dialogue, 0, "default") end
     Animations.lockActionOpen(player, weapon)
     return ISReloadWeaponAction_canShoot(player, weapon)
 end
@@ -79,14 +75,10 @@ function ISRackFirearm:complete()
     if Animations.IsWeaponWithCustomStates(self.gun:getFullType()) then
         Animations.CheckStates(self.gun)
     end
-    Animations.CallAnimate(self.character, self.gun, false)
+    if not self.gun:haveChamber() then
+        Animations.CallAnimate(self.character, self.gun, false)
+    end
     return ISRackFirearm_complete(self)
-end
-
-local ISRackFirearm_stop = ISRackFirearm.stop
-function ISRackFirearm:stop()
-    Animations.CallAnimate(self.character, self.gun, false)
-    return ISRackFirearm_stop(self)
 end
 
 --------------------------------------------------------------------------
@@ -103,14 +95,10 @@ end
 
 local ISUnloadBulletsFromFirearm_complete = ISUnloadBulletsFromFirearm.complete
 function ISUnloadBulletsFromFirearm:complete()
-    Animations.CallAnimate(self.character, self.gun, false)
+    if not self.gun:haveChamber() then
+        Animations.CallAnimate(self.character, self.gun, false)
+    end
     return ISUnloadBulletsFromFirearm_complete(self)
-end
-
-local ISUnloadBulletsFromFirearm_stop = ISUnloadBulletsFromFirearm.stop
-function ISUnloadBulletsFromFirearm:stop()
-    Animations.CallAnimate(self.character, self.gun, false)
-    return ISUnloadBulletsFromFirearm_stop(self)
 end
 
 ---------------------------------------------------------------

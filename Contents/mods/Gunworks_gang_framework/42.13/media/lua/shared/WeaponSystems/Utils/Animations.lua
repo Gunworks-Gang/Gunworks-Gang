@@ -54,7 +54,11 @@ function Animations.IsFiringRefresh()
     return firingRefresh
 end
 
-function Animations.CallSyncHandWeaponFields(player, weapon)
+---@param boltOpen boolean|nil  true/false sets modData.gunworksBoltOpen to true/nil; nil leaves it unchanged
+function Animations.CallSyncHandWeaponFields(player, weapon, boltOpen)
+    if boltOpen ~= nil then
+        weapon:getModData().gunworksBoltOpen = boltOpen and true or nil
+    end
     syncHandWeaponFields(player, weapon)
     player:setPrimaryHandItem(nil)
     if weapon:isTwoHandWeapon() then
@@ -127,10 +131,15 @@ function Animations.CallAnimationFunction(weapon, open)
     end
 end
 
-function Animations.CallAnimate(player, weapon, open)
+---@param keepBoltState boolean|nil  true leaves gunworksBoltOpen unchanged (firing-cycle flicks, which canShoot must not see as an open bolt)
+function Animations.CallAnimate(player, weapon, open, keepBoltState)
     firingRefresh = true
     Animations.CallAnimationFunction(weapon, open)
-    Animations.CallSyncHandWeaponFields(player, weapon)
+    local boltOpen = nil
+    if not keepBoltState then
+        boltOpen = open and true or false
+    end
+    Animations.CallSyncHandWeaponFields(player, weapon, boltOpen)
     firingRefresh = false
 end
 
@@ -158,12 +167,12 @@ function Animations.releaseActionLock(player, weapon)
     if not weapon or not player then return end
     if weapon:isJammed() or not weapon:haveChamber() then return end
     local open = not weapon:isRoundChambered()
-    Animations.CallAnimate(player, weapon, open)
+    Animations.CallAnimate(player, weapon, open, true)
 end
 
 function Animations.releaseActionLockForce(player, weapon)
     if not weapon or not player then return end
-    Animations.CallAnimate(player, weapon, false)
+    Animations.CallAnimate(player, weapon, false, true)
 end
 
 function Animations.lockActionOpen(player, weapon)
@@ -175,7 +184,7 @@ function Animations.lockActionOpen(player, weapon)
         if weapon:isRackAfterShoot() or weapon:isJammed() or not weapon:haveChamber() or not weapon:isRoundChambered() then return end
     end
 
-    Animations.CallAnimate(player, weapon, true)
+    Animations.CallAnimate(player, weapon, true, true)
 
     local seconds = GetCycleSeconds(weapon:getFullType())
     local releaseFunc = forced and Animations.releaseActionLockForce or Animations.releaseActionLock

@@ -25,7 +25,6 @@ require("WeaponSystems/ReloadAnim/PartState")
 require("WeaponSystems/ReloadAnim/PartSwap")
 require("WeaponSystems/ReloadAnim/RackPhases")
 local SpeedLoader = require("WeaponSystems/Utils/SpeedLoader")
-local Animations = require("WeaponSystems/Utils/Animations")
 local Magazine = require("WeaponSystems/Utils/Magazine")
 
 -- Re-wrap on every load. A Core.ResetLua (e.g. a client joining a modded MP server)
@@ -428,20 +427,7 @@ function ISRackFirearm:perform()
         handler.onRackPerform(self)
     end
 
-    ReloadAnim.finishRackStroke(self)
     prevRackPerform(self)
-end
-
--- complete runs on the server and in singleplayer. The Gunworks visual hook closes the bolt there;
--- after an opening stroke, put it back so it stays locked open through the magazine change.
-local prevRackComplete = ISRackFirearm.complete
----@param self ISRackFirearm
-function ISRackFirearm:complete()
-    local result = prevRackComplete(self)
-    if ReloadAnim.finishRackStroke(self) then
-        Animations.CallAnimate(self.character, self.gun, true)
-    end
-    return result
 end
 
 -------------------------------------------------
@@ -453,7 +439,7 @@ end
 -- ownership of the shell-by-shell loadFinished/loadAmmo loop. serverStart additionally applies
 -- the profile's authored load duration, but only when one is set - a registered gun without
 -- durations.load keeps byte-for-byte vanilla timing. Open-to-load guns (RackPhases.lua) also open
--- the bolt in begin, close it after perform, and keep its visual open through complete/stop.
+-- the bolt in begin and close it after perform.
 
 -- The queue calls begin for every load, however it was queued, before the action exists in the
 -- engine or on the server, so an opening stroke can still go in front of it here.
@@ -542,10 +528,6 @@ function ISReloadWeaponAction:stop()
     if handler then
         ReloadAnim.resetWeaponModel(self, handler)
     end
-    -- An interrupted load leaves an open-to-load bolt open; a rack or the next reload closes it.
-    if ReloadAnim.isBoltHeldOpenForLoad(self) then
-        Animations.CallAnimate(self.character, self.gun, true)
-    end
 end
 
 local prevReloadPerform = ISReloadWeaponAction.perform
@@ -562,18 +544,6 @@ function ISReloadWeaponAction:perform()
     if handler then
         ReloadAnim.resetWeaponModel(self, handler)
     end
-end
-
--- complete runs on the server and in singleplayer, where the Gunworks visual hook closes the bolt
--- after every load. An open-to-load bolt stays open until its closing stroke.
-local prevReloadComplete = ISReloadWeaponAction.complete
----@param self ISReloadWeaponAction
-function ISReloadWeaponAction:complete()
-    local result = prevReloadComplete(self)
-    if ReloadAnim.isBoltHeldOpenForLoad(self) then
-        Animations.CallAnimate(self.character, self.gun, true)
-    end
-    return result
 end
 
 -------------------------------------------------

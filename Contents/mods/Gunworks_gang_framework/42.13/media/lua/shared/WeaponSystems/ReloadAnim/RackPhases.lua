@@ -9,7 +9,8 @@
 -- The round handling comes from the AnimSet events, so a manual rack still ejects one round and
 -- chambers one: with Hot Brass the opening stroke's ejectCasing ejects and the closing stroke's
 -- chamberRound chambers; without it the closing stroke's vanilla rackBullet does both and the opening
--- stroke only animates. The gun remembers an open bolt in its mod data: the rack the insert queues then
+-- stroke only animates. The gun remembers an open bolt in its mod data (gunworksBoltOpen, recorded when
+-- the stroke's rackStart / rackEnd events animate the bolt): the rack the insert queues then
 -- only closes, and an interrupted reload resumes with a closing stroke. Every choice is made when an
 -- action starts, so the stroke rides the anim snapshot to observers and the constructor argument to
 -- the server, like the aim flag. Gate the AnimSet nodes on GunworksRackPhase = "open" / "close".
@@ -55,16 +56,6 @@ end
 function ReloadAnim.isBoltOpen(gun)
     local modData = gun and gun:getModData()
     return modData ~= nil and modData[BOLT_OPEN_KEY] == true
-end
-
----@param gun HandWeapon|nil
----@param open boolean
----@return nil
-function ReloadAnim.setBoltOpen(gun, open)
-    local modData = gun and gun:getModData()
-    if modData then
-        modData[BOLT_OPEN_KEY] = open and true or nil
-    end
 end
 
 --- Does a reload of this gun start with an opening stroke? True for a split-rack gun with nothing
@@ -127,18 +118,6 @@ function ReloadAnim.startOpeningStroke(action)
     action:initVars()
 end
 
---- Record the bolt position once a stroke has finished.
----@param action ISRackFirearm
----@return boolean opened true when this was an opening stroke
-function ReloadAnim.finishRackStroke(action)
-    if not action.gunworksRackPhase or not ReloadAnim.isSplitRackHandler(ReloadAnim.getHandlerForAction(action)) then
-        return false
-    end
-    local opened = action.gunworksRackPhase == ReloadAnim.RACK_PHASE_OPEN
-    ReloadAnim.setBoltOpen(action.gun, opened)
-    return opened
-end
-
 --- Open-to-load: would a reload add nothing? Opening ejects the chambered round, so a magazine plus
 --- chambered round that already make maxAmmo is as full as the gun gets.
 ---@param gun HandWeapon|nil
@@ -198,15 +177,6 @@ function ReloadAnim.closeBoltAfterLoad(action)
         return
     end
     ISTimedActionQueue.addAfter(action, ISRackFirearm:new(action.character, gun, ReloadAnim.RACK_PHASE_CLOSE))
-end
-
---- Is this load running with the bolt of an open-to-load gun held open? Its complete and stop close the
---- bolt visual, so the caller puts it back.
----@param action ISReloadWeaponAction
----@nodiscard
----@return boolean
-function ReloadAnim.isBoltHeldOpenForLoad(action)
-    return ReloadAnim.isBoltOpen(action.gun) and ReloadAnim.isOpenToLoadHandler(ReloadAnim.getHandlerForAction(action))
 end
 
 return ReloadAnim
