@@ -1741,6 +1741,193 @@ RateOfFire.RegisterMultipleSpreadAmmoModifier({
 })
 ```
 
+# Reload Rules System
+
+Reload rules decide which actions a reload is made of: when the bolt locks back, when a stripper clip replaces loading by hand, when a round goes straight into the chamber.
+A gun lists its rules in its reload animation profile.
+Gunworks ships the common rules, and you can write your own.
+
+Keep it simple:
+
+1. Give the gun's reload profile a `rules` field: a preset, or a list of rules.
+2. Write a rule only when no built-in one fits.
+3. Ship an AnimSet node for every step the rules use (see the step table).
+
+### Module import
+
+```lua
+local ReloadRules = require("WeaponSystems/ReloadAnim/Rules")
+local ReloadAnim = require("WeaponSystems/ReloadAnim/HandlerFactory")
+```
+
+### 1. Steps
+
+A reload is a chain of steps. Each step is one vanilla timed action, with its own AnimSet node and its own server timing.
+
+| Step | Action | AnimSet gate |
+|---|---|---|
+| `open` | `ISRackFirearm` | `GunworksRackPhase = open` |
+| `close` | `ISRackFirearm` | `GunworksRackPhase = close` |
+| `rack` | `ISRackFirearm` | your usual rack node |
+| `ejectMag` | `ISEjectMagazine` | your usual unload node |
+| `insertMag` | `ISInsertMagazine` | your usual load node |
+| `insertClip` | `ISInsertMagazine` with a stripper clip or speedloader | `GunworksReloadStep = insertClip` |
+| `loadRounds` | `ISReloadWeaponAction` | your usual load node |
+| `loadChamber` | `ISReloadWeaponAction` | `GunworksReloadStep = loadChamber` |
+| `unloadRounds` | `ISUnloadBulletsFromFirearm` | your usual unload node |
+
+Every action of a gun with a reload profile sets `GunworksReloadStep` to its step name.
+Gate a node on it when two steps share an action (`insertClip` and `insertMag`, `loadChamber` and `loadRounds`).
+Until such a node exists, the step plays the node it shares.
+
+What each step does with the rounds:
+
+- `open` handles no rounds itself. With Hot Brass, its `ejectCasing` event ejects the chambered round.
+- `close` is an ordinary rack: it chambers the next round (and, without Hot Brass, ejects the one the opening left in). Right after `loadChamber` it only closes over the round that step put in.
+- `loadChamber` puts one round from the inventory straight into the empty chamber.
+- `insertClip` loads the clip through the SpeedLoader system, so register the clip there.
+
+Optional durations in the profile's `durations` table, in seconds at reload speed 1:
+
+- `rackOpen`, `rackOpenAim`: the opening stroke. Falls back to `rack`.
+- `loadChamber`, `loadChamberAim`: the round into the chamber. Falls back to `load`.
+- `clip`, `clipAim`: the stripper clip or speedloader. Falls back to `load`.
+
+### 2. Built-in rules and presets
+
+| Rule | What it does |
+|---|---|
+| `openWhenChamberEmpty` | Before `ejectMag` or `insertMag`, with nothing chambered and the bolt closed: `open`. |
+| `rackInTwoStrokes` | Instead of `rack`: `close` if the bolt is open, otherwise `open` then `close`. |
+| `openToLoad` | Before `loadRounds`, `insertClip` or `unloadRounds`: `open` if the bolt is closed. After `loadRounds` or `insertClip`: `close` if no rack follows. A load that cannot add a round is dropped. |
+| `stripperClips` | Instead of `loadRounds`: `insertClip`, when all the rounds on a loaded clip fit. |
+| `chamberFirstWhenEmpty` | Before `loadRounds` on an empty gun: `open`, `loadChamber`, `close`, then the rest load as usual. |
+
+| Preset | Rules | For |
+|---|---|---|
+| `rollerDelayed` | `openWhenChamberEmpty`, `rackInTwoStrokes` | HK roller-delayed guns (MP5, G3) |
+| `boltAction` | `openToLoad`, `stripperClips`, `rackInTwoStrokes` | bolt-action rifles |
+| `pumpAction` | `chamberFirstWhenEmpty` | pump shotguns |
+
+### 3. Giving a gun rules
+
+Add `rules` to the gun's reload profile:
+
+```lua
+ReloadAnim.RegisterMultipleWeapons({
+	["MyMod.MP5"] = { animId = "my_mp5", style = "none", rules = "rollerDelayed" },
+	["MyMod.Mosin"] = { animId = "my_bolt", archetype = "boltactionnomag", rules = "boltAction" },
+	["MyMod.M870"] = { animId = "my_pump", archetype = "shotgun", rules = { "chamberFirstWhenEmpty" } },
+})
+```
+
+`rules` takes a rule name, a preset name, a rule table, or a list mixing them.
+Names are looked up when the gun reloads, so you can name a rule that another file registers later.
+The older `splitRack = true` and `openToLoad = true` flags still work: they stand for `openWhenChamberEmpty` + `rackInTwoStrokes` and `openToLoad` + `rackInTwoStrokes`.
+
+### 4. Writing a rule
+
+```lua
+ReloadRules.Register(name, rule)
+ReloadRules.RegisterPreset(name, entries)
+```
+
+A rule has up to three tables: `before`, `after` and `instead`.
+Each maps a step name to a function `function(ctx)`, or to a fixed list of step names.
+The function returns a list of step names (or one name) to act, or `nil` to pass.
+`instead` returning `{}` drops the step.
+
+Example: an open-bolt submachine gun whose bolt must be cocked before a magazine goes in.
+
+```lua
+ReloadRules.Register("cockBeforeInsert", {
+	before = {
+		insertMag = function(ctx)
+			if not ctx.boltOpen then
+				return { "open" }
+			end
+		end,
+	},
+})
+```
+
+When rules run:
+
+- `instead` and `before` run when the step's action begins, on the client (or in singleplayer). The reload key, the radial menu and the inventory menu all go through it.
+- `after` runs when the action finishes.
+- Each action is checked once. For each moment, the first rule in the gun's list that answers wins, so list specific rules first.
+- Steps a rule adds are checked too when they begin. A rule that keeps answering with its own step stops after 6 steps.
+- A rule that throws an error counts as no answer, and the error is printed.
+
+After a load, vanilla queues a `rack` when nothing is chambered, and the rules shape it when it begins (for example `rackInTwoStrokes` turns it into a `close`).
+Check `ctx.rackQueued` in an `after` rule so you do not add a second one.
+
+`ctx` fields:
+
+| Field | Meaning |
+|---|---|
+| `step` | the step being decided |
+| `action` | its timed action (`nil` while the reload key plans a reload) |
+| `character`, `gun`, `handler` | the player, the weapon, its reload profile |
+| `hasChamber`, `chambered` | the gun has a chamber / a round is in it |
+| `boltOpen` | the action is open |
+| `jammed` | the gun is jammed |
+| `rounds`, `maxAmmo`, `freeSpace` | rounds in the magazine or tube (not the chamber), capacity, room left |
+| `magazineFed`, `hasMagazine` | the gun takes magazines / one is in it |
+| `aiming` | the player is aiming |
+| `bestClip`, `clipRounds` | the loaded clip or speedloader the gun would take, and its rounds (0 without one) |
+| `rackQueued` | `after` only: a rack already follows this step |
+
+### 5. Custom steps
+
+```lua
+ReloadRules.RegisterStep(name, { create = function(ctx) ... end, dropsRackAfter = false })
+```
+
+`create(ctx)` returns the step's timed action, a list of actions (for example an inventory transfer, then the action), or `nil` to skip the step.
+Rules only run on the five vanilla reload actions above, so a custom step should create one of them.
+Set `dropsRackAfter = true` when vanilla queues a rack after that action that the step does not want (`loadChamber` does this).
+
+### Complete example
+
+```lua
+local ReloadRules = require("WeaponSystems/ReloadAnim/Rules")
+local ReloadAnim = require("WeaponSystems/ReloadAnim/HandlerFactory")
+local SpeedLoader = require("WeaponSystems/Utils/SpeedLoader")
+
+SpeedLoader.RegisterWeapon("MyMod.Mosin", "MyMod.MosinStripperClip")
+
+ReloadRules.Register("cockBeforeInsert", {
+	before = {
+		insertMag = function(ctx)
+			if not ctx.boltOpen then
+				return { "open" }
+			end
+		end,
+	},
+})
+
+ReloadAnim.RegisterMultipleWeapons({
+	["MyMod.Mosin"] = {
+		animId = "my_bolt",
+		archetype = "boltactionnomag",
+		rules = "boltAction",
+		durations = { load = 1.1, rackOpen = 0.9, rack = 1.1, clip = 2.0 },
+	},
+	["MyMod.M870"] = {
+		animId = "my_pump",
+		archetype = "shotgun",
+		rules = "pumpAction",
+		durations = { load = 0.8, loadChamber = 1.0, rackOpen = 0.4, rack = 0.4 },
+	},
+	["MyMod.Sten"] = {
+		animId = "my_sten",
+		style = "none",
+		rules = { "cockBeforeInsert", "rackInTwoStrokes" },
+	},
+})
+```
+
 # Stats Factory - Short Explanation
 
 `StatsFactory` is the helper module used by other systems when you want to change weapon stats.

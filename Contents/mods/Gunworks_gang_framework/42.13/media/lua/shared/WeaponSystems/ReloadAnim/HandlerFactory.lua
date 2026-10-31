@@ -5,6 +5,7 @@
 
 ---@class GunworksReloadAnim
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
+local ReloadRules = require("WeaponSystems/ReloadAnim/Rules")
 
 ---@param options table|nil
 ---@param message string
@@ -48,12 +49,9 @@ function ReloadAnim.normalizeWeaponReloadOptions(fullType, options)
         -- cap for a cap-lock. Array of item fullTypes. Consumed server-authoritatively during
         -- the reload; see CustomSystemHooks loadAmmo. Opt-in: nil = vanilla single-item reload.
         consumes = options.consumes,
-        -- Two-stroke rack (open, then close) with durations.rackOpen / rackOpenAim; see ReloadAnim/RackPhases.lua.
-        -- openToLoad (with splitRack, non-magazine guns): the bolt always opens before rounds go in.
-        splitRack = options.splitRack,
-        openToLoad = options.openToLoad,
-        rackOpenDuration = type(options.durations) == "table" and options.durations.rackOpen or nil,
-        rackOpenAimDuration = type(options.durations) == "table" and options.durations.rackOpenAim or nil,
+        -- Reload rules (ReloadAnim/Rules.lua): the strokes and loads a reload is made of. The older
+        -- splitRack / openToLoad flags turn into rules here.
+        rules = ReloadRules.profileRules(options),
     }
 
     -- A non-magazine gun's off-hand prop (a shell/round/speedloader) reuses the same
@@ -74,6 +72,14 @@ function ReloadAnim.normalizeWeaponReloadOptions(fullType, options)
         normalized.rackDuration = durations.rack
         normalized.rackAimDuration = durations.rackAim
         normalized.vehicleDurations = durations.vehicle
+        -- Rule steps: the opening stroke (falls back to rack), a round into the chamber (falls back to
+        -- load) and a stripper clip / speedloader (falls back to load).
+        normalized.rackOpenDuration = durations.rackOpen
+        normalized.rackOpenAimDuration = durations.rackOpenAim
+        normalized.loadChamberDuration = durations.loadChamber
+        normalized.loadChamberAimDuration = durations.loadChamberAim
+        normalized.clipDuration = durations.clip
+        normalized.clipAimDuration = durations.clipAim
     end
 
     if type(options.sprite) == "table" then
@@ -794,8 +800,12 @@ end
 --- the gun's plain profile. Give each variant its own `whenParts` (or `id`); register the most
 --- specific one first, matchers are tried in registration order. `profile` may also be an ARRAY of
 --- profiles for one fullType (a base plus whenParts variants).
+---
+--- Reload rules: `rules` lists the rules the reload follows (rule names, preset names such as
+--- "rollerDelayed" / "boltAction" / "pumpAction", or rule tables); see ReloadAnim/Rules.lua. The older
+--- splitRack = true and openToLoad = true flags still work and stand for the matching rules.
 ---@param fullType string|nil  weapon fullType key, e.g. "MyPack.M249Rifle" (nil only if profile.matches or profile.whenParts is set)
----@param profile {animId:string,archetype:string|nil,style:string|nil,magItem:string|nil,prop:{item:string|nil}|nil,sprite:{loaded:string|nil,unloaded:string|nil}|nil,attachments:table|nil,durations:{load:number|nil,loadAim:number|nil,loadShort:number|nil,unload:number|nil,unloadAim:number|nil,rack:number|nil,rackAim:number|nil,vehicle:table|nil}|nil,shortRackAfterInsert:boolean|nil,matches:fun(gun:HandWeapon):boolean|nil,whenParts:string|string[]|table|nil,id:string|nil}|table[]
+---@param profile {animId:string,archetype:string|nil,style:string|nil,magItem:string|nil,prop:{item:string|nil}|nil,sprite:{loaded:string|nil,unloaded:string|nil}|nil,attachments:table|nil,durations:{load:number|nil,loadAim:number|nil,loadShort:number|nil,unload:number|nil,unloadAim:number|nil,rack:number|nil,rackAim:number|nil,rackOpen:number|nil,rackOpenAim:number|nil,loadChamber:number|nil,loadChamberAim:number|nil,clip:number|nil,clipAim:number|nil,vehicle:table|nil}|nil,shortRackAfterInsert:boolean|nil,rules:string|table|nil,matches:fun(gun:HandWeapon):boolean|nil,whenParts:string|string[]|table|nil,id:string|nil}|table[]
 ---@return nil
 function ReloadAnim.RegisterWeapon(fullType, profile)
     -- An array of profiles for one gun (base + whenParts variants). Each entry carries its own
@@ -847,10 +857,13 @@ function ReloadAnim.RegisterWeapon(fullType, profile)
         return
     end
 
-    handler.splitRack = normalized.splitRack
-    handler.openToLoad = normalized.openToLoad
+    handler.rules = normalized.rules
     handler.rackOpenDuration = normalized.rackOpenDuration
     handler.rackOpenAimDuration = normalized.rackOpenAimDuration
+    handler.loadChamberDuration = normalized.loadChamberDuration
+    handler.loadChamberAimDuration = normalized.loadChamberAimDuration
+    handler.clipDuration = normalized.clipDuration
+    handler.clipAimDuration = normalized.clipAimDuration
     ReloadAnim.registerHandler(handler)
 end
 
