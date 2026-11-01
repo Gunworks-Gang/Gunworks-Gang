@@ -1788,6 +1788,10 @@ What each step does with the rounds:
 - `loadChamber` puts one round from the inventory straight into the empty chamber.
 - `insertClip` loads the clip through the SpeedLoader system, so register the clip there.
 
+The bolt moves on the strokes' `rackStart` / `rackEnd` events, which only play on the owner's client.
+In multiplayer the server records the bolt itself when a stroke starts: `open` leaves it open, any other rack leaves it closed.
+So the bolt stays open while the rounds or magazines go in, instead of snapping shut on the server's next weapon sync.
+
 Optional durations in the profile's `durations` table, in seconds at reload speed 1:
 
 - `rackOpen`, `rackOpenAim`: the opening stroke. Falls back to `rack`.

@@ -71,6 +71,11 @@ function Animations.CallSyncHandWeaponFields(player, weapon, boltOpen)
     player:resetEquippedHandsModels()
 end
 
+function Animations.SetBoltStateServer(weapon, open)
+    Animations.CallAnimationFunction(weapon, open)
+    weapon:getModData().gunworksBoltOpen = open and true or nil
+end
+
 local function ApplyAttachmentState(weapon, attachmentState, key)
     if not weapon or not attachmentState then return end
     local stateValue = attachmentState[key]

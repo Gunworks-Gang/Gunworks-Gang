@@ -15,10 +15,13 @@
 -- clears it when it completes.
 --
 -- The bolt flag (gunworksBoltOpen) is recorded by the strokes' rackStart / rackEnd events (Animations.lua).
+-- Those events play only on the owner's client, so the multiplayer server records each stroke's bolt state
+-- itself when the stroke starts (recordStrokeOnServer).
 
 ---@class GunworksReloadAnim
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
 local Ammo = require("WeaponSystems/Utils/Ammo")
+local Animations = require("WeaponSystems/Utils/Animations")
 
 ReloadAnim.RACK_PHASE_VARIABLE = "GunworksRackPhase"
 ReloadAnim.RACK_PHASE_OPEN = "open"
@@ -40,6 +43,19 @@ local ROUND_EVENTS = {
 function ReloadAnim.isBoltOpen(gun)
     local modData = gun and gun:getModData()
     return modData ~= nil and modData[BOLT_OPEN_KEY] == true
+end
+
+--- Multiplayer server, when a rack starts: the bolt state the stroke leaves. Without it the server keeps a
+--- closed bolt, and its next weapon sync (a loaded round, an ejected magazine) closes the bolt on the client in
+--- the middle of the reload. An opening stroke leaves the bolt open; any other rack leaves it closed, recorded
+--- before the rack's own round syncs go out. Nothing is sent: the client's rackStart / rackEnd keep the timing.
+---@param action ISRackFirearm
+---@return nil
+function ReloadAnim.recordStrokeOnServer(action)
+    local open = action.gunworksRackPhase == ReloadAnim.RACK_PHASE_OPEN
+    if open ~= ReloadAnim.isBoltOpen(action.gun) then
+        Animations.SetBoltStateServer(action.gun, open)
+    end
 end
 
 --- Start the opening stroke: vanilla ISRackFirearm:start without its canRack gate (an empty gun can

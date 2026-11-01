@@ -88,8 +88,9 @@ ReloadRules.presets = {}
 ReloadRules.steps = {}
 
 -- Gun ID -> true while an opening stroke this client played has not been closed. The bolt flag in mod data
--- comes from the strokes' rackStart / rackEnd events on this client, and in multiplayer the next server sync
--- of the weapon replaces it, so the rules keep their own note of the strokes they ran.
+-- comes from the strokes' rackStart / rackEnd events on this client, and in multiplayer a server sync sent
+-- before the server recorded the stroke (RackPhases.recordStrokeOnServer) can replace it, so the rules keep
+-- their own note of the strokes they ran.
 ReloadRules.openedBolts = {}
 
 -- Gun ID -> true when vanilla's perform is about to queue a rack that the step just finished does not want.

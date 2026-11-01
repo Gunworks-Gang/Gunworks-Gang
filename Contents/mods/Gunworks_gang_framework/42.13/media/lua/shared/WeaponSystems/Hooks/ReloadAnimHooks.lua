@@ -412,6 +412,9 @@ function ISRackFirearm:serverStart()
         return prevRackServerStart(self)
     end
 
+    -- First, so every weapon sync from here on carries the bolt the stroke leaves (RackPhases.lua).
+    ReloadAnim.recordStrokeOnServer(self)
+
     -- The opening stroke only animates: no ejectSpentRounds or rackBullet, the closing stroke racks.
     if self.gunworksRackPhase == ReloadAnim.RACK_PHASE_OPEN then
         self:initVars()
