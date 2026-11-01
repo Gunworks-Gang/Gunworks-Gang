@@ -1946,7 +1946,7 @@ ReloadRules.RegisterStep("unloadRounds", {
 
 ### Complete example
 
-The rules Guns of Marz uses (`MarzWeapons/Registries/ReloadRules.lua`, which also registers the steps from section 4): HK roller-delayed guns, bolt actions with stripper clips, and pump shotguns that chamber a round first when empty.
+The rules Guns of Marz uses (`MarzWeapons/Registries/ReloadRules.lua`, which also registers the steps from section 4): HK roller-delayed guns, bolt actions with stripper clips, and pump shotguns and lever rifles that chamber a round first when empty and rack in two strokes.
 
 ```lua
 local ReloadRules = require("WeaponSystems/ReloadAnim/Rules")
@@ -2029,7 +2029,8 @@ ReloadRules.Register("chamberFirstWhenEmpty", {
 
 ReloadRules.RegisterPreset("rollerDelayed", { "openWhenChamberEmpty", "rackInTwoStrokes" })
 ReloadRules.RegisterPreset("boltAction", { "openToLoad", "stripperClips", "rackInTwoStrokes" })
-ReloadRules.RegisterPreset("pumpAction", { "chamberFirstWhenEmpty" })
+ReloadRules.RegisterPreset("pumpAction", { "chamberFirstWhenEmpty", "rackInTwoStrokes" })
+ReloadRules.RegisterPreset("leverAction", { "chamberFirstWhenEmpty", "rackInTwoStrokes" })
 
 SpeedLoader.RegisterWeapon("MyMod.Mosin", "MyMod.MosinStripperClip")
 
