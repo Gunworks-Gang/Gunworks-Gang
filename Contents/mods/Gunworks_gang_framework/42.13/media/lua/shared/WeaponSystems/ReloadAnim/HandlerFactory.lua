@@ -49,8 +49,7 @@ function ReloadAnim.normalizeWeaponReloadOptions(fullType, options)
         -- cap for a cap-lock. Array of item fullTypes. Consumed server-authoritatively during
         -- the reload; see CustomSystemHooks loadAmmo. Opt-in: nil = vanilla single-item reload.
         consumes = options.consumes,
-        -- Reload rules (ReloadAnim/Rules.lua): the strokes and loads a reload is made of. The older
-        -- splitRack / openToLoad flags turn into rules here.
+        -- Reload rules (ReloadAnim/Rules.lua): the strokes and loads a reload is made of.
         rules = ReloadRules.profileRules(options),
     }
 
@@ -72,10 +71,12 @@ function ReloadAnim.normalizeWeaponReloadOptions(fullType, options)
         normalized.rackDuration = durations.rack
         normalized.rackAimDuration = durations.rackAim
         normalized.vehicleDurations = durations.vehicle
-        -- Rule steps: the opening stroke (falls back to rack), a round into the chamber (falls back to
-        -- load) and a stripper clip / speedloader (falls back to load).
+        -- Rule steps: the opening and closing strokes (fall back to rack), a round into the chamber (falls
+        -- back to load) and a stripper clip / speedloader (falls back to load).
         normalized.rackOpenDuration = durations.rackOpen
         normalized.rackOpenAimDuration = durations.rackOpenAim
+        normalized.rackCloseDuration = durations.rackClose
+        normalized.rackCloseAimDuration = durations.rackCloseAim
         normalized.loadChamberDuration = durations.loadChamber
         normalized.loadChamberAimDuration = durations.loadChamberAim
         normalized.clipDuration = durations.clip
@@ -801,11 +802,10 @@ end
 --- specific one first, matchers are tried in registration order. `profile` may also be an ARRAY of
 --- profiles for one fullType (a base plus whenParts variants).
 ---
---- Reload rules: `rules` lists the rules the reload follows (rule names, preset names such as
---- "rollerDelayed" / "boltAction" / "pumpAction", or rule tables); see ReloadAnim/Rules.lua. The older
---- splitRack = true and openToLoad = true flags still work and stand for the matching rules.
+--- Reload rules: `rules` lists the rules the reload follows (rule names, preset names or rule tables,
+--- registered by the weapon pack); see ReloadAnim/Rules.lua.
 ---@param fullType string|nil  weapon fullType key, e.g. "MyPack.M249Rifle" (nil only if profile.matches or profile.whenParts is set)
----@param profile {animId:string,archetype:string|nil,style:string|nil,magItem:string|nil,prop:{item:string|nil}|nil,sprite:{loaded:string|nil,unloaded:string|nil}|nil,attachments:table|nil,durations:{load:number|nil,loadAim:number|nil,loadShort:number|nil,unload:number|nil,unloadAim:number|nil,rack:number|nil,rackAim:number|nil,rackOpen:number|nil,rackOpenAim:number|nil,loadChamber:number|nil,loadChamberAim:number|nil,clip:number|nil,clipAim:number|nil,vehicle:table|nil}|nil,shortRackAfterInsert:boolean|nil,rules:string|table|nil,matches:fun(gun:HandWeapon):boolean|nil,whenParts:string|string[]|table|nil,id:string|nil}|table[]
+---@param profile {animId:string,archetype:string|nil,style:string|nil,magItem:string|nil,prop:{item:string|nil}|nil,sprite:{loaded:string|nil,unloaded:string|nil}|nil,attachments:table|nil,durations:{load:number|nil,loadAim:number|nil,loadShort:number|nil,unload:number|nil,unloadAim:number|nil,rack:number|nil,rackAim:number|nil,rackOpen:number|nil,rackOpenAim:number|nil,rackClose:number|nil,rackCloseAim:number|nil,loadChamber:number|nil,loadChamberAim:number|nil,clip:number|nil,clipAim:number|nil,vehicle:table|nil}|nil,shortRackAfterInsert:boolean|nil,rules:string|table|nil,matches:fun(gun:HandWeapon):boolean|nil,whenParts:string|string[]|table|nil,id:string|nil}|table[]
 ---@return nil
 function ReloadAnim.RegisterWeapon(fullType, profile)
     -- An array of profiles for one gun (base + whenParts variants). Each entry carries its own
@@ -860,6 +860,8 @@ function ReloadAnim.RegisterWeapon(fullType, profile)
     handler.rules = normalized.rules
     handler.rackOpenDuration = normalized.rackOpenDuration
     handler.rackOpenAimDuration = normalized.rackOpenAimDuration
+    handler.rackCloseDuration = normalized.rackCloseDuration
+    handler.rackCloseAimDuration = normalized.rackCloseAimDuration
     handler.loadChamberDuration = normalized.loadChamberDuration
     handler.loadChamberAimDuration = normalized.loadChamberAimDuration
     handler.clipDuration = normalized.clipDuration

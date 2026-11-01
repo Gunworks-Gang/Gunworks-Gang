@@ -83,7 +83,7 @@ function ReloadAnim.getProfileDuration(action, handler, stage)
         else
             seconds = handler[aimStage .. "Duration"] or seconds
         end
-    elseif (stage == "rack" or stage == "rackOpen") and character and character:isAiming() then
+    elseif (stage == "rack" or stage == "rackOpen" or stage == "rackClose") and character and character:isAiming() then
         local aimStage = stage .. "Aim"
         if vehicle then
             seconds = vehicle[aimStage] or vehicle[stage] or handler[aimStage .. "Duration"] or seconds

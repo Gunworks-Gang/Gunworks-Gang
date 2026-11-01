@@ -421,7 +421,12 @@ function ISRackFirearm:serverStart()
         return
     end
 
-    local durationMs = ReloadAnim.getActionDurationMs(self, ReloadAnim.getProfileDuration(self, handler, "rack"), 1200)
+    -- A closing stroke has its own clip when the gun also keeps a full one-stroke rack (pumps, levers).
+    local rackSeconds = ReloadAnim.getProfileDuration(self, handler, "rack")
+    if self.gunworksRackPhase == ReloadAnim.RACK_PHASE_CLOSE then
+        rackSeconds = ReloadAnim.getProfileDuration(self, handler, "rackClose") or rackSeconds
+    end
+    local durationMs = ReloadAnim.getActionDurationMs(self, rackSeconds, 1200)
 
     -- A closing stroke over a round loaded by hand leaves the rounds alone: no ejectSpentRounds (Hot Brass
     -- ejects the chambered round there) and no rackBullet.
