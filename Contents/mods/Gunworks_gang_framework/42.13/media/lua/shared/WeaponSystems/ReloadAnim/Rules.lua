@@ -465,16 +465,42 @@ local function getQueue(character)
     return ISTimedActionQueue.getTimedActionQueue(character)
 end
 
--- Put `actions` at the head of the queue, in place of `action` or in front of it, and begin the new head.
+-- Queue `action` right behind `anchor` through ISTimedActionQueue.addAfter, the way vanilla queues its own
+-- follow-up racks, so a mod that filters follow-ups still applies: Hot Brass manual racking refuses every
+-- ISRackFirearm queued this way, leaving the player to rack by hand. True when the action went in (checked in
+-- the queue, as not every addAfter wrapper passes vanilla's return value on).
+---@param queue table
+---@param anchor table
+---@param action table
+---@return boolean
+local function queueAfter(queue, anchor, action)
+    ISTimedActionQueue.addAfter(anchor, action)
+    return queue:indexOf(action) ~= -1
+end
+
+-- Begin `actions` at the head of the queue, in front of `action` (keepAction, the `before` steps: what the
+-- action needs first, always queued) or in its place (`instead`). In place, the first step takes the action's
+-- spot and the rest follow it as follow-ups (queueAfter), so with Hot Brass manual racking a rack that becomes
+-- open + close only opens, and the next rack closes.
 ---@param queue table
 ---@param actions table[]
 ---@param keepAction boolean
 local function replaceHead(queue, actions, keepAction)
-    if not keepAction then
+    if keepAction then
+        for i = #actions, 1, -1 do
+            table.insert(queue.queue, 1, actions[i])
+        end
+    else
         table.remove(queue.queue, 1)
-    end
-    for i = #actions, 1, -1 do
-        table.insert(queue.queue, 1, actions[i])
+        if actions[1] then
+            table.insert(queue.queue, 1, actions[1])
+            local anchor = actions[1]
+            for i = 2, #actions do
+                if queueAfter(queue, anchor, actions[i]) then
+                    anchor = actions[i]
+                end
+            end
+        end
     end
     local head = queue.queue[1]
     queue.current = head
@@ -546,7 +572,8 @@ end
 
 --- An action of a gun with rules has finished (perform): note the stroke, then apply `after`. Runs before
 --- vanilla's perform, which hands the queue to the next action. The steps go behind the rack vanilla
---- queues after a load, where a client's vanilla perform puts that rack too.
+--- queues after a load, where a client's vanilla perform puts that rack too, and are queued as follow-ups
+--- (queueAfter), so Hot Brass manual racking drops an automatic closing stroke like it drops vanilla's rack.
 ---@param action table
 ---@return nil
 function ReloadRules.afterAction(action)
@@ -584,9 +611,11 @@ function ReloadRules.afterAction(action)
     end
 
     local actions = ReloadRules.createSteps(after, ctx, action)
-    local at = rackBehind and index + 1 or index
+    local anchor = rackBehind and behind or action
     for i = 1, #actions do
-        table.insert(queue.queue, at + i, actions[i])
+        if queueAfter(queue, anchor, actions[i]) then
+            anchor = actions[i]
+        end
     end
 end
 
