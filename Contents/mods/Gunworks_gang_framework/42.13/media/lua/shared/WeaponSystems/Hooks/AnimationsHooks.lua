@@ -88,7 +88,7 @@ local ISUnloadBulletsFromFirearm_animEvent = ISUnloadBulletsFromFirearm.animEven
 function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
     if event == "openWeapon" then
         local open = parameter == "open"
-        return Animations.CallAnimate(self.character, self.gun, open)
+        Animations.CallAnimate(self.character, self.gun, open)
     end
     ISUnloadBulletsFromFirearm_animEvent(self, event, parameter)
 end

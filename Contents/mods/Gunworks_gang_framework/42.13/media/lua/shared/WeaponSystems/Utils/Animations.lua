@@ -54,10 +54,15 @@ function Animations.IsFiringRefresh()
     return firingRefresh
 end
 
+local function setBoltFlag(weapon, open)
+    if not Animations.WeaponsWithAnimatedParts[weapon:getFullType()] then return end
+    weapon:getModData().gunworksBoltOpen = open and true or nil
+end
+
 ---@param boltOpen boolean|nil  true/false sets modData.gunworksBoltOpen to true/nil; nil leaves it unchanged
 function Animations.CallSyncHandWeaponFields(player, weapon, boltOpen)
     if boltOpen ~= nil then
-        weapon:getModData().gunworksBoltOpen = boltOpen and true or nil
+        setBoltFlag(weapon, boltOpen)
     end
     syncHandWeaponFields(player, weapon)
     player:setPrimaryHandItem(nil)
@@ -73,7 +78,7 @@ end
 
 function Animations.SetBoltStateServer(weapon, open)
     Animations.CallAnimationFunction(weapon, open)
-    weapon:getModData().gunworksBoltOpen = open and true or nil
+    setBoltFlag(weapon, open)
 end
 
 local function ApplyAttachmentState(weapon, attachmentState, key)
