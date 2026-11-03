@@ -382,6 +382,11 @@ function ISRackFirearm:start()
         ReloadAnim.startOpeningStroke(self)
         return
     end
+    if handler and ReloadAnim.closesWithoutChamber(self) then
+        self.gunworksKeepChamber = true
+        ReloadAnim.startOpeningStroke(self)
+        return
+    end
     if handler and ReloadAnim.closesOverHandRound(self) then
         self.gunworksKeepChamber = true
     end
@@ -431,9 +436,9 @@ function ISRackFirearm:serverStart()
     end
     local durationMs = ReloadAnim.getActionDurationMs(self, rackSeconds, 1200)
 
-    -- A closing stroke over a round loaded by hand leaves the rounds alone: no ejectSpentRounds (Hot Brass
-    -- ejects the chambered round there) and no rackBullet.
-    if ReloadAnim.closesOverHandRound(self) then
+    -- A closing stroke over a round loaded by hand, or of a gun without a chamber, leaves the rounds alone: no
+    -- ejectSpentRounds (Hot Brass ejects the chambered round there, or a round of the cylinder) and no rackBullet.
+    if ReloadAnim.closesOverHandRound(self) or ReloadAnim.closesWithoutChamber(self) then
         self.gunworksKeepChamber = true
         self:initVars()
         emulateAnimEventOnce(self.netAction, durationMs, "rackingFinished", nil)

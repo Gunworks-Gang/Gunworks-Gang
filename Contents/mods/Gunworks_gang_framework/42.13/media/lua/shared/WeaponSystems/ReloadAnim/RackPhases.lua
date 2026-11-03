@@ -54,12 +54,23 @@ end
 function ReloadAnim.recordStrokeOnServer(action)
     local open = action.gunworksRackPhase == ReloadAnim.RACK_PHASE_OPEN
     if open ~= ReloadAnim.isBoltOpen(action.gun) then
-        Animations.SetBoltStateServer(action.gun, open)
+        Animations.SetBoltStateServer(action.gun, open, "reload")
     end
 end
 
---- Start the opening stroke: vanilla ISRackFirearm:start without its canRack gate (an empty gun can
---- still lock its bolt back) and without ejectSpentRounds (Hot Brass chambers a round there).
+--- Does this closing stroke only close the action? A gun without a chamber (revolver) gets its rounds from the
+--- load, so its closing stroke handles none: no ejectSpentRounds or rackBullet, which on such a gun take a round
+--- out of the cylinder. Its rack complete closes the action visual (AnimationsHooks).
+---@param action ISRackFirearm
+---@nodiscard
+---@return boolean
+function ReloadAnim.closesWithoutChamber(action)
+    return action.gunworksRackPhase == ReloadAnim.RACK_PHASE_CLOSE and not action.gun:haveChamber()
+end
+
+--- Start a stroke that handles no rounds: the opening stroke, or the closing stroke of a gun without a chamber.
+--- Vanilla ISRackFirearm:start without its canRack gate (an empty gun can still lock its bolt back) and without
+--- ejectSpentRounds (Hot Brass chambers a round there).
 ---@param action ISRackFirearm
 ---@return nil
 function ReloadAnim.startOpeningStroke(action)

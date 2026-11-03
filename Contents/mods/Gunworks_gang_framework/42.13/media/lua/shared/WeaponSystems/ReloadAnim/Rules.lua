@@ -239,6 +239,15 @@ function ReloadRules.hasRules(handler)
     return handler ~= nil and type(handler.rules) == "table" and #handler.rules > 0
 end
 
+--- Does this gun reload by rules? Then its opening and closing strokes own the action visual, and a load or an
+--- unload leaves the action as it is (AnimationsHooks).
+---@param gun HandWeapon
+---@nodiscard
+---@return boolean
+function ReloadRules.gunHasRules(gun)
+    return ReloadRules.hasRules(ReloadAnim.GetHandlerForGun(gun))
+end
+
 --- The handler's rules in order, presets expanded. Names resolve when asked, so a profile may name a rule
 --- that another file registers later.
 ---@param handler GunworksReloadAnimHandler|nil

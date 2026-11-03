@@ -27,6 +27,10 @@ end
 ---                        for weapons whose sprite is resolved dynamically (e.g. from installed parts).
 ---                     Optional: `cycleTicks` (number of ticks at 60 ticks/second) controls how long the action stays racked open before auto-closing. Defaults to Animations.DEFAULT_CYCLE_TICKS (10, i.e. 10/60 seconds).
 ---                     Optional: `force` bypasses the checks and trigger the animation on firing (perfect for revolver type weapons)
+---                     Optional: `reload` = a table shaped like the entry (SingleAttachment / MultipleAttachment / ...) used by
+---                        the reload, rack and unload events instead of the entry. Firing keeps the entry's own parts, so a
+---                        revolver can spin its cylinder when it fires and swing it out when it reloads. Without `reload`,
+---                        every event uses the entry.
 function Animations.RegisterWeaponWithAnimatedParts(fullType, entry)
     Animations.WeaponsWithAnimatedParts[fullType] = entry
 end
@@ -76,8 +80,8 @@ function Animations.CallSyncHandWeaponFields(player, weapon, boltOpen)
     player:resetEquippedHandsModels()
 end
 
-function Animations.SetBoltStateServer(weapon, open)
-    Animations.CallAnimationFunction(weapon, open)
+function Animations.SetBoltStateServer(weapon, open, route)
+    Animations.CallAnimationFunction(weapon, open, route)
     setBoltFlag(weapon, open)
 end
 
@@ -108,9 +112,13 @@ local function ApplyMultipleAttachmentState(weapon, attachmentState, key)
     ApplyAttachmentState(weapon, selectedVariant, key)
 end
 
-function Animations.CallAnimationFunction(weapon, open)
+---@param route string|nil  Animations.ROUTE_RELOAD to use the entry's `reload` parts when it has them
+function Animations.CallAnimationFunction(weapon, open, route)
     local entry = Animations.WeaponsWithAnimatedParts[weapon:getFullType()]
     if not entry then return end
+    if route and entry.reload then
+        entry = entry.reload
+    end
 
     local key = open and "open" or "locked"
 
@@ -142,9 +150,10 @@ function Animations.CallAnimationFunction(weapon, open)
 end
 
 ---@param keepBoltState boolean|nil  true leaves gunworksBoltOpen unchanged (firing-cycle flicks, which canShoot must not see as an open bolt)
-function Animations.CallAnimate(player, weapon, open, keepBoltState)
+---@param route string|nil  see CallAnimationFunction
+function Animations.CallAnimate(player, weapon, open, keepBoltState, route)
     firingRefresh = true
-    Animations.CallAnimationFunction(weapon, open)
+    Animations.CallAnimationFunction(weapon, open, route)
     local boltOpen = nil
     if not keepBoltState then
         boltOpen = open and true or false
@@ -205,9 +214,9 @@ end
 function Animations.rackAction(player, weapon, starting)
     if not weapon or not player then return end
     if starting then
-        Animations.CallAnimate(player, weapon, true)
+        Animations.CallAnimate(player, weapon, true, nil, "reload")
     else
-        Animations.CallAnimate(player, weapon, false)
+        Animations.CallAnimate(player, weapon, false, nil, "reload")
     end
 end
 
