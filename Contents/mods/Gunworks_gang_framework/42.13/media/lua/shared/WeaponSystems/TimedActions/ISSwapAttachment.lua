@@ -2,6 +2,7 @@ require("TimedActions/ISBaseTimedAction")
 
 local DynamicAttachment = require("WeaponSystems/Utils/DynamicAttachment")
 local Animations = require("WeaponSystems/Utils/Animations")
+local StatsSync = require("WeaponSystems/Utils/StatsSync")
 
 -------------------------------------------------
 -- Dynamic Attachment Swap Timed Action
@@ -32,6 +33,7 @@ end
 
 function ISSwapAttachment:complete()
     DynamicAttachment.SwapAttachment(self.weapon)
+    StatsSync.SendToClients(self.character, self.weapon)
     Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     return true
 end

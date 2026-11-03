@@ -2,6 +2,7 @@ require("TimedActions/ISUpgradeWeapon")
 require("TimedActions/ISRemoveWeaponUpgrade")
 
 local StatsFactory            = require("WeaponSystems/Utils/StatsFactory")
+local StatsSync               = require("WeaponSystems/Utils/StatsSync")
 local Underbarrel             = require("WeaponSystems/Utils/Underbarrel")
 local RequiredAttachment      = require("WeaponSystems/Utils/RequiredAttachment")
 local UniversalAttachment     = require("WeaponSystems/Utils/UniversalAttachment")
@@ -94,6 +95,7 @@ function ISUpgradeWeapon:complete()
 
     if self.weapon and instanceof(self.weapon, "HandWeapon") then
         StatsFactory.ReapplyAllModifiers(self.weapon)
+        StatsSync.SendToClients(self.character, self.weapon)
     end
 
     return true
@@ -125,6 +127,7 @@ function ISRemoveWeaponUpgrade:complete()
                 Underbarrel.HandleAttachmentRemoval(self.weapon, removedPart, self.character)
             end
             StatsFactory.ReapplyAllModifiers(self.weapon)
+            StatsSync.SendToClients(self.character, self.weapon)
         end
 
         return true
@@ -137,6 +140,7 @@ function ISRemoveWeaponUpgrade:complete()
             Underbarrel.HandleAttachmentRemoval(self.weapon, removedPart, self.character)
         end
         StatsFactory.ReapplyAllModifiers(self.weapon)
+        StatsSync.SendToClients(self.character, self.weapon)
     end
 
     return true
