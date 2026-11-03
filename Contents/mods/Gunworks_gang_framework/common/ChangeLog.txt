@@ -53,3 +53,12 @@ B42.20.3:
 [ 29/October/2026 ]
 [*] new split rack system to allow custom animations and more control for racking
 [ ------ ]
+
+[ 03/November/2026 ]
+[*] Website for API references released
+[*] New endpoint to create rules for custom events on how to reload weaponParts
+[*] Custom Actions for reloads now sync in MP
+[*] Remove additonal chance to damage bayonets when attacking zombies and players
+[*] New Bipod System, bipods can now be placed on surfaces
+[*] Reload events now properly sync in MP
+[ ------ ]
