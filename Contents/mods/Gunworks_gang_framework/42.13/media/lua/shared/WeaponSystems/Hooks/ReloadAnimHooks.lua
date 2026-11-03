@@ -420,6 +420,11 @@ function ISRackFirearm:serverStart()
     -- First, so every weapon sync from here on carries the bolt the stroke leaves (RackPhases.lua).
     ReloadAnim.recordStrokeOnServer(self)
 
+    -- Read the hand-loaded mark and clear it here, not in complete: the owner's client often starts its next
+    -- action (the rest of the load) first, and the server then stops this stroke without completing it.
+    local keepsRounds = ReloadAnim.closesOverHandRound(self) or ReloadAnim.closesWithoutChamber(self)
+    ReloadAnim.setHandChambered(self.gun, false)
+
     -- The opening stroke only animates: no ejectSpentRounds or rackBullet, the closing stroke racks.
     if self.gunworksRackPhase == ReloadAnim.RACK_PHASE_OPEN then
         self:initVars()
@@ -438,7 +443,7 @@ function ISRackFirearm:serverStart()
 
     -- A closing stroke over a round loaded by hand, or of a gun without a chamber, leaves the rounds alone: no
     -- ejectSpentRounds (Hot Brass ejects the chambered round there, or a round of the cylinder) and no rackBullet.
-    if ReloadAnim.closesOverHandRound(self) or ReloadAnim.closesWithoutChamber(self) then
+    if keepsRounds then
         self.gunworksKeepChamber = true
         self:initVars()
         emulateAnimEventOnce(self.netAction, durationMs, "rackingFinished", nil)
@@ -461,7 +466,8 @@ function ISRackFirearm:animEvent(event, parameter)
     return prevRackAnimEvent(self, event, parameter)
 end
 
--- Server and singleplayer: once a rack completes, the chambered round is no longer one loaded by hand.
+-- Singleplayer: once a rack completes, the chambered round is no longer one loaded by hand. The server already
+-- cleared the mark in serverStart.
 local prevRackComplete = ISRackFirearm.complete
 function ISRackFirearm:complete()
     if not isClient() and ReloadAnim.getHandlerForAction(self) then

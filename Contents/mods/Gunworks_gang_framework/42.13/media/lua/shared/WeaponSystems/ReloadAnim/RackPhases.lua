@@ -12,7 +12,8 @@
 -- The exception is a round put straight into the open chamber (the loadChamber step, used by pump actions
 -- loaded from empty). The gun is marked, and the closing stroke that follows closes over that round and
 -- leaves the rounds alone. The mark lives where rounds are handled (server, singleplayer) and any rack
--- clears it when it completes.
+-- clears it: in singleplayer when it completes, on the server when it starts (the server can stop a
+-- stroke without completing it, when the client has already moved on to its next action).
 --
 -- The bolt flag (gunworksBoltOpen) is recorded by the strokes' rackStart / rackEnd events (Animations.lua).
 -- Those events play only on the owner's client, so the multiplayer server records each stroke's bolt state
