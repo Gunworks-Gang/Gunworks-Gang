@@ -58,6 +58,14 @@ function ReloadAnim.captureReloadAiming(action)
     return action.gunworksReloadAiming
 end
 
+-- Stages whose aim variant follows the aim state captured when the load / unload starts.
+local RELOAD_AIM_STAGES = {
+    load = true,
+    unload = true,
+    loadChamber = true,
+    clip = true,
+}
+
 --- Choose the duration for the animation variant used by this action. Fields left
 --- unset retain the profile's ordinary timing, then the caller's existing fallback.
 ---@param action ISBaseTimedAction
@@ -68,14 +76,14 @@ function ReloadAnim.getProfileDuration(action, handler, stage)
     local character = action.character
     local vehicle = character and character:getVehicle() and handler.vehicleDurations
     local seconds = vehicle and vehicle[stage] or handler[stage .. "Duration"]
-    if (stage == "load" or stage == "unload") and ReloadAnim.captureReloadAiming(action) then
+    if RELOAD_AIM_STAGES[stage] and ReloadAnim.captureReloadAiming(action) then
         local aimStage = stage .. "Aim"
         if vehicle then
             seconds = vehicle[aimStage] or vehicle[stage] or handler[aimStage .. "Duration"] or seconds
         else
             seconds = handler[aimStage .. "Duration"] or seconds
         end
-    elseif (stage == "rack" or stage == "rackOpen") and character and character:isAiming() then
+    elseif (stage == "rack" or stage == "rackOpen" or stage == "rackClose") and character and character:isAiming() then
         local aimStage = stage .. "Aim"
         if vehicle then
             seconds = vehicle[aimStage] or vehicle[stage] or handler[aimStage .. "Duration"] or seconds

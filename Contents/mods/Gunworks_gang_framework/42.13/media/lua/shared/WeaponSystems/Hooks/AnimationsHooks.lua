@@ -6,6 +6,7 @@ require("TimedActions/ISEjectMagazine")
 
 local Animations = require("WeaponSystems/Utils/Animations")
 local Magazine = require("WeaponSystems/Utils/Magazine")
+local ReloadRules = require("WeaponSystems/ReloadAnim/Rules")
 
 --------------------------------------------------------------------------
 --- ISReloadWeaponAction
@@ -13,8 +14,10 @@ local Magazine = require("WeaponSystems/Utils/Magazine")
 local ISReloadWeaponAction_animEvent = ISReloadWeaponAction.animEvent
 function ISReloadWeaponAction:animEvent(event, parameter)
     if event == "openWeapon" then
-        local open = parameter == "open"
-        Animations.CallAnimate(self.character, self.gun, open)
+        Animations.CallAnimate(self.character, self.gun, true, nil, "reload")
+    end
+    if event == "closeWeapon" then
+        Animations.CallAnimate(self.character, self.gun, false, nil, "reload")
     end
     ISReloadWeaponAction_animEvent(self, event, parameter)
 end
@@ -24,21 +27,17 @@ function ISReloadWeaponAction:complete()
     if Animations.IsWeaponWithCustomStates(self.gun:getFullType()) then
         Animations.CheckStates(self.gun)
     end
-    Animations.CallAnimate(self.character, self.gun, false)
+    if not self.gun:haveChamber() and not ReloadRules.gunHasRules(self.gun) then
+        Animations.CallAnimate(self.character, self.gun, false, nil, "reload")
+    end
     return ISReloadWeaponAction_complete(self)
-end
-
-local ISReloadWeaponAction_stop = ISReloadWeaponAction.stop
-function ISReloadWeaponAction:stop()
-    Animations.CallAnimate(self.character, self.gun, false)
-    return ISReloadWeaponAction_stop(self)
 end
 
 -- I really want my revolvers clicking
 local ISReloadWeaponAction_canShoot = ISReloadWeaponAction.canShoot
 ISReloadWeaponAction.canShoot = function(player, weapon)
     if weapon:getFireMode() == "Safe" then return false end
-    if weapon:getModData().gunworksBoltOpen == true then return end
+    if weapon:getModData().gunworksBoltOpen == true then return false end
     Animations.lockActionOpen(player, weapon)
     return ISReloadWeaponAction_canShoot(player, weapon)
 end
@@ -55,7 +54,6 @@ ISReloadWeaponAction.onShoot = function(player, weapon)
 end
 Events.OnWeaponSwingHitPoint.Add(ISReloadWeaponAction.onShoot)
 
-
 --------------------------------------------------------------------------
 --- ISRackFirearm
 --------------------------------------------------------------------------
@@ -68,8 +66,10 @@ function ISRackFirearm:animEvent(event, parameter)
         Animations.rackAction(self.character, self.gun, false)
     end
     if event == "openWeapon" then
-        local open = parameter == "open"
-        Animations.CallAnimate(self.character, self.gun, open)
+        Animations.CallAnimate(self.character, self.gun, true, nil, "reload")
+    end
+    if event == "closeWeapon" then
+        Animations.CallAnimate(self.character, self.gun, false, nil, "reload")
     end
     ISRackFirearm_animEvent(self, event, parameter)
 end
@@ -79,14 +79,10 @@ function ISRackFirearm:complete()
     if Animations.IsWeaponWithCustomStates(self.gun:getFullType()) then
         Animations.CheckStates(self.gun)
     end
-    Animations.CallAnimate(self.character, self.gun, false)
+    if not self.gun:haveChamber() and self.gunworksRackPhase ~= "open" then
+        Animations.CallAnimate(self.character, self.gun, false, nil, "reload")
+    end
     return ISRackFirearm_complete(self)
-end
-
-local ISRackFirearm_stop = ISRackFirearm.stop
-function ISRackFirearm:stop()
-    Animations.CallAnimate(self.character, self.gun, false)
-    return ISRackFirearm_stop(self)
 end
 
 --------------------------------------------------------------------------
@@ -95,28 +91,25 @@ end
 local ISUnloadBulletsFromFirearm_animEvent = ISUnloadBulletsFromFirearm.animEvent
 function ISUnloadBulletsFromFirearm:animEvent(event, parameter)
     if event == "openWeapon" then
-        local open = parameter == "open"
-        return Animations.CallAnimate(self.character, self.gun, open)
+        Animations.CallAnimate(self.character, self.gun, true, nil, "reload")
+    end
+    if event == "closeWeapon" then
+        Animations.CallAnimate(self.character, self.gun, false, nil, "reload")
     end
     ISUnloadBulletsFromFirearm_animEvent(self, event, parameter)
 end
 
 local ISUnloadBulletsFromFirearm_complete = ISUnloadBulletsFromFirearm.complete
 function ISUnloadBulletsFromFirearm:complete()
-    Animations.CallAnimate(self.character, self.gun, false)
+    if not self.gun:haveChamber() and not ReloadRules.gunHasRules(self.gun) then
+        Animations.CallAnimate(self.character, self.gun, false, nil, "reload")
+    end
     return ISUnloadBulletsFromFirearm_complete(self)
-end
-
-local ISUnloadBulletsFromFirearm_stop = ISUnloadBulletsFromFirearm.stop
-function ISUnloadBulletsFromFirearm:stop()
-    Animations.CallAnimate(self.character, self.gun, false)
-    return ISUnloadBulletsFromFirearm_stop(self)
 end
 
 ---------------------------------------------------------------
 -- ISInsertMagazine hooks
 ---------------------------------------------------------------
-
 local ISInsertMagazine_start = ISInsertMagazine.start
 function ISInsertMagazine:start()
     self._actualMagType = self.magazine and self.magazine:getFullType() or nil
@@ -152,7 +145,6 @@ end
 ---------------------------------------------------------------
 -- ISEjectMagazine hooks
 ---------------------------------------------------------------
-
 local ISEjectMagazine_start = ISEjectMagazine.start
 function ISEjectMagazine:start()
     local clipPart = self.gun and self.gun:getWeaponPart("Clip")

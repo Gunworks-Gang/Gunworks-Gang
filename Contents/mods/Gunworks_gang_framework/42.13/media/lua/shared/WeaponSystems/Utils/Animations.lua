@@ -27,6 +27,10 @@ end
 ---                        for weapons whose sprite is resolved dynamically (e.g. from installed parts).
 ---                     Optional: `cycleTicks` (number of ticks at 60 ticks/second) controls how long the action stays racked open before auto-closing. Defaults to Animations.DEFAULT_CYCLE_TICKS (10, i.e. 10/60 seconds).
 ---                     Optional: `force` bypasses the checks and trigger the animation on firing (perfect for revolver type weapons)
+---                     Optional: `reload` = a table shaped like the entry (SingleAttachment / MultipleAttachment / ...) used by
+---                        the reload, rack and unload events instead of the entry. Firing keeps the entry's own parts, so a
+---                        revolver can spin its cylinder when it fires and swing it out when it reloads. Without `reload`,
+---                        every event uses the entry.
 function Animations.RegisterWeaponWithAnimatedParts(fullType, entry)
     Animations.WeaponsWithAnimatedParts[fullType] = entry
 end
@@ -54,7 +58,16 @@ function Animations.IsFiringRefresh()
     return firingRefresh
 end
 
-function Animations.CallSyncHandWeaponFields(player, weapon)
+local function setBoltFlag(weapon, open)
+    if not Animations.WeaponsWithAnimatedParts[weapon:getFullType()] then return end
+    weapon:getModData().gunworksBoltOpen = open and true or nil
+end
+
+---@param boltOpen boolean|nil  true/false sets modData.gunworksBoltOpen to true/nil; nil leaves it unchanged
+function Animations.CallSyncHandWeaponFields(player, weapon, boltOpen)
+    if boltOpen ~= nil then
+        setBoltFlag(weapon, boltOpen)
+    end
     syncHandWeaponFields(player, weapon)
     player:setPrimaryHandItem(nil)
     if weapon:isTwoHandWeapon() then
@@ -65,6 +78,11 @@ function Animations.CallSyncHandWeaponFields(player, weapon)
         player:setSecondaryHandItem(weapon)
     end
     player:resetEquippedHandsModels()
+end
+
+function Animations.SetBoltStateServer(weapon, open, route)
+    Animations.CallAnimationFunction(weapon, open, route)
+    setBoltFlag(weapon, open)
 end
 
 local function ApplyAttachmentState(weapon, attachmentState, key)
@@ -94,9 +112,13 @@ local function ApplyMultipleAttachmentState(weapon, attachmentState, key)
     ApplyAttachmentState(weapon, selectedVariant, key)
 end
 
-function Animations.CallAnimationFunction(weapon, open)
+---@param route string|nil  Animations.ROUTE_RELOAD to use the entry's `reload` parts when it has them
+function Animations.CallAnimationFunction(weapon, open, route)
     local entry = Animations.WeaponsWithAnimatedParts[weapon:getFullType()]
     if not entry then return end
+    if route and entry.reload then
+        entry = entry.reload
+    end
 
     local key = open and "open" or "locked"
 
@@ -127,10 +149,16 @@ function Animations.CallAnimationFunction(weapon, open)
     end
 end
 
-function Animations.CallAnimate(player, weapon, open)
+---@param keepBoltState boolean|nil  true leaves gunworksBoltOpen unchanged (firing-cycle flicks, which canShoot must not see as an open bolt)
+---@param route string|nil  see CallAnimationFunction
+function Animations.CallAnimate(player, weapon, open, keepBoltState, route)
     firingRefresh = true
-    Animations.CallAnimationFunction(weapon, open)
-    Animations.CallSyncHandWeaponFields(player, weapon)
+    Animations.CallAnimationFunction(weapon, open, route)
+    local boltOpen = nil
+    if not keepBoltState then
+        boltOpen = open and true or false
+    end
+    Animations.CallSyncHandWeaponFields(player, weapon, boltOpen)
     firingRefresh = false
 end
 
@@ -158,12 +186,12 @@ function Animations.releaseActionLock(player, weapon)
     if not weapon or not player then return end
     if weapon:isJammed() or not weapon:haveChamber() then return end
     local open = not weapon:isRoundChambered()
-    Animations.CallAnimate(player, weapon, open)
+    Animations.CallAnimate(player, weapon, open, true)
 end
 
 function Animations.releaseActionLockForce(player, weapon)
     if not weapon or not player then return end
-    Animations.CallAnimate(player, weapon, false)
+    Animations.CallAnimate(player, weapon, false, true)
 end
 
 function Animations.lockActionOpen(player, weapon)
@@ -175,7 +203,7 @@ function Animations.lockActionOpen(player, weapon)
         if weapon:isRackAfterShoot() or weapon:isJammed() or not weapon:haveChamber() or not weapon:isRoundChambered() then return end
     end
 
-    Animations.CallAnimate(player, weapon, true)
+    Animations.CallAnimate(player, weapon, true, true)
 
     local seconds = GetCycleSeconds(weapon:getFullType())
     local releaseFunc = forced and Animations.releaseActionLockForce or Animations.releaseActionLock
@@ -186,9 +214,9 @@ end
 function Animations.rackAction(player, weapon, starting)
     if not weapon or not player then return end
     if starting then
-        Animations.CallAnimate(player, weapon, true)
+        Animations.CallAnimate(player, weapon, true, nil, "reload")
     else
-        Animations.CallAnimate(player, weapon, false)
+        Animations.CallAnimate(player, weapon, false, nil, "reload")
     end
 end
 

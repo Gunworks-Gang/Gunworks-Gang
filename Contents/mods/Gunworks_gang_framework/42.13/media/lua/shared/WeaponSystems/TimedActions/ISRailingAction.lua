@@ -3,6 +3,7 @@ require("TimedActions/ISBaseTimedAction")
 local Railing     = require("WeaponSystems/Utils/Railing")
 local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 local Animations  = require("WeaponSystems/Utils/Animations")
+local StatsSync   = require("WeaponSystems/Utils/StatsSync")
 
 -------------------------------------------------
 -- Mount Accessory via Railing – Timed Action
@@ -40,6 +41,7 @@ end
 
 function ISRailingMount:complete()
     Railing.MountAccessory(self.weapon, self.accessoryItem, self.character)
+    StatsSync.SendToClients(self.character, self.weapon)
     Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     sendRemoveItemFromContainer(self.character:getInventory(), self.accessoryItem)
     return true
@@ -90,6 +92,7 @@ end
 function ISRailingUnmount:complete()
     Underbarrel.HandleAttachmentRemoval(self.weapon, self.accessoryPart, self.character)
     local success, returnedItem = Railing.UnmountAccessory(self.weapon, self.accessoryPart, self.character)
+    StatsSync.SendToClients(self.character, self.weapon)
     Animations.CallSyncHandWeaponFields(self.character, self.weapon)
     if returnedItem then
         sendAddItemToContainer(self.character:getInventory(), returnedItem)

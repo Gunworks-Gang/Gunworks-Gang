@@ -38,10 +38,15 @@ local table_remove = table.remove
 ---@field matches fun(gun:HandWeapon):boolean|nil
 ---@field autoRack boolean|nil
 ---@field consumes string[]|nil
----@field splitRack boolean|nil
----@field openToLoad boolean|nil
+---@field rules (string|GunworksReloadRule)[]|nil
 ---@field rackOpenDuration number|nil
 ---@field rackOpenAimDuration number|nil
+---@field rackCloseDuration number|nil
+---@field rackCloseAimDuration number|nil
+---@field loadChamberDuration number|nil
+---@field loadChamberAimDuration number|nil
+---@field clipDuration number|nil
+---@field clipAimDuration number|nil
 
 ---@class GunworksReloadPartSpec
 ---@field partType string|nil
