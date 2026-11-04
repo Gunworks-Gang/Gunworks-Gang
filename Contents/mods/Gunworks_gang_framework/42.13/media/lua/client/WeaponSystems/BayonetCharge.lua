@@ -2,6 +2,7 @@ local Bayonet = require("WeaponSystems/Utils/Bayonet")
 
 local CHARGE_DELAY_MS = 1000
 local sprintStartTimes = {}
+local getTimestampMs = getTimestampMs
 
 local function bayonetCharge(player)
     if not player:isSprinting() then

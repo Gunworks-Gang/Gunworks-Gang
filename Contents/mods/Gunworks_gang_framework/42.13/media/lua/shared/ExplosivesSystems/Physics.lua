@@ -13,11 +13,6 @@ ExplosivesSystems.EDGE_TOL                = 0.15
 ExplosivesSystems.LOW_WALL_Z_THRESHOLD    = 0.25
 ExplosivesSystems.MIN_WORLD_Z             = -32
 ExplosivesSystems.GRAVITY_WORLD_Z         = ExplosivesSystems.GRAVITY * ExplosivesSystems.Z_STEP * 3600
-
-function ExplosivesSystems.GT()
-    return GameTime.getInstance()
-end
-
 function ExplosivesSystems.predictUnitHorizontalRange(vzInternal, startZ)
     local velocityX = 1.0
     local velocityZ = vzInternal

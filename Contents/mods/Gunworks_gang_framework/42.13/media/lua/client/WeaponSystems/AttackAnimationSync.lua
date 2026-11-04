@@ -1,4 +1,5 @@
 local OrdnanceFactory = require("ExplosivesSystems/OrdnanceFactory")
+local getTimestampMs = getTimestampMs
 
 local MODULE = "GWAttackAnimation"
 local TIMEOUT_MS = 5000

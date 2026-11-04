@@ -2,6 +2,7 @@ local ExplosivesSystems          = require("ExplosivesSystems/Physics")
 local Payloads                   = require("ExplosivesSystems/Payloads")
 local OrdnanceFactory            = require("ExplosivesSystems/OrdnanceFactory")
 local r                          = newrandom()
+local getGameTime                = getGameTime
 
 ExplosivesSystems.activeOrdnance = {}
 ExplosivesSystems.nextOrdnanceId = 0
@@ -171,7 +172,7 @@ function ExplosivesSystems.forceDetonate(ord, index)
 end
 
 function ExplosivesSystems.update()
-    local dt    = ExplosivesSystems.GT():getTimeDelta()
+    local dt    = getGameTime():getTimeDelta()
     local scale = dt * 60
 
     local i     = 1
@@ -196,7 +197,7 @@ function ExplosivesSystems.update()
 end
 
 function ExplosivesSystems.updateOrdnance(ord, index, scale)
-    local dt = ExplosivesSystems.GT():getTimeDelta()
+    local dt = getGameTime():getTimeDelta()
     if ord.detonationTimer > 0 then
         ord.detonationTimer = ord.detonationTimer - dt
         if ord.detonationTimer <= 0 then

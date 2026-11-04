@@ -1,5 +1,6 @@
 local ExplosivesSystems          = require("ExplosivesSystems/Physics")
 local OrdnanceFactory            = require("ExplosivesSystems/OrdnanceFactory")
+local getGameTime                = getGameTime
 
 ExplosivesSystems.visualOrdnance = {}
 
@@ -172,7 +173,7 @@ function ExplosivesSystems.updateVisualOrdnance()
     local n = #list
     if n == 0 then return end
 
-    local dt = ExplosivesSystems.GT():getTimeDelta()
+    local dt = getGameTime():getTimeDelta()
     local scale = dt * 60
 
     local i = 1

@@ -1,5 +1,6 @@
 local ExplosivesSystems      = require("ExplosivesSystems/Init")
 local ExplosionFX            = {}
+local getGameTime            = getGameTime
 
 ExplosionFX.activeEffects    = {}
 
@@ -82,7 +83,7 @@ function ExplosionFX.PlayEffect(square, itemType, lx, ly, lz, duration, frames)
 end
 
 function ExplosionFX.tick()
-    local dt = GameTime.getInstance():getTimeDelta()
+    local dt = getGameTime():getTimeDelta()
     local i  = #ExplosionFX.activeEffects
     while i >= 1 do
         local fx = ExplosionFX.activeEffects[i]
