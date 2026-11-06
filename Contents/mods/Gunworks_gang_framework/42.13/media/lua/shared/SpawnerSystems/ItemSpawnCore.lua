@@ -28,6 +28,19 @@ function ItemSpawnCore.getSelectedItemType(spawnerItem, candidates)
     return selectedType
 end
 
+function ItemSpawnCore.splitNewItems(newItems, bonusItems)
+    if type(newItems) ~= "table" then
+        return newItems, bonusItems
+    end
+
+    bonusItems = bonusItems or {}
+    for i = 2, #newItems do
+        bonusItems[#bonusItems + 1] = newItems[i]
+    end
+
+    return newItems[1], bonusItems
+end
+
 local function replaceContainerSpawner(spawnerItem, container, newItem, bonusItems)
     local addedItem = container:AddItem(newItem)
     if not addedItem then return false end
@@ -120,7 +133,7 @@ function ItemSpawnCore.resolve(item, entry, computeFn, queue, resolveFn)
         return
     end
 
-    local newItem, bonusItems = computeFn(item, entry)
+    local newItem, bonusItems = ItemSpawnCore.splitNewItems(computeFn(item, entry))
     if not newItem then
         print("Attempting to replace again " .. tostring(item:getFullType()))
         queue.mark(item, resolveFn)
