@@ -21,7 +21,7 @@
 		<m_SpeedScale>1.00</m_SpeedScale>
 	</m_2DBlends>
 	<m_2DBlends referenceID="3">
-		<m_AnimName>Bob_IdleAimRifle</m_AnimName>
+		<m_AnimName>Bob_AttackRifle_Small</m_AnimName>
 		<m_XPos>0.00</m_XPos>
 		<m_YPos>0.00</m_YPos>
 		<m_SpeedScale>1.00</m_SpeedScale>
