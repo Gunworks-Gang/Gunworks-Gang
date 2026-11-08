@@ -9,7 +9,7 @@ Animations.WeaponsWithAnimatedParts = {}
 -- Cycle timing (how long the action stays racked open before it auto-closes)
 -------------------------------------------------
 local TICKS_PER_SECOND = 60
-Animations.DEFAULT_CYCLE_TICKS = 10 -- default: 10/60 seconds
+Animations.DEFAULT_CYCLE_TICKS = 10  -- default: 10/60 seconds
 
 local function GetCycleSeconds(fullType)
     local entry = Animations.WeaponsWithAnimatedParts[fullType]
@@ -18,8 +18,8 @@ local function GetCycleSeconds(fullType)
 end
 
 --- Register a single weapon with animated moving parts.
----@param fullType string  fullType e.g. "Base.M16A3"
----@param entry table      { SingleAttachment = { open = "Part.Open", locked = "Part.Locked" } }
+---@param fullType string fullType e.g. "Base.M16A3"
+---@param entry    table  { SingleAttachment = { open = "Part.Open", locked = "Part.Locked" } }
 ---                     OR { MultipleAttachment = { Slide = { open = "Part.Open", locked = "Part.Locked" } } }
 ---                     OR { MultipleAttachmentsVariant = { Slide = { partType = "Slide", variants = { ["Part.A"] = { open = "Part.OpenA", locked = "Part.LockedA" }, ["Part.B"] = { open = "Part.OpenB", locked = "Part.LockedB" } } } } }
 ---                     OR { Models     = { open = "Sprite_Open", locked = "Sprite_Locked" } }
@@ -31,6 +31,8 @@ end
 ---                        the reload, rack and unload events instead of the entry. Firing keeps the entry's own parts, so a
 ---                        revolver can spin its cylinder when it fires and swing it out when it reloads. Without `reload`,
 ---                        every event uses the entry.
+---                     Optional: `reload.open` / `reload.close` = complete visual entries for the matching split-rack
+---                        phase. Without a phase override, racks use the normal `reload` entry.
 function Animations.RegisterWeaponWithAnimatedParts(fullType, entry)
     Animations.WeaponsWithAnimatedParts[fullType] = entry
 end
@@ -63,7 +65,7 @@ local function setBoltFlag(weapon, open)
     weapon:getModData().gunworksBoltOpen = open and true or nil
 end
 
----@param boltOpen boolean|nil  true/false sets modData.gunworksBoltOpen to true/nil; nil leaves it unchanged
+---@param boltOpen boolean | nil true/false sets modData.gunworksBoltOpen to true/nil; nil leaves it unchanged
 function Animations.CallSyncHandWeaponFields(player, weapon, boltOpen)
     if boltOpen ~= nil then
         setBoltFlag(weapon, boltOpen)
@@ -80,8 +82,8 @@ function Animations.CallSyncHandWeaponFields(player, weapon, boltOpen)
     player:resetEquippedHandsModels()
 end
 
-function Animations.SetBoltStateServer(weapon, open, route)
-    Animations.CallAnimationFunction(weapon, open, route)
+function Animations.SetBoltStateServer(weapon, open, route, rackPhase)
+    Animations.CallAnimationFunction(weapon, open, route, rackPhase)
     setBoltFlag(weapon, open)
 end
 
@@ -112,12 +114,16 @@ local function ApplyMultipleAttachmentState(weapon, attachmentState, key)
     ApplyAttachmentState(weapon, selectedVariant, key)
 end
 
----@param route string|nil  Animations.ROUTE_RELOAD to use the entry's `reload` parts when it has them
-function Animations.CallAnimationFunction(weapon, open, route)
+---@param route string | nil "reload" to use the entry's `reload` parts when it has them
+---@param rackPhase string | nil "open" / "close" to select a complete phase override inside `reload`
+function Animations.CallAnimationFunction(weapon, open, route, rackPhase)
     local entry = Animations.WeaponsWithAnimatedParts[weapon:getFullType()]
     if not entry then return end
     if route and entry.reload then
         entry = entry.reload
+        if rackPhase and entry[rackPhase] then
+            entry = entry[rackPhase]
+        end
     end
 
     local key = open and "open" or "locked"
@@ -149,11 +155,12 @@ function Animations.CallAnimationFunction(weapon, open, route)
     end
 end
 
----@param keepBoltState boolean|nil  true leaves gunworksBoltOpen unchanged (firing-cycle flicks, which canShoot must not see as an open bolt)
----@param route string|nil  see CallAnimationFunction
-function Animations.CallAnimate(player, weapon, open, keepBoltState, route)
+---@param keepBoltState boolean | nil true leaves gunworksBoltOpen unchanged (firing-cycle flicks, which canShoot must not see as an open bolt)
+---@param route         string | nil  see CallAnimationFunction
+---@param rackPhase     string | nil  see CallAnimationFunction
+function Animations.CallAnimate(player, weapon, open, keepBoltState, route, rackPhase)
     firingRefresh = true
-    Animations.CallAnimationFunction(weapon, open, route)
+    Animations.CallAnimationFunction(weapon, open, route, rackPhase)
     local boltOpen = nil
     if not keepBoltState then
         boltOpen = open and true or false
@@ -177,7 +184,7 @@ function Animations.scheduleActionClose(seconds, callback, ...)
 
     Events.OnTick.Add(tick)
 
-    return function()
+    return function ()
         Events.OnTick.Remove(tick)
     end
 end
@@ -200,7 +207,9 @@ function Animations.lockActionOpen(player, weapon)
     local forced = getIsForcedAnimate(weapon)
 
     if not forced then
-        if weapon:isRackAfterShoot() or weapon:isJammed() or not weapon:haveChamber() or not weapon:isRoundChambered() then return end
+        if weapon:isRackAfterShoot() or weapon:isJammed() or not weapon:haveChamber() or not weapon:isRoundChambered() then
+            return
+        end
     end
 
     Animations.CallAnimate(player, weapon, true, true)
@@ -211,12 +220,12 @@ function Animations.lockActionOpen(player, weapon)
     Animations.scheduleActionClose(seconds, releaseFunc, player, weapon)
 end
 
-function Animations.rackAction(player, weapon, starting)
+function Animations.rackAction(player, weapon, starting, rackPhase)
     if not weapon or not player then return end
     if starting then
-        Animations.CallAnimate(player, weapon, true, nil, "reload")
+        Animations.CallAnimate(player, weapon, true, nil, "reload", rackPhase)
     else
-        Animations.CallAnimate(player, weapon, false, nil, "reload")
+        Animations.CallAnimate(player, weapon, false, nil, "reload", rackPhase)
     end
 end
 
@@ -226,8 +235,8 @@ end
 Animations.WeaponsWithCustomStates = {}
 
 --- Register a single weapon with custom states.
----@param fullType string       fullType e.g. "Base.M60"
----@param paramsTable table      { threshold = 1, part = "MWA.Bullet_1", slot = "Animated1" }
+---@param fullType    string fullType e.g. "Base.M60"
+---@param paramsTable table  { threshold = 1, part = "MWA.Bullet_1", slot = "Animated1" }
 function Animations.RegisterWeaponsWithCustomStates(fullType, paramsTable)
     Animations.WeaponsWithCustomStates[fullType] = paramsTable
 end

@@ -249,9 +249,31 @@ Parameters:
 - `entry`: table that describes the two visual states. Use either `attachments` or `models`.
 - `entriesTable`: table in the form `{ [fullType] = entry }`.
 
-Optional field:
+Optional fields:
 
 - `cycleTicks`: how long, in ticks (60 ticks = 1 second), the action stays racked open before it auto-closes. Defaults to `Animations.DEFAULT_CYCLE_TICKS` (`10`, i.e. 10/60 seconds) when omitted.
+- `reload`: an optional visual entry (`SingleAttachment`, `MultipleAttachment`, `MultipleAttachmentsVariant`, or `Models`) used for reload, unload and rack events. Firing uses the outer entry.
+- `reload.open` / `reload.close`: optional complete visual entries for a split rack's `GunworksRackPhase`. When omitted, that phase uses the normal `reload` entry. Each override replaces the whole visual entry for that phase; include every part that should change.
+
+For example, an AR15 can move its bolt and charging handle during a normal rack, but keep the handle closed during a bolt-catch release. Both client animation events and server stroke handling select the same override; keep the XML rack and round events for chambering and Hot Brass:
+
+```lua
+Animations.RegisterWeaponWithAnimatedParts("MyMod.AR15", {
+	SingleAttachment = { open = "MyMod.Bolt_Open", locked = "MyMod.Bolt_Closed" },
+	reload = {
+		MultipleAttachment = {
+			Bolt = { open = "MyMod.Bolt_Open", locked = "MyMod.Bolt_Closed" },
+			ChargingHandle = { open = "MyMod.Handle_Open", locked = "MyMod.Handle_Closed" },
+		},
+		close = {
+			MultipleAttachment = {
+				Bolt = { open = "MyMod.Bolt_Open", locked = "MyMod.Bolt_Closed" },
+				ChargingHandle = { open = "MyMod.Handle_Closed", locked = "MyMod.Handle_Closed" },
+			},
+		},
+	},
+})
+```
 
 ```lua
 {

@@ -60,16 +60,16 @@ Events.OnWeaponSwingHitPoint.Add(ISReloadWeaponAction.onShoot)
 local ISRackFirearm_animEvent = ISRackFirearm.animEvent
 function ISRackFirearm:animEvent(event, parameter)
     if event == "rackStart" then
-        Animations.rackAction(self.character, self.gun, true)
+        Animations.rackAction(self.character, self.gun, true, self.gunworksRackPhase)
     end
     if event == "rackEnd" then
-        Animations.rackAction(self.character, self.gun, false)
+        Animations.rackAction(self.character, self.gun, false, self.gunworksRackPhase)
     end
     if event == "openWeapon" then
-        Animations.CallAnimate(self.character, self.gun, true, nil, "reload")
+        Animations.CallAnimate(self.character, self.gun, true, nil, "reload", self.gunworksRackPhase)
     end
     if event == "closeWeapon" then
-        Animations.CallAnimate(self.character, self.gun, false, nil, "reload")
+        Animations.CallAnimate(self.character, self.gun, false, nil, "reload", self.gunworksRackPhase)
     end
     ISRackFirearm_animEvent(self, event, parameter)
 end
@@ -80,7 +80,7 @@ function ISRackFirearm:complete()
         Animations.CheckStates(self.gun)
     end
     if not self.gun:haveChamber() and self.gunworksRackPhase ~= "open" then
-        Animations.CallAnimate(self.character, self.gun, false, nil, "reload")
+        Animations.CallAnimate(self.character, self.gun, false, nil, "reload", self.gunworksRackPhase)
     end
     return ISRackFirearm_complete(self)
 end

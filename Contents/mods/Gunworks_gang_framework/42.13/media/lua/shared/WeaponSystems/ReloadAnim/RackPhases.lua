@@ -55,7 +55,7 @@ end
 function ReloadAnim.recordStrokeOnServer(action)
     local open = action.gunworksRackPhase == ReloadAnim.RACK_PHASE_OPEN
     if open ~= ReloadAnim.isBoltOpen(action.gun) then
-        Animations.SetBoltStateServer(action.gun, open, "reload")
+        Animations.SetBoltStateServer(action.gun, open, "reload", action.gunworksRackPhase)
     end
 end
 
