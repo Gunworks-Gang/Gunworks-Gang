@@ -33,18 +33,28 @@ function ISReloadWeaponAction:complete()
     return ISReloadWeaponAction_complete(self)
 end
 
--- I really want my revolvers clicking
+local function isTriggerBlocked(weapon)
+    return weapon:getFireMode() == "Safe" or weapon:getModData().gunworksBoltOpen == true
+end
+
 local ISReloadWeaponAction_canShoot = ISReloadWeaponAction.canShoot
-ISReloadWeaponAction.canShoot = function(player, weapon)
-    if weapon:getFireMode() == "Safe" then return false end
-    if weapon:getModData().gunworksBoltOpen == true then return false end
-    Animations.lockActionOpen(player, weapon)
+ISReloadWeaponAction.canShoot = function (player, weapon)
+    if isTriggerBlocked(weapon) then return false end
     return ISReloadWeaponAction_canShoot(player, weapon)
 end
 
+-- I really want my revolvers clicking. A dry fire plays the Empty anim, which has no AttackCollisionCheck,
+-- so onShoot never runs, OnWeaponSwing fires once per trigger pull instead. should be better for MP
+local function onWeaponSwing(player, weapon)
+    if not player:isLocalPlayer() or not weapon or not weapon:isRanged() or player:isDoShove() then return end
+    if isTriggerBlocked(weapon) or ISReloadWeaponAction.canShoot(player, weapon) then return end
+    Animations.dryFireAction(player, weapon)
+end
+Events.OnWeaponSwing.Add(onWeaponSwing)
+
 local ISReloadWeaponAction_onShoot = ISReloadWeaponAction.onShoot
 Events.OnWeaponSwingHitPoint.Remove(ISReloadWeaponAction.onShoot)
-ISReloadWeaponAction.onShoot = function(player, weapon)
+ISReloadWeaponAction.onShoot = function (player, weapon)
     if Animations.IsWeaponWithCustomStates(weapon:getFullType()) then
         Animations.CheckStates(weapon)
         Animations.CallSyncHandWeaponFields(player, weapon)

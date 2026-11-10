@@ -114,7 +114,7 @@ local function ApplyMultipleAttachmentState(weapon, attachmentState, key)
     ApplyAttachmentState(weapon, selectedVariant, key)
 end
 
----@param route string | nil "reload" to use the entry's `reload` parts when it has them
+---@param route     string | nil "reload" to use the entry's `reload` parts when it has them
 ---@param rackPhase string | nil "open" / "close" to select a complete phase override inside `reload`
 function Animations.CallAnimationFunction(weapon, open, route, rackPhase)
     local entry = Animations.WeaponsWithAnimatedParts[weapon:getFullType()]
@@ -202,7 +202,9 @@ function Animations.releaseActionLockForce(player, weapon)
 end
 
 function Animations.lockActionOpen(player, weapon)
+    if isServer() then return end
     if not weapon or not player or not weapon:isRanged() then return end
+    if not Animations.WeaponsWithAnimatedParts[weapon:getFullType()] then return end
 
     local forced = getIsForcedAnimate(weapon)
 
@@ -218,6 +220,11 @@ function Animations.lockActionOpen(player, weapon)
     local releaseFunc = forced and Animations.releaseActionLockForce or Animations.releaseActionLock
 
     Animations.scheduleActionClose(seconds, releaseFunc, player, weapon)
+end
+
+function Animations.dryFireAction(player, weapon)
+    if not getIsForcedAnimate(weapon) then return end
+    Animations.lockActionOpen(player, weapon)
 end
 
 function Animations.rackAction(player, weapon, starting, rackPhase)
