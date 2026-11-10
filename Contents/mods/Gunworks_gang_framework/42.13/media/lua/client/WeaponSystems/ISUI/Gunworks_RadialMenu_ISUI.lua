@@ -69,7 +69,7 @@ end
 function CDeployBipod:invoke()
     local weapon = self:getWeapon()
     if not weapon then return end
-    ISTimedActionQueue.add(ISFoldBipod:new(self.character, weapon))
+    ISTimedActionQueue.add(ISFoldBipod:new(self.character, weapon, CharacterActionAnims.Craft))
 end
 
 -------------------------------------------------

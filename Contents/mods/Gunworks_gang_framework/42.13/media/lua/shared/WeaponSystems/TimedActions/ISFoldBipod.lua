@@ -20,29 +20,7 @@ function ISFoldBipod:start()
         self.weapon = self.character:getInventory():getItemById(self.weapon:getID())
     end
     Animations.CallSyncHandWeaponFields(self.character, self.weapon)
-    -- Choose at start so queued toggles use the current bipod state.
-    local animation = FoldingBipod.IsBipodDeployed(self.weapon) and "GW_BipodFold" or "GW_BipodUnfold"
-    self:setActionAnim(animation)
-    self:setOverrideHandModels(self.weapon, nil)
-end
-
-function ISFoldBipod:serverStart()
-    local duration = FoldingBipod.IsBipodDeployed(self.weapon) and 2056 or 2139
-    emulateAnimEventOnce(self.netAction, duration, "GW_BipodFinished", nil)
-end
-
-function ISFoldBipod:getDuration()
-    return -1
-end
-
-function ISFoldBipod:animEvent(event, parameter)
-    if event == "GW_BipodFinished" then
-        if isServer() then
-            self.netAction:forceComplete()
-        else
-            self:forceComplete()
-        end
-    end
+    self:setActionAnim(self.animation)
 end
 
 function ISFoldBipod:update()
@@ -62,12 +40,13 @@ function ISFoldBipod:stop()
     ISBaseTimedAction.stop(self)
 end
 
-function ISFoldBipod:new(character, weapon)
+function ISFoldBipod:new(character, weapon, anim)
     local o = ISBaseTimedAction.new(self, character)
     o.stopOnWalk = false
     o.stopOnRun = true
-    o.maxTime = o:getDuration()
+    o.maxTime = 30
     o.weapon = weapon
+    o.animation = anim
     o.useProgressBar = false
     return o
 end
@@ -77,12 +56,12 @@ end
 -------------------------------------------------
 FoldBipodContext = {}
 
-FoldBipodContext.callAction = function (player, weapon)
+FoldBipodContext.callAction = function(player, weapon)
     if not player or not weapon then return end
     if player:getPrimaryHandItem() ~= weapon then
         ISTimedActionQueue.add(ISEquipWeaponAction:new(player, weapon, 50, true, true))
     end
     if weapon:getContainer() == player:getInventory() then
-        ISTimedActionQueue.add(ISFoldBipod:new(player, weapon))
+        ISTimedActionQueue.add(ISFoldBipod:new(player, weapon, CharacterActionAnims.Craft))
     end
 end
