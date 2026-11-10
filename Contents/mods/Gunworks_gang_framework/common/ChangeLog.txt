@@ -62,3 +62,11 @@ B42.20.3:
 [*] New Bipod System, bipods can now be placed on surfaces
 [*] Reload events now properly sync in MP
 [ ------ ]
+
+[10/November/2026 ]
+B42.22.2:
+[*] Adjustment to logic in Replacer to allow mininal and maximun items ensure
+[*] New path for reload animations to control what plays in the closing and opening events (optional)
+[*] Rework spawner to allow minimal and maximun items without breaking existing tables
+[*] Rework animations event to prevent additional trigger in MP
+[ ------ ]
