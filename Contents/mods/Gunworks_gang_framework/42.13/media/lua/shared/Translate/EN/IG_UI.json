@@ -42,5 +42,6 @@
   "IGUI_UseMainWeapon": "Use Main Weapon",
   "IGUI_LoadAmmo": "Load Ammo",
   "IGUI_BipodStanceAutomatic": "Bipod Stance Automatic",
-  "IGUI_BipodStanceToggle": "Bipod Stance Toggle"
+  "IGUI_BipodStanceToggle": "Bipod Stance Toggle",
+  "IGUI_ChamberOpen": "Chamber is open, close it before firing."
 }
