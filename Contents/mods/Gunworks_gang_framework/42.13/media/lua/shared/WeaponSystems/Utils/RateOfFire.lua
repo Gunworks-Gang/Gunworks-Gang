@@ -1,44 +1,44 @@
 require("TimedActions/ISReloadWeaponAction")
-local StatsFactory                  = require("WeaponSystems/Utils/StatsFactory")
-local getTimestampMs                = getTimestampMs
+local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
+local getTimestampMs = getTimestampMs
 -------------------------------------------------
 -- Rate of Fire Control System
 -------------------------------------------------
-local RateOfFire                    = {}
+local RateOfFire = {}
 
-RateOfFire.lastFireTime             = {}
-RateOfFire.DEFAULT_RPM              = 600
-RateOfFire.BURST_DEFAULT_COUNT      = 3
-RateOfFire.BURST_DELAY_MS           = 500
-RateOfFire.burstState               = {}
-RateOfFire.burstCooldown            = {}
+RateOfFire.lastFireTime = {}
+RateOfFire.DEFAULT_RPM = 600
+RateOfFire.BURST_DEFAULT_COUNT = 3
+RateOfFire.BURST_DELAY_MS = 500
+RateOfFire.burstState = {}
+RateOfFire.burstCooldown = {}
 
-RateOfFire.RPM_STAGE_MODDATA_KEY    = "GW_RpmStage"
+RateOfFire.RPM_STAGE_MODDATA_KEY = "GW_RpmStage"
 
-RateOfFire.spreadState              = {}
-RateOfFire.SPREAD_INITIAL_DEFAULT   = 0.0
+RateOfFire.spreadState = {}
+RateOfFire.SPREAD_INITIAL_DEFAULT = 0.0
 RateOfFire.SPREAD_SUSTAINED_DEFAULT = 0.1
-RateOfFire.SPREAD_MAX_DEFAULT       = 3
-RateOfFire.SpreadPartModifiers      = {}
+RateOfFire.SPREAD_MAX_DEFAULT = 3
+RateOfFire.SpreadPartModifiers = {}
 
-RateOfFire.MOODLE_SPREAD_MULT       = { [0] = 1.0, [1] = 1.5, [2] = 2.0, [3] = 3.0, [4] = 4.0 }
+RateOfFire.MOODLE_SPREAD_MULT = { [0] = 1.0, [1] = 1.5, [2] = 2.0, [3] = 3.0, [4] = 4.0 }
 
 -------------------------------------------------
 -- Registry tables  (keyed by weapon fullType)
 -------------------------------------------------
-RateOfFire.WeaponProfiles           = {} -- fullType -> { rpm = number, burstCount = number }
+RateOfFire.WeaponProfiles = {}  -- fullType -> { rpm = number, burstCount = number }
 
 --- Register a single weapon with custom RPM and/or burst count.
----@param weaponType string       fullType e.g. "MWA.M16A3"
----@param entry table             { rpm = number?, burstCount = number?, enableSpread = boolean?,
+---@param weaponType string fullType e.g. "MWA.M16A3"
+---@param entry      table  { rpm = number?, burstCount = number?, enableSpread = boolean?,
 ---                                 initialSpread = number?, sustainedSpread = number?, maxSpread = number? }
 function RateOfFire.RegisterWeapon(weaponType, entry)
     RateOfFire.WeaponProfiles[weaponType] = entry
 end
 
 --- Convenience: register the same profile for multiple weapon types.
----@param weaponTypes string[]    array of fullType strings
----@param entry table             { rpm = number?, burstCount = number?, enableSpread = boolean?,
+---@param weaponTypes string[] array of fullType strings
+---@param entry       table    { rpm = number?, burstCount = number?, enableSpread = boolean?,
 ---                                 initialSpread = number?, sustainedSpread = number?, maxSpread = number? }
 function RateOfFire.RegisterMultipleWeaponsWithSameProfile(weaponTypes, entry)
     for i = 1, #weaponTypes do
@@ -47,7 +47,7 @@ function RateOfFire.RegisterMultipleWeaponsWithSameProfile(weaponTypes, entry)
 end
 
 --- Convenience: register multiple weapon types with their entry.
----@param entriesTable table    { [weaponType] = { rpm = number?, burstCount = number?, enableSpread = boolean?,
+---@param entriesTable table { [weaponType] = { rpm = number?, burstCount = number?, enableSpread = boolean?,
 ---                                 initialSpread = number?, sustainedSpread = number?, maxSpread = number? } }
 function RateOfFire.RegisterMultipleWeapons(entriesTable)
     for weaponType, entry in pairs(entriesTable) do
@@ -57,14 +57,14 @@ end
 
 --- Register a spread multiplier for a single weapon part fullType.
 --- When a weapon has this part attached, sustainedSpread and maxSpread are multiplied.
----@param partType string         fullType of the part e.g. "MWA.ForegripVert"
----@param entry table             { sustainedSpreadMult = number?, maxSpreadMult = number? }
+---@param partType string fullType of the part e.g. "MWA.ForegripVert"
+---@param entry    table  { sustainedSpreadMult = number?, maxSpreadMult = number? }
 function RateOfFire.RegisterSpreadPartModifier(partType, entry)
     RateOfFire.SpreadPartModifiers[partType] = entry
 end
 
 --- Convenience: register spread multipliers for multiple part types at once.
----@param modifiersTable table         { [partType] = { sustainedSpreadMult = number?, maxSpreadMult = number? } }
+---@param modifiersTable table { [partType] = { sustainedSpreadMult = number?, maxSpreadMult = number? } }
 function RateOfFire.RegisterMultipleSpreadPartModifier(modifiersTable)
     for partType, entry in pairs(modifiersTable) do
         RateOfFire.SpreadPartModifiers[partType] = entry
@@ -73,14 +73,14 @@ end
 
 --- Register a spread multiplier for a single weapon ammo fullType.
 --- When a weapon uses this ammo, sustainedSpread and maxSpread are multiplied.
----@param ammoType string         fullType of the ammo e.g. "MWA.556x45"
----@param entry table             { sustainedSpreadMult = number?, maxSpreadMult = number? }
+---@param ammoType string fullType of the ammo e.g. "MWA.556x45"
+---@param entry    table  { sustainedSpreadMult = number?, maxSpreadMult = number? }
 function RateOfFire.RegisterSpreadAmmoModifier(ammoType, entry)
     RateOfFire.SpreadPartModifiers[ammoType] = entry
 end
 
 --- Convenience: register spread multipliers for multiple ammo types at once.
----@param modifiersTable table         { [ammoType] = { sustainedSpreadMult = number?, maxSpreadMult = number? } }
+---@param modifiersTable table { [ammoType] = { sustainedSpreadMult = number?, maxSpreadMult = number? } }
 function RateOfFire.RegisterMultipleSpreadAmmoModifier(modifiersTable)
     for ammoType, entry in pairs(modifiersTable) do
         RateOfFire.SpreadPartModifiers[ammoType] = entry
@@ -96,7 +96,7 @@ function RateOfFire.IsWeaponRegistered(weapon)
     return RateOfFire.WeaponProfiles[weapon:getFullType()] ~= nil
 end
 
-function RateOfFire.getSpreadProfile(weapon)
+function RateOfFire.getSpreadProfile(weapon, player)
     if not weapon then return nil end
     local profile = RateOfFire.WeaponProfiles[weapon:getFullType()]
     if not profile or not profile.enableSpread then return nil end
@@ -135,6 +135,12 @@ function RateOfFire.getSpreadProfile(weapon)
         end
     end
 
+    if player:getVariableBoolean("GunworksBipodDeployed") then
+        sp.initialSpread = sp.initialSpread * 0.5
+        sp.sustainedSpread = sp.sustainedSpread * 0.5
+        sp.maxSpread = sp.maxSpread * 0.5
+    end
+
     return sp
 end
 
@@ -143,7 +149,7 @@ function RateOfFire.getMoodleSpreadMult(player)
     local moodles = player:getMoodles()
     if not moodles then return 1.0 end
     local enduranceMult = RateOfFire.MOODLE_SPREAD_MULT[moodles:getMoodleLevel(MoodleType.ENDURANCE)] or 1.0
-    local tiredMult     = RateOfFire.MOODLE_SPREAD_MULT[moodles:getMoodleLevel(MoodleType.TIRED)] or 1.0
+    local tiredMult = RateOfFire.MOODLE_SPREAD_MULT[moodles:getMoodleLevel(MoodleType.TIRED)] or 1.0
     return enduranceMult * tiredMult
 end
 
@@ -241,17 +247,17 @@ function RateOfFire.getWeaponBurstCount(weapon)
 end
 
 function RateOfFire.applySpreadOnShot(player, weapon, intervalMs)
-    local sp = RateOfFire.getSpreadProfile(weapon)
+    local sp = RateOfFire.getSpreadProfile(weapon, player)
     if not sp then return end
 
-    local moodleMult   = RateOfFire.getMoodleSpreadMult(player)
+    local moodleMult = RateOfFire.getMoodleSpreadMult(player)
     sp.sustainedSpread = sp.sustainedSpread * moodleMult
-    sp.maxSpread       = sp.maxSpread * moodleMult
+    sp.maxSpread = sp.maxSpread * moodleMult
 
-    local playerId     = player:getPlayerNum()
-    local now          = getTimestampMs()
-    local fullType     = weapon:getFullType()
-    local state        = RateOfFire.spreadState[playerId]
+    local playerId = player:getPlayerNum()
+    local now = getTimestampMs()
+    local fullType = weapon:getFullType()
+    local state = RateOfFire.spreadState[playerId]
 
     if not state or state.weaponType ~= fullType then
         weapon:setRangeFalloff(true)
@@ -268,9 +274,9 @@ function RateOfFire.applySpreadOnShot(player, weapon, intervalMs)
     end
 
     state.currentSpread = math.min(state.currentSpread + sp.sustainedSpread, sp.maxSpread)
-    state.lastShotTime  = now
+    state.lastShotTime = now
     state.lastDecayTime = now
-    state.intervalMs    = intervalMs
+    state.intervalMs = intervalMs
     weapon:setProjectileSpread(state.currentSpread)
 end
 
@@ -282,20 +288,19 @@ function RateOfFire.decaySpreadTick()
         if not profile or not profile.enableSpread then
             RateOfFire.spreadState[playerId] = nil
         else
-            local sp            = RateOfFire.getSpreadProfile_fromProfile(profile)
+            local sp = RateOfFire.getSpreadProfile_fromProfile(profile)
             local timeSinceFire = now - state.lastShotTime
 
             if timeSinceFire >= state.intervalMs then
-                local decayWindow   = now - state.lastDecayTime
-                local decayAmount   = sp.sustainedSpread * (decayWindow / state.intervalMs)
+                local decayWindow = now - state.lastDecayTime
+                local decayAmount = sp.sustainedSpread * (decayWindow / state.intervalMs)
                 state.currentSpread = math.max(state.currentSpread - decayAmount, sp.initialSpread)
                 state.lastDecayTime = now
 
-                local player        = getSpecificPlayer(playerId)
+                local player = getSpecificPlayer(playerId)
                 if player and not player:isDead() then
                     local weapon = player:getPrimaryHandItem()
-                    if weapon and instanceof(weapon, "HandWeapon")
-                        and weapon:getFullType() == state.weaponType then
+                    if weapon and instanceof(weapon, "HandWeapon") and weapon:getFullType() == state.weaponType then
                         weapon:setProjectileSpread(state.currentSpread)
                     end
                 end
@@ -325,7 +330,7 @@ function RateOfFire.startBurst(player, weapon, intervalMs, Original_Attack_Hook,
         weapon = weapon,
         attackHook = Original_Attack_Hook,
         chargeDelta = chargeDelta,
-        nextShotTime = getTimestampMs() + intervalMs
+        nextShotTime = getTimestampMs() + intervalMs,
     }
 end
 
