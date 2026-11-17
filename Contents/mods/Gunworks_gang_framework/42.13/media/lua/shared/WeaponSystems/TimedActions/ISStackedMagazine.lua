@@ -53,13 +53,6 @@ function ISStackedMagazine:start()
     self:setActionAnim(CharacterActionAnims.Reload)
     self.character:reportEvent("EventReloading")
     self:initVars()
-    StackedMagazines.debug(
-        "flip start: animation", self.animation, "next side", nextSide, nextRounds, nextType, "| vars WeaponReloadType",
-        self.character:getVariableString("WeaponReloadType"), "isUnloading",
-        self.character:getVariableString("isUnloading"), "PerformingAction",
-        self.character:getVariableString("PerformingAction"), "GunworksStackedSide",
-        self.character:getVariableString(StackedMagazines.SIDE_VARIABLE)
-    )
 end
 
 function ISStackedMagazine:initVars()
@@ -109,7 +102,6 @@ function ISStackedMagazine:playReloadSound(parameter)
 end
 
 function ISStackedMagazine:animEvent(event, parameter)
-    StackedMagazines.debug("flip event", event, parameter, "phase", self.phase)
     if event == "unloadFinished" then
         if self.phase == PHASE_UNLOAD then
             self:beginLoadPhase()
@@ -213,7 +205,6 @@ function ISStackedMagazine:clearReloadVariables()
 end
 
 function ISStackedMagazine:stop()
-    StackedMagazines.debug("flip stop, phase", self.phase, "flipped", self.flipped)
     if self.gun:getInsertAmmoStopSound() then
         self.character:playSound(self.gun:getInsertAmmoStopSound())
     end
@@ -224,7 +215,6 @@ function ISStackedMagazine:stop()
 end
 
 function ISStackedMagazine:perform()
-    StackedMagazines.debug("flip perform, flipped", self.flipped)
     if self.gun:getInsertAmmoStopSound() then
         self.character:playSound(self.gun:getInsertAmmoStopSound())
     end

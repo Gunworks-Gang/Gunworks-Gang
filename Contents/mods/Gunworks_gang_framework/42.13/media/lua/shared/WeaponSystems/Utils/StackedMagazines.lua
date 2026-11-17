@@ -61,15 +61,6 @@ StackedMagazines.Groups = {}
 ---@type table<string,{group:GunworksStackedGroup, side:integer}>
 StackedMagazines.Sides = {}
 
--- TEMP debug trail (remove after the in-game check)
-function StackedMagazines.debug(...)
-    local parts = {}
-    for i = 1, select("#", ...) do
-        parts[#parts + 1] = tostring(select(i, ...))
-    end
-    print("[Gunworks/StackedMagazines/DEBUG] " .. table.concat(parts, " "))
-end
-
 local warned = {}
 
 local function warnOnce(message)
@@ -120,7 +111,6 @@ function StackedMagazines.RegisterMagazines(name, definition)
         StackedMagazines.Sides[magazines[i]] = { group = group, side = i }
     end
     StackedMagazines.Groups[name] = group
-    StackedMagazines.debug("registered", name, "sides", #group.magazines, "animation", group.animation)
 end
 
 -------------------------------------------------
@@ -663,32 +653,23 @@ local function isFlipQueued(playerObj, gun)
     return false
 end
 
---- Flip when another side has rounds and the side in the well is not full. A full side does nothing, like a full
---- gun, and so does a second press while a flip is queued (it would flip straight back). False leaves the reload
---- to the normal magazine swap (no split pack, or every other side is empty).
+--- Flip whenever another side has rounds, even when the side in the well is full. A second press while a flip is
+--- queued does nothing (it would flip straight back). False leaves the reload to the normal magazine swap (no split
+--- pack, or every other side is empty), which takes the pack out and inserts the best magazine like any other.
 ---@param playerObj IsoPlayer
 ---@param gun HandWeapon
 ---@return boolean handled
 function StackedMagazines.BeginReload(playerObj, gun)
-    local rawState = gun:getModData()[StackedMagazines.STATE_KEY]
-    StackedMagazines.debug("reload key:", gun:getFullType(), "magType", gun:getMagazineType(), "clip", gun:isContainsClip(),
-        "count", gun:getCurrentAmmoCount(), "chambered", gun:isRoundChambered(), "maxAmmo", gun:getMaxAmmo(),
-        "state", type(rawState), rawState and rawState.group, rawState and rawState.side,
-        rawState and rawState.rounds and rawState.rounds[1], rawState and rawState.rounds and rawState.rounds[2])
     local state, group = StackedMagazines.GetGunState(gun)
     if not state then
-        StackedMagazines.debug("  -> no split pack in the gun (IsInGun", StackedMagazines.IsInGun(gun), "): normal reload")
         return false
     end
-    if gun:getCurrentAmmoCount() >= StackedMagazines.GetSideCapacity(group) or isFlipQueued(playerObj, gun) then
-        StackedMagazines.debug("  -> side full or flip queued: nothing")
+    if isFlipQueued(playerObj, gun) then
         return true
     end
     if not StackedMagazines.GetNextSide(state, group) then
-        StackedMagazines.debug("  -> no other loaded side: normal reload")
         return false
     end
-    StackedMagazines.debug("  -> flip queued")
     ISTimedActionQueue.add(ISStackedMagazine:new(playerObj, gun))
     return true
 end

@@ -2238,7 +2238,7 @@ How it plays:
 2. Inserting a pack seats the first side that has rounds. A pack loaded from empty fills its last side first, so `60/60` goes in on side 1 and `30/60` or less goes in on side 2.
 3. The gun only counts the side in the well. When that side runs dry the chamber stays empty and the gun can't fire, even with rounds on the other side.
 4. The reload key flips to the next side that has rounds. With an empty chamber the gun's own rack follows. With a round chambered (a flip before the side ran dry) no rack is needed, and the partly used side stays on the clamp for later.
-5. A full side ignores the reload key. When no other side has rounds, the reload key swaps the whole pack for another magazine, as usual.
+5. The reload key flips even when the side in the well is full. When no other side has rounds, the reload key swaps the whole pack for another magazine, as usual.
 6. An ejected pack keeps every side's rounds (and their AmmoList), whichever side was in the well. It comes out as the group's first item.
 
 ### Module import
