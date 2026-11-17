@@ -2227,6 +2227,107 @@ if loader then
 end
 ```
 
+# Stacked Magazine System
+
+This system makes magazines clamped together (jungle mags) work like the real thing.
+Only one side sits in the magazine well. The gun fires from that side alone, and the reload key flips the next loaded side in.
+
+How it plays:
+
+1. In the bag the pack counts all its rounds (`60/60`).
+2. Inserting a pack seats the first side that has rounds. A pack loaded from empty fills its last side first, so `60/60` goes in on side 1 and `30/60` or less goes in on side 2.
+3. The gun only counts the side in the well. When that side runs dry the chamber stays empty and the gun can't fire, even with rounds on the other side.
+4. The reload key flips to the next side that has rounds. With an empty chamber the gun's own rack follows. With a round chambered (a flip before the side ran dry) no rack is needed, and the partly used side stays on the clamp for later.
+5. A full side ignores the reload key. When no other side has rounds, the reload key swaps the whole pack for another magazine, as usual.
+6. An ejected pack keeps every side's rounds (and their AmmoList), whichever side was in the well. It comes out as the group's first item.
+
+### Module import
+
+```lua
+local StackedMagazines = require("WeaponSystems/Utils/StackedMagazines")
+```
+
+### 1. Group registration
+
+```lua
+StackedMagazines.RegisterMagazines(name, definition)
+```
+
+Parameters:
+
+- `name`: the group name. Registering the same name again replaces the group.
+- `definition.magazines`: one item per side, side 1 first. At least two.
+- `definition.animation` (optional): the `WeaponReloadType` value of the flip's own unload and load nodes. Without it the flip plays the gun's own unload clip, then its own load clip.
+- `definition.unloadDuration` / `definition.loadDuration` (optional, with `animation`): the lengths of those two clips in seconds, for the server timing. Without `animation` the server uses the gun profile's `unload` / `load` durations.
+
+The items:
+
+- Every side's item has the `MaxAmmo` of the whole pack. Each side holds an equal share (`MaxAmmo / number of sides`).
+- Each item's model shows its side in the well. The item in the gun changes on every flip, so the model follows.
+- Add every side's item to the gun's magazine profile, to the ammo family and to Prevent Removal, like any magazine.
+
+### 2. The flip animation
+
+The flip is its own timed action, `ISStackedMagazine`. Its nodes need `PerformingAction = Reload`.
+
+The flip plays an unload node (`isUnloading`) until `unloadFinished`, then a load node (`isLoading`) until `loadFinished`. The sides flip on `loadFinished`.
+
+- With `animation` set, both nodes are yours, gated on `WeaponReloadType` = your `animation` value. The unload takes the pack out of the well and the load puts it back on its next side, without a trip to the pouch.
+- `GunworksStackedSide` is the side going in (`"1"`, `"2"`, ...). A side-by-side pack moves one way to seat side 2 and the other way back to side 1, so give each direction its own load node.
+- `GunworksReloadAiming` tells an aimed variant apart, as in every Gunworks reload.
+- Without `animation`, the gun's own unload and load nodes play, as in a magazine swap.
+
+Events in either case:
+
+- `InsertMag`: takes the magazine model off the gun when one is on, and puts the next side's model on when none is. Place it once where the pack leaves the well and once where it goes back in.
+- `attachToHand` / `detachFromHand`: the pack in the left hand, as in a magazine reload. The hand shows the pack as it came out of the well. Leave out `detachFromHand` in your unload and `attachToHand` in your load to keep it in the hand through both: it keeps that model, so the load clip must move the hand so that the next side lines up with the well at `InsertMag`. When the unload puts it down (the gun's own clips), the load picks up the side going in.
+- `playReloadSound` with `load`, `insertAmmoStart`, `unload` or `ejectAmmoStart`: the gun's sounds.
+
+The rack after the flip is the gun's normal rack, so reload rules (for example a bolt catch slap) still apply to it.
+
+### 3. Helpers
+
+```lua
+StackedMagazines.IsStackedMagazine(item)    -- is this item a side of a registered group?
+StackedMagazines.GetReserveRounds(gun)      -- rounds waiting on the sides that are not in the well
+StackedMagazines.PeekNextSide(gun)          -- side, rounds, item type the next flip would seat
+StackedMagazines.TakePack(gun)              -- server: empty the gun into a new pack item (not added anywhere)
+```
+
+`TakePack` is for mods that remove magazines their own way (a tactical drop, for example). Reading `getCurrentAmmoCount()` there would only count the side in the well.
+
+### Complete example
+
+```lua
+local Magazine = require("WeaponSystems/Utils/Magazine")
+local Ammo = require("WeaponSystems/Utils/Ammo")
+local PreventRemoval = require("WeaponSystems/Utils/PreventRemovals")
+local StackedMagazines = require("WeaponSystems/Utils/StackedMagazines")
+
+Magazine.RegisterMagazineProfile("STANAG", {
+	"MyMod.Magazine30_STANAG",
+	"MyMod.JungleMag60_STANAG",
+	"MyMod.JungleMag60_STANAG_2",
+})
+
+Ammo.RegisterItemWithFamily("5.56x45mm", {
+	"MyMod.JungleMag60_STANAG",
+	"MyMod.JungleMag60_STANAG_2",
+})
+
+PreventRemoval.Register({
+	"MyMod.JungleMag60_STANAG",
+	"MyMod.JungleMag60_STANAG_2",
+})
+
+StackedMagazines.RegisterMagazines("556x45 2x30 Jungle Magazines", {
+	magazines = { "MyMod.JungleMag60_STANAG", "MyMod.JungleMag60_STANAG_2" },
+	animation = "jungleMagReload",
+	unloadDuration = 0.9,
+	loadDuration = 1.0333,
+})
+```
+
 # Underbarrel System
 
 This system lets a weapon switch to an underbarrel weapon, such as a grenade launcher or shotgun.

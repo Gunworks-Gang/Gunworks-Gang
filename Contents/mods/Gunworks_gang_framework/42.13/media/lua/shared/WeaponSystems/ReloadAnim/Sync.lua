@@ -14,6 +14,7 @@
 
 ---@class GunworksReloadAnim
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
+local StackedMagazines = require("WeaponSystems/Utils/StackedMagazines")
 -- Register the input repair AFTER vanilla's reload/rack handlers, including when
 -- this module is required directly rather than through ReloadAnimHooks.
 require("TimedActions/ISReloadWeaponAction")
@@ -73,8 +74,14 @@ local function deriveReloadAnimForPlayer(player)
             or player:getVariableBoolean("isRacking")
             or (player:getVariableBoolean("isUnloading")
                 and (not ReloadAnim.isNonMagArchetype(handler.archetype) or handler.customUnload))
-        if useCustomType and player:getVariableString("WeaponReloadType") ~= desired then
-            player:setVariable("WeaponReloadType", desired)
+        -- A stacked magazine flip plays its own nodes (Utils/StackedMagazines.lua).
+        local reloadType = desired
+        local stacked = player:getVariableString(StackedMagazines.ANIM_VARIABLE)
+        if stacked and stacked ~= "" then
+            reloadType = stacked
+        end
+        if useCustomType and player:getVariableString("WeaponReloadType") ~= reloadType then
+            player:setVariable("WeaponReloadType", reloadType)
         end
     elseif current and current ~= "" then
         player:clearVariable(ReloadAnim.ANIM_VARIABLE)
