@@ -1,10 +1,10 @@
 require("TimedActions/ISReloadWeaponAction")
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
-local getTimestampMs = getTimestampMs
 -------------------------------------------------
 -- Rate of Fire Control System
 -------------------------------------------------
 local RateOfFire = {}
+local getTimestampMs = getTimestampMs
 
 RateOfFire.lastFireTime = {}
 RateOfFire.DEFAULT_RPM = 600

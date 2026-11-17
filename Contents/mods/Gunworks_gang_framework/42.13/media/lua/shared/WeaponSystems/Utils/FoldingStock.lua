@@ -1,5 +1,6 @@
-local FoldingStock = {}
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
+
+local FoldingStock = {}
 
 -------------------------------------------------
 -- Single source of truth: weaponType -> { modifiers, models?, attachments?, initialState? }
@@ -20,7 +21,7 @@ FoldingStock.WeaponsWithFoldableStock = {}
 FoldingStock.RestoreStats = {}
 
 --- Declare which stats stock profiles may modify.
----@param statNames string[]  e.g. { "ReloadTime", ... }
+---@param statNames string[] e.g. { "ReloadTime", ... }
 function FoldingStock.RegisterRestoreStats(statNames)
     for _, name in ipairs(statNames) do
         FoldingStock.RestoreStats[name] = true
@@ -32,8 +33,8 @@ end
 -------------------------------------------------
 
 --- Register a weapon as having a foldable stock
---- @param weaponType string   e.g. "MyMod.MyAK"
---- @param entry table  { modifiers = { folded = { ... }?, deployed = { ... }? }, models = { ... }?, attachments = { ... }?, initialState = "folded"|"deployed"? }
+---@param weaponType string e.g. "MyMod.MyAK"
+---@param entry      table  { modifiers = { folded = { ... }?, deployed = { ... }? }, models = { ... }?, attachments = { ... }?, initialState = "folded"|"deployed"? }
 function FoldingStock.RegisterWeapon(weaponType, entry)
     FoldingStock.WeaponsWithFoldableStock[weaponType] = entry
 end
@@ -138,6 +139,8 @@ local function getModifiers(weapon)
     return entry.modifiers[state]
 end
 
-StatsFactory.RegisterModifierLayer("FoldingStock", getModifiers, FoldingStock.RestoreStats, FoldingStock.HasFoldableStock)
+StatsFactory.RegisterModifierLayer(
+    "FoldingStock", getModifiers, FoldingStock.RestoreStats, FoldingStock.HasFoldableStock
+)
 
 return FoldingStock

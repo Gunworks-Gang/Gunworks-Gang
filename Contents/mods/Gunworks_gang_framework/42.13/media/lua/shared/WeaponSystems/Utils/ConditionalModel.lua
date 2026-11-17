@@ -1,5 +1,6 @@
-local ConditionalModel    = {}
-local StatsFactory        = require("WeaponSystems/Utils/StatsFactory")
+local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
+
+local ConditionalModel = {}
 
 -------------------------------------------------
 -- Registry: weaponFullType -> {
@@ -25,9 +26,9 @@ local function slotMatches(want, installedType)
     return false
 end
 
---- @param weapon HandWeapon
---- @param parts table  { <slot> = <match>, ... }
---- @return boolean
+---@param weapon HandWeapon
+---@param parts  table      { <slot> = <match>, ... }
+---@return boolean
 local function ruleMatches(weapon, parts)
     if type(parts) ~= "table" then return false end
 
@@ -46,15 +47,12 @@ end
 -------------------------------------------------
 
 --- Register a weapon whose displayed model depends on which parts are installed.
---- @param weaponType string  weapon fullType e.g. "MarzModular.M203_CAR15_Weapon"
---- @param config     table   { rules = { ... }, default = string|nil }
+---@param weaponType string weapon fullType e.g. "MarzModular.M203_CAR15_Weapon"
+---@param config     table  { rules = { ... }, default = string|nil }
 function ConditionalModel.Register(weaponType, config)
     if not weaponType or type(config) ~= "table" then return end
 
-    ConditionalModel.Registry[weaponType] = {
-        rules   = config.rules or {},
-        default = config.default,
-    }
+    ConditionalModel.Registry[weaponType] = { rules = config.rules or {}, default = config.default }
 end
 
 --- Register several weapons at once. entries = { [weaponType] = config, ... }
@@ -74,8 +72,8 @@ end
 -------------------------------------------------
 
 --- Work out which model a weapon should display from its installed parts.
---- @param weapon HandWeapon
---- @return string|nil  model (WeaponSprite) name, or nil when the weapon is not
+---@param weapon HandWeapon
+---@return string | nil model (WeaponSprite) name, or nil when the weapon is not
 ---                      registered, or no rule matched and no default is set
 function ConditionalModel.ResolveModel(weapon)
     if not weapon then return nil end
@@ -97,8 +95,8 @@ end
 --- Safe to call any time; a no-op for an unregistered weapon or when nothing
 --- resolves. Prefer letting the StatsFactory layer below do this - call it only
 --- from code paths that do not run ReapplyAllModifiers.
---- @param weapon HandWeapon
---- @return boolean  true when a model was applied
+---@param weapon HandWeapon
+---@return boolean true when a model was applied
 function ConditionalModel.Apply(weapon)
     local model = ConditionalModel.ResolveModel(weapon)
     if not model then return false end

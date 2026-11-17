@@ -1,5 +1,6 @@
-local DynamicAttachment = {}
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
+
+local DynamicAttachment = {}
 
 -------------------------------------------------
 -- Registry: attachmentFullType -> partnerFullType
@@ -8,8 +9,8 @@ local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
 DynamicAttachment.AttachmentPairs = {}
 
 --- Register an attachment pair (bidirectional swap).
---- @param attachmentA string  e.g. "MWA.BIPOD"
---- @param attachmentB string  e.g. "MWA.BIPOD_RETRACTED"
+---@param attachmentA string e.g. "MWA.BIPOD"
+---@param attachmentB string e.g. "MWA.BIPOD_RETRACTED"
 function DynamicAttachment.RegisterPair(attachmentA, attachmentB)
     DynamicAttachment.AttachmentPairs[attachmentA] = attachmentB
     DynamicAttachment.AttachmentPairs[attachmentB] = attachmentA
@@ -21,8 +22,8 @@ end
 
 --- Returns the partner attachment type if any installed attachment is a registered pair member, or nil.
 --- Also returns the partType slot so we know where to swap.
---- @param weapon HandWeapon
---- @return string|nil partnerType, string|nil partType, WeaponPart|nil currentPart
+---@param weapon HandWeapon
+---@return string | nil partnerType, string | nil partType, WeaponPart | nil currentPart
 function DynamicAttachment.GetSwappableAttachment(weapon)
     if not weapon then return nil end
 
@@ -41,8 +42,8 @@ function DynamicAttachment.GetSwappableAttachment(weapon)
 end
 
 --- Check whether the weapon has any swappable attachment pair installed.
---- @param weapon HandWeapon
---- @return boolean
+---@param weapon HandWeapon
+---@return boolean
 function DynamicAttachment.HasSwappableAttachment(weapon)
     return DynamicAttachment.GetSwappableAttachment(weapon) ~= nil
 end
@@ -57,7 +58,7 @@ end
 -------------------------------------------------
 
 --- Swap the currently installed paired attachment with its partner.
---- @param weapon HandWeapon
+---@param weapon HandWeapon
 function DynamicAttachment.SwapAttachment(weapon)
     if not weapon then return end
 

@@ -456,6 +456,47 @@ Animations.RegisterWeaponsWithCustomStates("MyMod.M60", {
 })
 ```
 
+# Attachments Durability System
+
+This makes registered weapon parts wear out while the gun fires.
+
+How it plays:
+
+1. Every shot rolls once per registered part on the gun, with a one in `ConditionLowerChanceOneIn` chance (the part's own script value).
+2. A hit roll takes 1 condition off the part.
+3. At 0 condition the part comes off the gun and goes back to the player's inventory, broken. The gun's stats, including the Gunworks custom stats (sound, muzzle flash), drop back to the gun without it.
+
+The roll runs in singleplayer and on the server, never on a client.
+
+### Module import
+
+```lua
+local AttachmentsDurability = require("WeaponSystems/Utils/AttachmentsDurability")
+```
+
+### Registration
+
+```lua
+AttachmentsDurability.RegisterAttachment(parts)
+```
+
+Parameters:
+
+- `parts`: one full part type or an array of full part types.
+
+The part's script sets how long it lasts: `ConditionMax` is the condition it starts with, and `ConditionLowerChanceOneIn` the chance per shot. With `ConditionMax = 50` and `ConditionLowerChanceOneIn = 15`, a part lasts about 750 shots.
+
+### Complete example
+
+```lua
+local AttachmentsDurability = require("WeaponSystems/Utils/AttachmentsDurability")
+
+AttachmentsDurability.RegisterAttachment({
+	"MyMod.Suppressor_556",
+	"MyMod.Suppressor_9mm",
+})
+```
+
 # Bayonet System
 
 The bayonet system supports two kinds of bayonets:

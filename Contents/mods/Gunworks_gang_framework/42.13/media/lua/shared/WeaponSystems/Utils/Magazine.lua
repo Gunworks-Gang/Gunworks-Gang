@@ -1,5 +1,6 @@
-local Magazine = {}
 local Ammo = require("WeaponSystems/Utils/Ammo")
+
+local Magazine = {}
 
 -------------------------------------------------
 -- Table 1.a: Weapon -> Magazine Profile
