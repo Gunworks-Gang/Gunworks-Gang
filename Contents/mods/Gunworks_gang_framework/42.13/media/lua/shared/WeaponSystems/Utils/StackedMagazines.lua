@@ -1,45 +1,19 @@
--- Gunworks stacked magazines: two or more magazines clamped together (jungle mags). One side sits in the
--- magazine well and the gun feeds from that side alone; the reload key flips the next loaded side in.
---
--- A group lists one item per side. Every item carries the MaxAmmo of the whole pack, and each side holds an
--- equal share (side capacity = MaxAmmo / number of sides). The item type in the gun names the side in the well,
--- so its model shows that side:
---
---   StackedMagazines.RegisterMagazines("556x45 2x30 Jungle Magazines", {
---       magazines = { "MyMod.JungleMag", "MyMod.JungleMag_2" },
---       animation = "jungleMagReload",   -- optional, see TimedActions/ISStackedMagazine.lua
---   })
---
--- In the gun: getCurrentAmmoCount() is the side in the well, so firing, racking and canShoot never take a round
---             from another side, and an empty side leaves the chamber empty. modData.GW_Stacked keeps the others:
---             { group, side, rounds = { [side] = count }, lists = { [side] = AmmoList } }.
--- In the bag: the item counts the whole pack (60/60). modData.GW_Stacked = { group, rounds } splits it into
---             sides, and AmmoList holds every side in side order, side 1 first, so Gunworks' magazine loading and
---             unloading keep working on it. Rounds loaded since go on the last side with room; rounds unloaded
---             since come off the last side first, in the same order the AmmoList grows and shrinks.
---
--- Inserting a pack seats the first side that has rounds. A pack that was never split fills from the last side, so
--- 60/60 seats side 1 and 30/60 or less seats side 2. The reload key flips to the next loaded side while the side
--- in the well is not full; when no other side has rounds it swaps the whole pack as usual.
---
--- State changes run where the reload mechanics run (server / singleplayer). Clients read the synced copy.
-
 local Magazine = require("WeaponSystems/Utils/Magazine")
 local Ammo = require("WeaponSystems/Utils/Ammo")
 
 ---@class GunworksStackedGroup
----@field name string
----@field magazines string[]        one item fullType per side, side 1 first
----@field animation string|nil      WeaponReloadType of the flip's unload and load nodes; nil plays the gun's own
----@field unloadDuration number|nil server timing of that unload clip, in seconds
----@field loadDuration number|nil   server timing of that load clip, in seconds
----@field capacity number|nil       rounds per side, resolved on first use
+---@field name           string
+---@field magazines      string[]     one item fullType per side, side 1 first
+---@field animation      string | nil WeaponReloadType of the flip's unload and load nodes; nil plays the gun's own
+---@field unloadDuration number | nil server timing of that unload clip, in seconds
+---@field loadDuration   number | nil server timing of that load clip, in seconds
+---@field capacity       number | nil rounds per side, resolved on first use
 
 ---@class GunworksStackedPack
----@field group GunworksStackedGroup
----@field side integer              the side that goes into the well
+---@field group  GunworksStackedGroup
+---@field side   integer                  the side that goes into the well
 ---@field rounds integer[]
----@field lists table<integer,string[]>
+---@field lists  table<integer, string[]>
 
 ---@class GunworksStackedMagazines
 local StackedMagazines = {}
@@ -54,11 +28,11 @@ StackedMagazines.SIDE_VARIABLE = "GunworksStackedSide"
 --- during every reload (ReloadAnim/Sync.lua, for multiplayer observers too); while this is set it keeps it here.
 StackedMagazines.ANIM_VARIABLE = "GunworksStackedReload"
 
----@type table<string,GunworksStackedGroup>
+---@type table<string, GunworksStackedGroup>
 StackedMagazines.Groups = {}
 
 -- Magazine fullType -> { group, side }
----@type table<string,{group:GunworksStackedGroup, side:integer}>
+---@type table<string, { group: GunworksStackedGroup, side: integer }>
 StackedMagazines.Sides = {}
 
 local warned = {}
@@ -76,8 +50,8 @@ end
 -------------------------------------------------
 
 --- Register (or replace) a stacked magazine group.
----@param name string
----@param definition { magazines:string[], animation:string|nil, unloadDuration:number|nil, loadDuration:number|nil }
+---@param name       string
+---@param definition { magazines: string[], animation: string | nil, unloadDuration: number | nil, loadDuration: number | nil }
 function StackedMagazines.RegisterMagazines(name, definition)
     if type(name) ~= "string" or name == "" or type(definition) ~= "table" then
         warnOnce("RegisterMagazines needs a name and a definition table")
@@ -117,9 +91,9 @@ end
 -- Lookups
 -------------------------------------------------
 
----@param fullType string|nil
----@return GunworksStackedGroup|nil group
----@return integer|nil side
+---@param fullType string | nil
+---@return GunworksStackedGroup | nil group
+---@return integer | nil side
 function StackedMagazines.GetGroupForType(fullType)
     local entry = fullType and StackedMagazines.Sides[fullType]
     if not entry then
@@ -128,7 +102,7 @@ function StackedMagazines.GetGroupForType(fullType)
     return entry.group, entry.side
 end
 
----@param item InventoryItem|nil
+---@param item InventoryItem | nil
 ---@return boolean
 function StackedMagazines.IsStackedMagazine(item)
     return item ~= nil and StackedMagazines.Sides[item:getFullType()] ~= nil
@@ -154,8 +128,8 @@ end
 
 --- The split of the pack in the gun, or nil when there is no pack or it was never split.
 ---@param gun HandWeapon
----@return table|nil state
----@return GunworksStackedGroup|nil group
+---@return table | nil state
+---@return GunworksStackedGroup | nil group
 function StackedMagazines.GetGunState(gun)
     if not StackedMagazines.IsInGun(gun) then
         return nil
@@ -174,7 +148,7 @@ end
 --- The item type of the side in the well. Read from the split, which reaches a client with the weapon sync; the
 --- client's own getMagazineType() only follows on the next equip.
 ---@param gun HandWeapon
----@return string|nil
+---@return string | nil
 function StackedMagazines.GetWellType(gun)
     local state, group = StackedMagazines.GetGunState(gun)
     if state then
@@ -186,7 +160,7 @@ end
 --- The next side after the one in the well that has rounds, in clamp order.
 ---@param state table
 ---@param group GunworksStackedGroup
----@return integer|nil
+---@return integer | nil
 function StackedMagazines.GetNextSide(state, group)
     local count = #group.magazines
     for offset = 1, count - 1 do
@@ -200,9 +174,9 @@ end
 
 --- What a flip of this gun would seat: the side, its rounds and its item type.
 ---@param gun HandWeapon
----@return integer|nil side
+---@return integer | nil side
 ---@return integer rounds
----@return string|nil magazineType
+---@return string | nil magazineType
 function StackedMagazines.PeekNextSide(gun)
     local state, group = StackedMagazines.GetGunState(gun)
     if not state then
@@ -234,7 +208,7 @@ end
 
 --- The WeaponReloadType of the flip nodes for the pack in the gun (nil plays the gun's own unload, then its load).
 ---@param gun HandWeapon
----@return string|nil
+---@return string | nil
 function StackedMagazines.GetAnimation(gun)
     local _, group = StackedMagazines.GetGunState(gun)
     return group and group.animation or nil
@@ -244,8 +218,8 @@ end
 -- Round lists
 -------------------------------------------------
 
----@param list table|nil
----@return string[]|nil
+---@param list table | nil
+---@return string[] | nil
 local function copyList(list)
     if type(list) ~= "table" or #list == 0 then
         return nil
@@ -258,17 +232,17 @@ local function copyList(list)
 end
 
 ---@param item InventoryItem
----@return string|nil
+---@return string | nil
 local function defaultRound(item)
     local ammoType = item:getAmmoType()
     return ammoType and ammoType:getItemKey() or nil
 end
 
 -- A list that names `count` rounds: rounds it does not name sit at the bottom and get `filler`.
----@param list string[]|nil
----@param count integer
----@param filler string|nil
----@return string[]|nil
+---@param list   string[] | nil
+---@param count  integer
+---@param filler string | nil
+---@return string[] | nil
 local function fitList(list, count, filler)
     if not list or count <= 0 then
         return nil
@@ -297,9 +271,9 @@ end
 -- Packs in the bag
 -------------------------------------------------
 
----@param rounds integer[]
+---@param rounds   integer[]
 ---@param capacity integer
----@return integer|nil
+---@return integer | nil
 local function lastSideWithRoom(rounds, capacity)
     for side = #rounds, 1, -1 do
         if rounds[side] < capacity then
@@ -310,7 +284,7 @@ local function lastSideWithRoom(rounds, capacity)
 end
 
 ---@param rounds integer[]
----@return integer|nil
+---@return integer | nil
 local function firstLoadedSide(rounds)
     for side = 1, #rounds do
         if rounds[side] > 0 then
@@ -322,7 +296,7 @@ end
 
 --- Split a stacked magazine item into its sides and pick the side to seat. Nil for any other item.
 ---@param magazine InventoryItem
----@return GunworksStackedPack|nil
+---@return GunworksStackedPack | nil
 function StackedMagazines.ReadPack(magazine)
     local group = StackedMagazines.GetGroupForType(magazine:getFullType())
     if not group then
@@ -381,17 +355,12 @@ function StackedMagazines.ReadPack(magazine)
         end
     end
 
-    return {
-        group = group,
-        side = firstLoadedSide(rounds) or 1,
-        rounds = rounds,
-        lists = lists,
-    }
+    return { group = group, side = firstLoadedSide(rounds) or 1, rounds = rounds, lists = lists }
 end
 
 --- The item type the pack goes in as (the side its insert seats), or nil for any other item.
 ---@param magazine InventoryItem
----@return string|nil
+---@return string | nil
 function StackedMagazines.GetSeatedType(magazine)
     local pack = StackedMagazines.ReadPack(magazine)
     return pack and pack.group.magazines[pack.side] or nil
@@ -399,9 +368,9 @@ end
 
 --- Write a split onto a magazine item: its count, its sides and one AmmoList in side order.
 ---@param magazine InventoryItem
----@param group GunworksStackedGroup
----@param rounds integer[]
----@param lists table<integer,string[]>
+---@param group    GunworksStackedGroup
+---@param rounds   integer[]
+---@param lists    table<integer, string[]>
 function StackedMagazines.WritePack(magazine, group, rounds, lists)
     local total = 0
     local named = false
@@ -443,9 +412,9 @@ end
 -- Packs in the gun (server / singleplayer)
 -------------------------------------------------
 
----@param gun HandWeapon
+---@param gun   HandWeapon
 ---@param group GunworksStackedGroup
----@param side integer
+---@param side  integer
 local function setWellSide(gun, group, side)
     local magazineType = group.magazines[side]
     gun:setMagazineType(magazineType)
@@ -455,9 +424,9 @@ end
 
 --- The insert is about to load this pack: the item now holds only the side that goes in, and the gun keeps the
 --- other sides. Returns what undoes it when the insert does not happen.
----@param gun HandWeapon
+---@param gun      HandWeapon
 ---@param magazine InventoryItem
----@param pack GunworksStackedPack
+---@param pack     GunworksStackedPack
 ---@return table undo
 function StackedMagazines.PresentSide(gun, magazine, pack)
     local modData = magazine:getModData()
@@ -486,9 +455,9 @@ function StackedMagazines.PresentSide(gun, magazine, pack)
     return undo
 end
 
----@param gun HandWeapon
+---@param gun      HandWeapon
 ---@param magazine InventoryItem
----@param undo table
+---@param undo     table
 function StackedMagazines.UndoPresentSide(gun, magazine, undo)
     magazine:setCurrentAmmoCount(undo.count)
     magazine:getModData().AmmoList = undo.list
@@ -496,7 +465,7 @@ function StackedMagazines.UndoPresentSide(gun, magazine, undo)
 end
 
 --- The pack is in: the gun takes the side's item type and capacity.
----@param gun HandWeapon
+---@param gun  HandWeapon
 ---@param pack GunworksStackedPack
 function StackedMagazines.SeatPack(gun, pack)
     setWellSide(gun, pack.group, pack.side)
@@ -513,8 +482,8 @@ end
 
 -- The gun's AmmoList without its chambered round, and that round.
 ---@param gun HandWeapon
----@return string[]|nil list
----@return string|nil chambered
+---@return string[] | nil list
+---@return string | nil chambered
 local function splitChamber(gun)
     local list = copyList(gun:getModData().AmmoList)
     local chambered = nil
@@ -526,7 +495,7 @@ end
 
 --- Flip the next loaded side into the well. The chambered round stays.
 ---@param character IsoGameCharacter
----@param gun HandWeapon
+---@param gun       HandWeapon
 ---@return boolean flipped
 function StackedMagazines.FlipSides(character, gun)
     local state, group = StackedMagazines.GetGunState(gun)
@@ -557,12 +526,7 @@ function StackedMagazines.FlipSides(character, gun)
 
     local modData = gun:getModData()
     modData.AmmoList = copyList(seatedList)
-    modData[StackedMagazines.STATE_KEY] = {
-        group = group.name,
-        side = nextSide,
-        rounds = rounds,
-        lists = lists,
-    }
+    modData[StackedMagazines.STATE_KEY] = { group = group.name, side = nextSide, rounds = rounds, lists = lists }
     setWellSide(gun, group, nextSide)
 
     syncHandWeaponFields(character, gun)
@@ -573,7 +537,7 @@ end
 --- Take the whole pack out of the gun as a new item of the group's first type (not added anywhere). The chambered
 --- round stays. A pack inserted before this system (no split) comes out whole and splits on its next insert.
 ---@param gun HandWeapon
----@return InventoryItem|nil
+---@return InventoryItem | nil
 function StackedMagazines.TakePack(gun)
     if not StackedMagazines.IsInGun(gun) then
         return nil
@@ -610,8 +574,8 @@ end
 
 --- Eject the pack into the character's inventory (ISEjectMagazine).
 ---@param character IsoGameCharacter
----@param gun HandWeapon
----@return InventoryItem|nil
+---@param gun       HandWeapon
+---@return InventoryItem | nil
 function StackedMagazines.EjectPack(character, gun)
     local pack = StackedMagazines.TakePack(gun)
     if not pack then
@@ -640,7 +604,7 @@ end
 -------------------------------------------------
 
 ---@param playerObj IsoPlayer
----@param gun HandWeapon
+---@param gun       HandWeapon
 ---@return boolean
 local function isFlipQueued(playerObj, gun)
     local actions = ISTimedActionQueue.getTimedActionQueue(playerObj).queue
@@ -657,7 +621,7 @@ end
 --- queued does nothing (it would flip straight back). False leaves the reload to the normal magazine swap (no split
 --- pack, or every other side is empty), which takes the pack out and inserts the best magazine like any other.
 ---@param playerObj IsoPlayer
----@param gun HandWeapon
+---@param gun       HandWeapon
 ---@return boolean handled
 function StackedMagazines.BeginReload(playerObj, gun)
     local state, group = StackedMagazines.GetGunState(gun)

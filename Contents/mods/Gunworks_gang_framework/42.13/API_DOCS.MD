@@ -2296,6 +2296,23 @@ StackedMagazines.TakePack(gun)              -- server: empty the gun into a new 
 
 `TakePack` is for mods that remove magazines their own way (a tactical drop, for example). Reading `getCurrentAmmoCount()` there would only count the side in the well.
 
+### 4. Saved state
+
+In the gun:
+
+- `getCurrentAmmoCount()` is the side in the well. Firing, racking and `canShoot` never take a round from another side, and an empty side leaves the chamber empty.
+- The item type in the gun names the side in the well.
+- `modData.GW_Stacked` keeps the others: `{ group, side, rounds = { [side] = count }, lists = { [side] = AmmoList } }`.
+
+In the bag:
+
+- The item counts the whole pack (`60/60`).
+- `modData.GW_Stacked = { group, rounds }` splits it into sides.
+- `AmmoList` holds every side in side order, side 1 first, so Gunworks' magazine loading and unloading keep working on it.
+- Rounds loaded since go on the last side with room. Rounds unloaded since come off the last side first, in the same order the `AmmoList` grows and shrinks.
+
+State changes run where the reload mechanics run (server / singleplayer). Clients read the synced copy.
+
 ### Complete example
 
 ```lua
