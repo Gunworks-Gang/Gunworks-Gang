@@ -7,7 +7,7 @@
 	<m_BlendTime>0.05</m_BlendTime>
 	<m_BlendOutTime>0.15</m_BlendOutTime>
 	<m_EarlyTransitionOut>true</m_EarlyTransitionOut>
-	<m_SpeedScale>singleShootSpeed</m_SpeedScale>
+	<m_SpeedScale>1.5</m_SpeedScale>
 	<m_Scalar>verticalAimAngle</m_Scalar>
 	<m_Scalar2>recoilVarY</m_Scalar2>
 	<m_SyncTrackingEnabled>false</m_SyncTrackingEnabled>
