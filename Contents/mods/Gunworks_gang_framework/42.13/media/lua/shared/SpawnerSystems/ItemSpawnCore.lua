@@ -95,7 +95,7 @@ function ItemSpawnCore.newDeferredQueue()
         if entries[item] then return end
 
         local entry = { attempts = 0 }
-        entry.tick = function()
+        entry.tick = function ()
             entry.attempts = entry.attempts + 1
             if entry.attempts > ItemSpawnCore.MAX_DEFERRED_TICKS then
                 queue.clear(item)

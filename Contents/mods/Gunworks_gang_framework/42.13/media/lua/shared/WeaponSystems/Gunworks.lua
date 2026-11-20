@@ -28,7 +28,7 @@ local Gunworks = {}
 
 --- True if the gun currently has the given part attached, matched by the part's item fullType OR
 --- its partType slot, so a `when` can target either a specific attachment item or a whole slot.
----@param gun HandWeapon
+---@param gun    HandWeapon
 ---@param attach string
 ---@nodiscard
 ---@return boolean
@@ -48,13 +48,13 @@ end
 
 --- Build a matches(gun) predicate from a `when` block, AND-scoped to a gun fullType.
 ---@param fullType string
----@param when {attach:string|nil, present:boolean|nil}
+---@param when     { attach: string | nil, present: boolean | nil }
 ---@nodiscard
----@return fun(gun:HandWeapon):boolean
+---@return fun(gun: HandWeapon): boolean
 function Gunworks.buildMatches(fullType, when)
     local attach = when.attach
     local present = when.present ~= false
-    return function(gun)
+    return function (gun)
         if gun:getFullType() ~= fullType then
             return false
         end
@@ -71,15 +71,15 @@ end
 
 --- A `when`-tagged variant id, unique per (animId, attachment, presence).
 ---@param animId string
----@param when table
+---@param when   table
 ---@return string
 local function variantId(animId, when)
     return animId .. "@" .. (when.attach or "any") .. (when.present == false and "!" or "")
 end
 
 -- A profile block may be a single profile ({animId=...}) or a list of variant profiles.
----@param block table|table[]|nil
----@return table[]|nil
+---@param block table | table[] | nil
+---@return table[] | nil
 local function asList(block)
     if not block then
         return nil
@@ -105,7 +105,7 @@ end
 
 --- Public API: register a gun's animation identity in one call.
 ---@param fullType string
----@param spec {reload:table|table[]|nil, grip:table|table[]|nil, animatedParts:table|nil, customStates:table|nil}
+---@param spec     { reload: table | table[] | nil, grip: table | table[] | nil, animatedParts: table | nil, customStates: table | nil }
 ---@return nil
 function Gunworks.RegisterWeapon(fullType, spec)
     if not fullType or not spec then

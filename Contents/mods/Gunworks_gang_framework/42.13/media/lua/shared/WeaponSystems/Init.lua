@@ -1,14 +1,14 @@
 require("WeaponSystems/Utils/CustomStatsAttachments")
 require("WeaponSystems/Utils/ConditionalModel")
 
-local Animations   = require("WeaponSystems/Utils/Animations")
-local Bayonet      = require("WeaponSystems/Utils/Bayonet")
+local Animations = require("WeaponSystems/Utils/Animations")
+local Bayonet = require("WeaponSystems/Utils/Bayonet")
 local FoldingStock = require("WeaponSystems/Utils/FoldingStock")
 local FoldingBipod = require("WeaponSystems/Utils/FoldingBipod")
-local Magazine     = require("WeaponSystems/Utils/Magazine")
+local Magazine = require("WeaponSystems/Utils/Magazine")
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
-local Underbarrel  = require("WeaponSystems/Utils/Underbarrel")
-local Ammo         = require("WeaponSystems/Utils/Ammo")
+local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
+local Ammo = require("WeaponSystems/Utils/Ammo")
 
 local function restoreContainer(container)
     if not container then return end
@@ -51,14 +51,14 @@ local function restoreEquippedWeapon(playerObj, weapon)
     end
 end
 
-Events.OnGameStart.Add(function()
+Events.OnGameStart.Add(function ()
     local player = getSpecificPlayer(0)
     if player then
         restorePlayer(player)
     end
 end)
 
-Events.OnCreatePlayer.Add(function(_, playerObj)
+Events.OnCreatePlayer.Add(function (_, playerObj)
     restorePlayer(playerObj)
 end)
 
