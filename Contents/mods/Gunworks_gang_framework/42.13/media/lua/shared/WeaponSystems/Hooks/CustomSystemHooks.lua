@@ -238,6 +238,29 @@ function ISRackFirearm:removeBullet()
     -- fallback pose. Skipping the give-back when there is no ammo type avoids that crash.
 end
 
+local ISRackFirearm_rackBullet = ISRackFirearm.rackBullet
+function ISRackFirearm:rackBullet()
+    local gun = self.gun
+    local discardsJammedRound = gun:haveChamber() and gun:isJammed() and gun:isRoundChambered()
+    local ammoCount = gun:getCurrentAmmoCount()
+    ISRackFirearm_rackBullet(self)
+    if not discardsJammedRound then
+        return
+    end
+    if gun:isRoundChambered() and gun:getCurrentAmmoCount() == ammoCount then
+        return
+    end
+    local modData = gun:getModData()
+    local ammoList = modData.AmmoList
+    if ammoList and #ammoList > 0 then
+        ammoList[#ammoList] = nil
+        if #ammoList == 0 then
+            modData.AmmoList = nil
+        end
+        Ammo.SyncAmmoListToClient(self.character, gun)
+    end
+end
+
 -------------------------------------------------
 -- Insert Magazine: Transfer AmmoList mag -> gun
 -------------------------------------------------
