@@ -456,6 +456,47 @@ Animations.RegisterWeaponsWithCustomStates("MyMod.M60", {
 })
 ```
 
+# Attachments Durability System
+
+This makes registered weapon parts wear out while the gun fires.
+
+How it plays:
+
+1. Every shot rolls once per registered part on the gun, with a one in `ConditionLowerChanceOneIn` chance (the part's own script value).
+2. A hit roll takes 1 condition off the part.
+3. At 0 condition the part comes off the gun and goes back to the player's inventory, broken. The gun's stats, including the Gunworks custom stats (sound, muzzle flash), drop back to the gun without it.
+
+The roll runs in singleplayer and on the server, never on a client.
+
+### Module import
+
+```lua
+local AttachmentsDurability = require("WeaponSystems/Utils/AttachmentsDurability")
+```
+
+### Registration
+
+```lua
+AttachmentsDurability.RegisterAttachment(parts)
+```
+
+Parameters:
+
+- `parts`: one full part type or an array of full part types.
+
+The part's script sets how long it lasts: `ConditionMax` is the condition it starts with, and `ConditionLowerChanceOneIn` the chance per shot. With `ConditionMax = 50` and `ConditionLowerChanceOneIn = 15`, a part lasts about 750 shots.
+
+### Complete example
+
+```lua
+local AttachmentsDurability = require("WeaponSystems/Utils/AttachmentsDurability")
+
+AttachmentsDurability.RegisterAttachment({
+	"MyMod.Suppressor_556",
+	"MyMod.Suppressor_9mm",
+})
+```
+
 # Bayonet System
 
 The bayonet system supports two kinds of bayonets:
@@ -1168,6 +1209,114 @@ FoldingStock.RegisterMultipleWeapons({
 			deployed = "FAL_Para_Deployed",
 		}
 	},
+})
+```
+
+# Foregrip Grip System
+
+This makes the left hand hold a vertical foregrip instead of wrapping the handguard.
+Gunworks provides the registry and the `GunworksGripAnim` variable.
+The animations ship with Guns of Marz, so the foregrip grip needs Guns of Marz enabled:
+
+- **AnimSet nodes:** `GW_Foregrip_*`, in a `Foregrip_Rifle` folder inside each state, for example `media/AnimSets/player/idle/Foregrip_Rifle`.
+  They cover the idle, walk, run, sprint, sneak, strafe, aim and fire poses of two-handed firearms, plus the transitions, bumps, getting up, sitting down, vaulting, shoves and idle fidgets that keep the hand on the gun.
+- **Animation clips:** `Marz_Foregrip_*`, in `media/anims_X/Bob/Foregrip_Rifle`.
+
+Your mod only registers its foregrip attachments.
+
+How it plays:
+
+1. While a gun carrying a registered foregrip is in the primary hand, Gunworks sets the animation variable `GunworksGripAnim` to `Foregrip`.
+2. The Guns of Marz AnimSet nodes `GW_Foregrip_*` (clips `Marz_Foregrip_*`) gate on that value and take over from the vanilla rifle nodes.
+3. A deployed bipod (Gunworks bipod stance) wins over the foregrip.
+   A gun's own grip (registered by fullType or with a `when` rule) wins over a registered part, unless it names a variant for that part's grip (section 3).
+4. Reloads, racks and unloads keep the gun's own reload animations.
+
+The left hand holds the same spot on every gun, fixed to `Bip01_Prop1`: the fist is centred 20 units along the barrel and 1.9 units below the Prop1 origin.
+Place each gun's foregrip so it lands in that hand with the gun model's `attachment foregrip`: `offset = 0.0000 0.2000 <z>`, where `<z>` puts the top of the grip at the bottom of the handguard (about `0.0060` on an AR-15).
+
+## SMG stance
+
+Guns of Marz also ships a stance for short-handguard SMGs that use the rifle animations, in the same layout:
+
+| `GunworksGripAnim` | Nodes | Clips | Left hand |
+|---|---|---|---|
+| `SMG` | `GW_SMG_*` in `<state>/SMG` | `Marz_SMG_*` in `anims_X/Bob/SMG` | Wraps the handguard like vanilla, 4.6 units further back and 1 unit higher than the vanilla aim grip (fist centred 15.2 along the barrel). |
+| `ForegripSMG` | `GW_ForegripSMG_*` in `<state>/Foregrip_SMG` | `Marz_ForegripSMG_*` in `anims_X/Bob/Foregrip_SMG` | Holds a vertical foregrip with the fist centred 15.4 along the barrel and 0.9 below the Prop1 origin, so an SMG's foregrip goes at `offset = 0.0000 0.1540 <z>`. |
+
+Guns of Marz registers its SMGs in `MarzWeapons/Registries/GripStances.lua` with the variant from section 3, so a registered foregrip on an SMG plays `ForegripSMG`.
+
+### Module import
+
+```lua
+local GripAnim = require("WeaponSystems/Utils/GripAnim")
+```
+
+### 1. Foregrip registration
+
+```lua
+GripAnim.RegisterForegrip(partFullType)
+GripAnim.RegisterMultipleForegrips(partFullTypes)
+```
+
+Parameters:
+
+- `partFullType`: full item type of the foregrip attachment.
+- `partFullTypes`: array of full item types.
+
+### 2. Your own grip animations for a part
+
+Use this when your mod ships its own grip nodes, gated on `GunworksGripAnim` = your `animId`.
+
+```lua
+GripAnim.RegisterPart(partFullType, { animId = "MyGrip" })
+GripAnim.RegisterMultipleParts({ [partFullType] = { animId = "MyGrip" } })
+```
+
+To give only one gun the foregrip grip for a part, use the per-gun facade instead:
+
+```lua
+local Gunworks = require("WeaponSystems/Gunworks")
+
+Gunworks.RegisterWeapon("MyMod.M4", {
+	grip = { animId = GripAnim.FOREGRIP, when = { attach = "MyMod.AngledGrip" } },
+})
+```
+
+### 3. A gun's own grip, with a version for each part grip
+
+A gun registered with its own grip keeps it whatever parts are installed.
+`variants` maps a part grip (the `animId` a part is registered with) to the grip the gun plays while that part is installed.
+
+```lua
+GripAnim.RegisterWeapon(fullType, { animId = "SMG", variants = { [GripAnim.FOREGRIP] = "ForegripSMG" } })
+GripAnim.RegisterMultipleWeapons({ [fullType] = { animId = "SMG", variants = { [GripAnim.FOREGRIP] = "ForegripSMG" } } })
+```
+
+Parameters:
+
+- `fullType`: full item type of the gun.
+- `animId`: the gun's grip without a matching part.
+- `variants`: optional; keys are part grips, values are the grips to play instead.
+
+A part grip with no entry in `variants` leaves the gun's own grip.
+The facade takes the same field: `grip = { animId = "SMG", variants = { [GripAnim.FOREGRIP] = "ForegripSMG" } }`.
+
+### Complete example
+
+```lua
+local GripAnim = require("WeaponSystems/Utils/GripAnim")
+
+GripAnim.RegisterMultipleForegrips({
+	"MyMod.Foregrip_Vertical",
+	"MyMod.Foregrip_Stubby",
+})
+
+local SMG = { animId = "SMG", variants = { [GripAnim.FOREGRIP] = "ForegripSMG" } }
+
+GripAnim.RegisterMultipleWeapons({
+	["MyMod.UMP45"] = SMG,
+	["MyMod.Vector"] = SMG,
 })
 ```
 
@@ -2225,6 +2374,124 @@ if loader then
 		print("Loaded rounds: " .. tostring(moved))
 	end
 end
+```
+
+# Stacked Magazine System
+
+This system makes magazines clamped together (jungle mags) work like the real thing.
+Only one side sits in the magazine well. The gun fires from that side alone, and the reload key flips the next loaded side in.
+
+How it plays:
+
+1. In the bag the pack counts all its rounds (`60/60`).
+2. Inserting a pack seats the first side that has rounds. A pack loaded from empty fills its last side first, so `60/60` goes in on side 1 and `30/60` or less goes in on side 2.
+3. The gun only counts the side in the well. When that side runs dry the chamber stays empty and the gun can't fire, even with rounds on the other side.
+4. The reload key flips to the next side that has rounds. With an empty chamber the gun's own rack follows. With a round chambered (a flip before the side ran dry) no rack is needed, and the partly used side stays on the clamp for later.
+5. The reload key flips even when the side in the well is full. When no other side has rounds, the reload key swaps the whole pack for another magazine, as usual.
+6. An ejected pack keeps every side's rounds (and their AmmoList), whichever side was in the well. It comes out as the group's first item.
+
+### Module import
+
+```lua
+local StackedMagazines = require("WeaponSystems/Utils/StackedMagazines")
+```
+
+### 1. Group registration
+
+```lua
+StackedMagazines.RegisterMagazines(name, definition)
+```
+
+Parameters:
+
+- `name`: the group name. Registering the same name again replaces the group.
+- `definition.magazines`: one item per side, side 1 first. At least two.
+- `definition.animation` (optional): the `WeaponReloadType` value of the flip's own unload and load nodes. Without it the flip plays the gun's own unload clip, then its own load clip.
+- `definition.unloadDuration` / `definition.loadDuration` (optional, with `animation`): the lengths of those two clips in seconds, for the server timing. Without `animation` the server uses the gun profile's `unload` / `load` durations.
+
+The items:
+
+- Every side's item has the `MaxAmmo` of the whole pack. Each side holds an equal share (`MaxAmmo / number of sides`).
+- Each item's model shows its side in the well. The item in the gun changes on every flip, so the model follows.
+- Add every side's item to the gun's magazine profile, to the ammo family and to Prevent Removal, like any magazine.
+
+### 2. The flip animation
+
+The flip is its own timed action, `ISStackedMagazine`. Its nodes need `PerformingAction = Reload`.
+
+The flip plays an unload node (`isUnloading`) until `unloadFinished`, then a load node (`isLoading`) until `loadFinished`. The sides flip on `loadFinished`.
+
+- With `animation` set, both nodes are yours, gated on `WeaponReloadType` = your `animation` value. The unload takes the pack out of the well and the load puts it back on its next side, without a trip to the pouch.
+- `GunworksStackedSide` is the side going in (`"1"`, `"2"`, ...). A side-by-side pack moves one way to seat side 2 and the other way back to side 1, so give each direction its own load node.
+- `GunworksReloadAiming` tells an aimed variant apart, as in every Gunworks reload.
+- Without `animation`, the gun's own unload and load nodes play, as in a magazine swap.
+
+Events in either case:
+
+- `InsertMag`: takes the magazine model off the gun when one is on, and puts the next side's model on when none is. Place it once where the pack leaves the well and once where it goes back in.
+- `attachToHand` / `detachFromHand`: the pack in the left hand, as in a magazine reload. The hand shows the pack as it came out of the well. Leave out `detachFromHand` in your unload and `attachToHand` in your load to keep it in the hand through both: it keeps that model, so the load clip must move the hand so that the next side lines up with the well at `InsertMag`. When the unload puts it down (the gun's own clips), the load picks up the side going in.
+- `playReloadSound` with `load`, `insertAmmoStart`, `unload` or `ejectAmmoStart`: the gun's sounds.
+
+The rack after the flip is the gun's normal rack, so reload rules (for example a bolt catch slap) still apply to it.
+
+### 3. Helpers
+
+```lua
+StackedMagazines.IsStackedMagazine(item)    -- is this item a side of a registered group?
+StackedMagazines.GetReserveRounds(gun)      -- rounds waiting on the sides that are not in the well
+StackedMagazines.PeekNextSide(gun)          -- side, rounds, item type the next flip would seat
+StackedMagazines.TakePack(gun)              -- server: empty the gun into a new pack item (not added anywhere)
+```
+
+`TakePack` is for mods that remove magazines their own way (a tactical drop, for example). Reading `getCurrentAmmoCount()` there would only count the side in the well.
+
+### 4. Saved state
+
+In the gun:
+
+- `getCurrentAmmoCount()` is the side in the well. Firing, racking and `canShoot` never take a round from another side, and an empty side leaves the chamber empty.
+- The item type in the gun names the side in the well.
+- `modData.GW_Stacked` keeps the others: `{ group, side, rounds = { [side] = count }, lists = { [side] = AmmoList } }`.
+
+In the bag:
+
+- The item counts the whole pack (`60/60`).
+- `modData.GW_Stacked = { group, rounds }` splits it into sides.
+- `AmmoList` holds every side in side order, side 1 first, so Gunworks' magazine loading and unloading keep working on it.
+- Rounds loaded since go on the last side with room. Rounds unloaded since come off the last side first, in the same order the `AmmoList` grows and shrinks.
+
+State changes run where the reload mechanics run (server / singleplayer). Clients read the synced copy.
+
+### Complete example
+
+```lua
+local Magazine = require("WeaponSystems/Utils/Magazine")
+local Ammo = require("WeaponSystems/Utils/Ammo")
+local PreventRemoval = require("WeaponSystems/Utils/PreventRemovals")
+local StackedMagazines = require("WeaponSystems/Utils/StackedMagazines")
+
+Magazine.RegisterMagazineProfile("STANAG", {
+	"MyMod.Magazine30_STANAG",
+	"MyMod.JungleMag60_STANAG",
+	"MyMod.JungleMag60_STANAG_2",
+})
+
+Ammo.RegisterItemWithFamily("5.56x45mm", {
+	"MyMod.JungleMag60_STANAG",
+	"MyMod.JungleMag60_STANAG_2",
+})
+
+PreventRemoval.Register({
+	"MyMod.JungleMag60_STANAG",
+	"MyMod.JungleMag60_STANAG_2",
+})
+
+StackedMagazines.RegisterMagazines("556x45 2x30 Jungle Magazines", {
+	magazines = { "MyMod.JungleMag60_STANAG", "MyMod.JungleMag60_STANAG_2" },
+	animation = "jungleMagReload",
+	unloadDuration = 0.9,
+	loadDuration = 1.0333,
+})
 ```
 
 # Underbarrel System

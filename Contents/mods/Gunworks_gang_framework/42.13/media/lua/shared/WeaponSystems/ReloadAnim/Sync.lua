@@ -14,13 +14,14 @@
 
 ---@class GunworksReloadAnim
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
+local StackedMagazines = require("WeaponSystems/Utils/StackedMagazines")
 -- Register the input repair AFTER vanilla's reload/rack handlers, including when
 -- this module is required directly rather than through ReloadAnimHooks.
 require("TimedActions/ISReloadWeaponAction")
 
 --- Set the selector on a character.
----@param character IsoGameCharacter|nil
----@param animId string|nil
+---@param character IsoGameCharacter | nil
+---@param animId    string | nil
 ---@return nil
 function ReloadAnim.setReloadAnimVar(character, animId)
     if not character or not animId then
@@ -31,7 +32,7 @@ function ReloadAnim.setReloadAnimVar(character, animId)
 end
 
 --- Clear the selector on a character.
----@param character IsoGameCharacter|nil
+---@param character IsoGameCharacter | nil
 ---@return nil
 function ReloadAnim.clearReloadAnimVar(character)
     if not character then
@@ -43,7 +44,7 @@ end
 
 --- Per-player tick pass: derive GunworksReloadAnim for EVERY player (local reloader + remote
 --- observers + the server's view) from their synced reload state + equipped weapon.
----@param player IsoPlayer|nil
+---@param player IsoPlayer | nil
 ---@return nil
 local function deriveReloadAnimForPlayer(player)
     if not player then
@@ -68,13 +69,17 @@ local function deriveReloadAnimForPlayer(player)
         -- the custom family during rack as well as load, without changing those flags.
         -- Non-magazine unload still requires the profile's explicit customUnload opt-in;
         -- packs without a matching Unload node must retain their engine reload type.
-        local useCustomType = player:getVariableBoolean("isLoading")
-            or player:getVariableBoolean("isLoadingShort")
-            or player:getVariableBoolean("isRacking")
-            or (player:getVariableBoolean("isUnloading")
+        local useCustomType = player:getVariableBoolean("isLoading") or player:getVariableBoolean("isLoadingShort")
+            or player:getVariableBoolean("isRacking") or (player:getVariableBoolean("isUnloading")
                 and (not ReloadAnim.isNonMagArchetype(handler.archetype) or handler.customUnload))
-        if useCustomType and player:getVariableString("WeaponReloadType") ~= desired then
-            player:setVariable("WeaponReloadType", desired)
+        -- A stacked magazine flip plays its own nodes (Utils/StackedMagazines.lua).
+        local reloadType = desired
+        local stacked = player:getVariableString(StackedMagazines.ANIM_VARIABLE)
+        if stacked and stacked ~= "" then
+            reloadType = stacked
+        end
+        if useCustomType and player:getVariableString("WeaponReloadType") ~= reloadType then
+            player:setVariable("WeaponReloadType", reloadType)
         end
     elseif current and current ~= "" then
         player:clearVariable(ReloadAnim.ANIM_VARIABLE)
@@ -102,7 +107,7 @@ Events.OnPressReloadButton.Add(deriveReloadAnimForPlayer)
 -- server neither fires OnTick nor renders.
 if isClient() then
     local ticksSincePass = 0
-    Events.OnTick.Add(function()
+    Events.OnTick.Add(function ()
         ticksSincePass = ticksSincePass + 1
         if ticksSincePass < 3 then
             return

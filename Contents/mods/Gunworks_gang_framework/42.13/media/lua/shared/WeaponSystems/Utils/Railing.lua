@@ -1,5 +1,6 @@
-local Railing = {}
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
+
+local Railing = {}
 
 -------------------------------------------------
 -- Registry: railingFullType -> { accessoryFullType, ... }
@@ -42,8 +43,8 @@ end
 -------------------------------------------------
 
 --- Register a railing and the accessories it accepts.
---- @param railingType string|string[]  e.g. "MWA.PICATINNY_RAIL" or { "MWA.PICATINNY_RAIL", "MWA.AK_MOUNT" }
---- @param accessories string[]        e.g. { "Base.2xScope", "Base.4xScope" }
+---@param railingType string | string[] e.g. "MWA.PICATINNY_RAIL" or { "MWA.PICATINNY_RAIL", "MWA.AK_MOUNT" }
+---@param accessories string[]          e.g. { "Base.2xScope", "Base.4xScope" }
 function Railing.RegisterRailing(railingType, accessories)
     if not railingType or not accessories then return end
 
@@ -64,8 +65,8 @@ end
 
 --- Register one or more accessories as blocked on a specific weapon.
 --- This only applies after a railing has already accepted the accessory.
---- @param weaponType string|HandWeapon|string[]  e.g. "MWA.AA12" or { "MWA.AA12", "MWA.AA13" }
---- @param accessories string|string[]   e.g. "Base.8xScope" or { "Base.8xScope", "Base.Laser" }
+---@param weaponType  string | HandWeapon | string[] e.g. "MWA.AA12" or { "MWA.AA12", "MWA.AA13" }
+---@param accessories string | string[]              e.g. "Base.8xScope" or { "Base.8xScope", "Base.Laser" }
 function Railing.RegisterWeaponExclusions(weaponType, accessories)
     if not weaponType or not accessories then return end
 
@@ -99,8 +100,8 @@ end
 
 --- Register one or more items as mutually exclusive with one or more other items.
 --- If one is mounted, the other cannot be mounted.
---- @param itemA string|string[]  e.g. "MWA.BIPOD_DEPLOYED" or { "MWA.BOOSTER_ON", "MWA.BOOSTER_OFF" }
---- @param itemB string|string[]  e.g. "MWA.INTEGRATED_BIPOD_DEPLOYED" or { "MWA.SCOPE_A", "MWA.SCOPE_B" }
+---@param itemA string | string[] e.g. "MWA.BIPOD_DEPLOYED" or { "MWA.BOOSTER_ON", "MWA.BOOSTER_OFF" }
+---@param itemB string | string[] e.g. "MWA.INTEGRATED_BIPOD_DEPLOYED" or { "MWA.SCOPE_A", "MWA.SCOPE_B" }
 function Railing.SetExclusives(itemA, itemB)
     if not itemA or not itemB then return end
 
@@ -113,7 +114,9 @@ function Railing.SetExclusives(itemA, itemB)
         return
     end
 
-    if not Railing.Exclusives[itemA] then Railing.Exclusives[itemA] = {} end
+    if not Railing.Exclusives[itemA] then
+        Railing.Exclusives[itemA] = {}
+    end
 
     local itemsB = {}
     if type(itemB) == "table" then
@@ -126,7 +129,9 @@ function Railing.SetExclusives(itemA, itemB)
 
     for _, exclusiveItem in ipairs(itemsB) do
         if exclusiveItem then
-            if not Railing.Exclusives[exclusiveItem] then Railing.Exclusives[exclusiveItem] = {} end
+            if not Railing.Exclusives[exclusiveItem] then
+                Railing.Exclusives[exclusiveItem] = {}
+            end
             Railing.Exclusives[itemA][exclusiveItem] = true
             Railing.Exclusives[exclusiveItem][itemA] = true
         end
@@ -136,9 +141,9 @@ end
 -------------------------------------------------
 
 --- Check if an accessory is blocked by an exclusive item already on the weapon.
---- @param weapon HandWeapon
---- @param accessoryType string
---- @return boolean  true if blocked
+---@param weapon        HandWeapon
+---@param accessoryType string
+---@return boolean true if blocked
 function Railing.IsBlockedByExclusive(weapon, accessoryType)
     local exclusives = Railing.Exclusives[accessoryType]
     if not exclusives then return false end
@@ -154,9 +159,9 @@ function Railing.IsBlockedByExclusive(weapon, accessoryType)
 end
 
 --- Check if an accessory is blocked on the current weapon regardless of the railing.
---- @param weapon HandWeapon|string
---- @param accessoryType string
---- @return boolean  true if blocked on this weapon
+---@param weapon        HandWeapon | string
+---@param accessoryType string
+---@return boolean true if blocked on this weapon
 function Railing.IsBlockedByWeapon(weapon, accessoryType)
     local weaponType = normalizeWeaponType(weapon)
     if not weaponType or not accessoryType then return false end
@@ -170,8 +175,8 @@ end
 -------------------------------------------------
 
 --- Find all installed railings on a weapon that are registered.
---- @param weapon HandWeapon
---- @return table[] array of { railingType = string, part = WeaponPart }
+---@param weapon HandWeapon
+---@return table[] array of { railingType = string, part = WeaponPart }
 function Railing.GetInstalledRailings(weapon)
     local railings = {}
     if not weapon then return railings end
@@ -190,15 +195,15 @@ function Railing.GetInstalledRailings(weapon)
 end
 
 --- Check if the weapon has any registered railing installed.
---- @param weapon HandWeapon
---- @return boolean
+---@param weapon HandWeapon
+---@return boolean
 function Railing.HasRailing(weapon)
     return #Railing.GetInstalledRailings(weapon) > 0
 end
 
 --- Get the combined list of accessory fullTypes that all installed railings accept.
---- @param weapon HandWeapon
---- @return string[]|nil
+---@param weapon HandWeapon
+---@return string[] | nil
 function Railing.GetAcceptedAccessories(weapon)
     local railings = Railing.GetInstalledRailings(weapon)
     if #railings == 0 then return nil end
@@ -222,8 +227,8 @@ end
 
 --- Find installed accessories on the weapon that were mounted via the
 --- railing system (i.e. their fullType is accepted by any installed railing).
---- @param weapon HandWeapon
---- @return WeaponPart[]  array of currently mounted railing accessories
+---@param weapon HandWeapon
+---@return WeaponPart[] array of currently mounted railing accessories
 function Railing.GetMountedAccessories(weapon)
     local mounted = {}
     if not weapon then return mounted end
@@ -247,9 +252,9 @@ function Railing.GetMountedAccessories(weapon)
 end
 
 --- Check whether a specific installed railing still has any mounted accessory depending on it.
---- @param weapon HandWeapon
---- @param railingPart WeaponPart|string
---- @return boolean
+---@param weapon      HandWeapon
+---@param railingPart WeaponPart | string
+---@return boolean
 function Railing.HasMountedAccessoryOnRailing(weapon, railingPart)
     if not weapon or not railingPart then return false end
 
@@ -280,9 +285,9 @@ end
 --- Check if a specific accessory type can be mounted right now.
 --- Returns false if the weapon already has a part in the same PartType slot.
 --- Checks across all installed railings.
---- @param weapon HandWeapon
---- @param accessoryType string
---- @return boolean
+---@param weapon        HandWeapon
+---@param accessoryType string
+---@return boolean
 function Railing.CanMountAccessory(weapon, accessoryType)
     if not weapon or not accessoryType then return false end
 
@@ -319,10 +324,10 @@ end
 -------------------------------------------------
 
 --- Mount an accessory (from player inventory) onto the weapon via its railing.
---- @param weapon HandWeapon
---- @param accessoryItem InventoryItem  the actual inventory item to consume
---- @param player IsoPlayer
---- @return boolean success
+---@param weapon        HandWeapon
+---@param accessoryItem InventoryItem the actual inventory item to consume
+---@param player        IsoPlayer
+---@return boolean success
 function Railing.MountAccessory(weapon, accessoryItem, player)
     if not weapon or not accessoryItem or not player then return false end
 
@@ -341,10 +346,10 @@ function Railing.MountAccessory(weapon, accessoryItem, player)
 end
 
 --- Unmount an accessory from the weapon and return it to the player's inventory.
---- @param weapon HandWeapon
---- @param accessoryPart WeaponPart  the part currently on the weapon
---- @param player IsoPlayer
---- @return boolean success
+---@param weapon        HandWeapon
+---@param accessoryPart WeaponPart the part currently on the weapon
+---@param player        IsoPlayer
+---@return boolean success
 function Railing.UnmountAccessory(weapon, accessoryPart, player)
     if not weapon or not accessoryPart or not player then return false end
 

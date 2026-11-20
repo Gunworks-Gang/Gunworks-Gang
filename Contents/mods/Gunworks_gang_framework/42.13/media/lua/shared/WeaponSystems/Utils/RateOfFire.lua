@@ -1,10 +1,10 @@
 require("TimedActions/ISReloadWeaponAction")
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
-local getTimestampMs = getTimestampMs
 -------------------------------------------------
 -- Rate of Fire Control System
 -------------------------------------------------
 local RateOfFire = {}
+local getTimestampMs = getTimestampMs
 
 RateOfFire.lastFireTime = {}
 RateOfFire.DEFAULT_RPM = 600
@@ -12,6 +12,7 @@ RateOfFire.BURST_DEFAULT_COUNT = 3
 RateOfFire.BURST_DELAY_MS = 500
 RateOfFire.burstState = {}
 RateOfFire.burstCooldown = {}
+RateOfFire.triggerLatched = {}
 
 RateOfFire.RPM_STAGE_MODDATA_KEY = "GW_RpmStage"
 
@@ -230,6 +231,27 @@ function RateOfFire.canFire(player, weapon)
     return false
 end
 
+-------------------------------------------------
+-- Single fire trigger reset: one shot per pull, the trigger must be released before the next one
+-------------------------------------------------
+
+function RateOfFire.isTriggerLatched(player)
+    return RateOfFire.triggerLatched[player:getPlayerNum()] == true
+end
+
+function RateOfFire.latchTrigger(player)
+    RateOfFire.triggerLatched[player:getPlayerNum()] = true
+end
+
+function RateOfFire.triggerReleaseTick()
+    for playerId in pairs(RateOfFire.triggerLatched) do
+        local player = getSpecificPlayer(playerId)
+        if not player or not player:isAttackButtonDown() then
+            RateOfFire.triggerLatched[playerId] = nil
+        end
+    end
+end
+
 function RateOfFire.canStartBurst(player)
     local playerId = player:getPlayerNum()
     local now = getTimestampMs()
@@ -388,7 +410,7 @@ end
 local function getModifiers(weapon)
     if not weapon or not weapon:isRanged() then return nil end
     local mode = weapon:getFireMode()
-    if mode == "RealAuto" or mode == "RealBurst" then
+    if mode == "RealAuto" or mode == "RealBurst" or mode == "RealSingle" then
         return { StatsFactory.Set("RecoilDelay", 1) }
     end
     return nil

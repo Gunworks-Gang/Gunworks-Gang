@@ -7,10 +7,10 @@
 ---@class GunworksReloadAnim
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
 
----@param source GunworksReloadPartSpec|string|nil
----@param handler GunworksReloadAnimHandler|nil
+---@param source  GunworksReloadPartSpec | string | nil
+---@param handler GunworksReloadAnimHandler | nil
 ---@nodiscard
----@return GunworksReloadPartSpec|nil
+---@return GunworksReloadPartSpec | nil
 function ReloadAnim.resolvePartSpec(source, handler)
     if not source then
         return nil
@@ -36,10 +36,10 @@ function ReloadAnim.resolvePartSpec(source, handler)
     return nil
 end
 
----@param gun HandWeapon|nil
----@param itemType string|nil
+---@param gun      HandWeapon | nil
+---@param itemType string | nil
 ---@nodiscard
----@return WeaponPart|nil
+---@return WeaponPart | nil
 function ReloadAnim.getWeaponPartByItemType(gun, itemType)
     if not gun or not itemType or itemType == "" then
         return nil
@@ -72,8 +72,8 @@ end
 --- Attach a part for looks only: doChange = false skips every stat delta and onAttach, and the
 --- engine auto-detaches whatever already occupies that PartType.
 ---@param character IsoGameCharacter
----@param gun HandWeapon
----@param itemType string
+---@param gun       HandWeapon
+---@param itemType  string
 ---@return boolean
 function ReloadAnim.attachVisualPart(character, gun, itemType)
     if ReloadAnim.getWeaponPartByItemType(gun, itemType) then
@@ -92,8 +92,8 @@ end
 --- Detach a part for looks only. detachWeaponPart identity-checks against the attached instance,
 --- so the part must be fetched off the gun rather than freshly instanced.
 ---@param character IsoGameCharacter
----@param gun HandWeapon
----@param itemType string
+---@param gun       HandWeapon
+---@param itemType  string
 ---@return boolean
 function ReloadAnim.detachVisualPart(character, gun, itemType)
     local part = ReloadAnim.getWeaponPartByItemType(gun, itemType)
@@ -106,8 +106,8 @@ function ReloadAnim.detachVisualPart(character, gun, itemType)
 end
 
 ---@param action ISBaseTimedAction
----@param gun HandWeapon|nil
----@param spec GunworksReloadPartSpec|nil
+---@param gun    HandWeapon | nil
+---@param spec   GunworksReloadPartSpec | nil
 ---@return nil
 function ReloadAnim.attachWeaponPartSpec(action, gun, spec)
     if not action or not gun or not spec or not spec.itemType or spec.itemType == "" then
@@ -135,8 +135,8 @@ function ReloadAnim.attachWeaponPartSpec(action, gun, spec)
 end
 
 ---@param action ISBaseTimedAction
----@param gun HandWeapon|nil
----@param spec GunworksReloadPartSpec|nil
+---@param gun    HandWeapon | nil
+---@param spec   GunworksReloadPartSpec | nil
 ---@return nil
 function ReloadAnim.detachWeaponPartSpec(action, gun, spec)
     if not action or not gun or not spec then
@@ -162,10 +162,10 @@ function ReloadAnim.detachWeaponPartSpec(action, gun, spec)
     gun:detachWeaponPart(action.character, part, spec.doChange == true)
 end
 
----@param action ISBaseTimedAction
----@param gun HandWeapon
----@param handler GunworksReloadAnimHandler
----@param stateKey string|nil
+---@param action   ISBaseTimedAction
+---@param gun      HandWeapon
+---@param handler  GunworksReloadAnimHandler
+---@param stateKey string | nil
 ---@return boolean
 function ReloadAnim.applyWeaponAttachmentState(action, gun, handler, stateKey)
     if not stateKey or stateKey == "" or not handler.states then
@@ -194,11 +194,11 @@ function ReloadAnim.applyWeaponAttachmentState(action, gun, handler, stateKey)
     return true
 end
 
----@param action ISBaseTimedAction
----@param handler GunworksReloadAnimHandler|nil
----@param preferActionGun boolean|nil
+---@param action          ISBaseTimedAction
+---@param handler         GunworksReloadAnimHandler | nil
+---@param preferActionGun boolean | nil
 ---@nodiscard
----@return HandWeapon|nil
+---@return HandWeapon | nil
 function ReloadAnim.resolveActionGun(action, handler, preferActionGun)
     if not action then
         return nil
@@ -222,9 +222,9 @@ function ReloadAnim.resolveActionGun(action, handler, preferActionGun)
     return nil
 end
 
----@param action ISBaseTimedAction
----@param handler GunworksReloadAnimHandler|nil
----@param stateKey string|nil
+---@param action   ISBaseTimedAction
+---@param handler  GunworksReloadAnimHandler | nil
+---@param stateKey string | nil
 ---@return boolean
 function ReloadAnim.setWeaponAttachmentState(action, handler, stateKey)
     if not action or not handler then
@@ -251,24 +251,24 @@ function ReloadAnim.setWeaponAttachmentState(action, handler, stateKey)
     return true
 end
 
----@param action ISBaseTimedAction|nil
+---@param action ISBaseTimedAction | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.isEjectAction(action)
     return action and action.Type == "ISEjectMagazine" or false
 end
 
----@param action ISBaseTimedAction|nil
+---@param action ISBaseTimedAction | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.isInsertAction(action)
     return action and action.Type == "ISInsertMagazine" or false
 end
 
----@param handler GunworksReloadAnimHandler|nil
----@param parameter string|nil
+---@param handler   GunworksReloadAnimHandler | nil
+---@param parameter string | nil
 ---@nodiscard
----@return GunworksReloadPartSpec|nil
+---@return GunworksReloadPartSpec | nil
 function ReloadAnim.resolveEventPartSpec(handler, parameter)
     if not handler or not parameter or parameter == "" then
         return nil
@@ -298,10 +298,10 @@ function ReloadAnim.resolveEventPartSpec(handler, parameter)
     return nil
 end
 
----@param gun HandWeapon|nil
----@param spec GunworksReloadPartSpec|nil
+---@param gun  HandWeapon | nil
+---@param spec GunworksReloadPartSpec | nil
 ---@nodiscard
----@return WeaponPart|nil
+---@return WeaponPart | nil
 function ReloadAnim.getWeaponPartForSpec(gun, spec)
     if not gun or not spec then
         return nil
@@ -326,8 +326,8 @@ end
 -- (defined in Utils/ReloadAnim.lua, registered in ReloadAnim/AttachLocations.lua).
 
 --- Is an attached-item location id valid for this character's model?
----@param character IsoGameCharacter|nil
----@param location string|nil
+---@param character IsoGameCharacter | nil
+---@param location  string | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.hasAttachLocation(character, location)
@@ -358,10 +358,10 @@ end
 ---   3. gun modData.MagazineType -- the mag type Gunworks last saved on the gun
 ---   4. handler.magItem         -- the profile default, and the ONLY value for non-mag props
 ---                                 (shells / rounds / speedloaders, which have no action.magazine)
----@param action ISBaseTimedAction
+---@param action  ISBaseTimedAction
 ---@param handler GunworksReloadAnimHandler
 ---@nodiscard
----@return string|nil
+---@return string | nil
 function ReloadAnim.resolveReloadMagItem(action, handler)
     local mag = action.magazine
     if mag then
@@ -388,8 +388,8 @@ function ReloadAnim.resolveReloadMagItem(action, handler)
     return handler.magItem
 end
 
----@param action ISBaseTimedAction
----@param handler GunworksReloadAnimHandler|nil
+---@param action  ISBaseTimedAction
+---@param handler GunworksReloadAnimHandler | nil
 ---@return nil
 function ReloadAnim.attachReloadMagazine(action, handler)
     if not action or not handler or not handler.magItem then
@@ -437,7 +437,7 @@ function ReloadAnim.detachReloadMagazine(action)
 end
 
 ---@param action ISBaseTimedAction
----@param sprite string|nil
+---@param sprite string | nil
 ---@return nil
 function ReloadAnim.setWeaponSprite(action, sprite)
     if not action or not action.character or not sprite or sprite == "" then
@@ -463,8 +463,8 @@ function ReloadAnim.setWeaponSprite(action, sprite)
     end
 end
 
----@param action ISBaseTimedAction
----@param event string
+---@param action    ISBaseTimedAction
+---@param event     string
 ---@param parameter string
 ---@return boolean
 function ReloadAnim.handleWeaponSpriteAnimEvent(action, event, parameter)
@@ -493,9 +493,9 @@ function ReloadAnim.handleWeaponSpriteAnimEvent(action, event, parameter)
     return true
 end
 
----@param action ISBaseTimedAction
----@param handler GunworksReloadAnimHandler|nil
----@param event string
+---@param action    ISBaseTimedAction
+---@param handler   GunworksReloadAnimHandler | nil
+---@param event     string
 ---@param parameter string
 ---@return boolean
 function ReloadAnim.handleWeaponAttachmentStateAnimEvent(action, handler, event, parameter)
@@ -510,9 +510,9 @@ function ReloadAnim.handleWeaponAttachmentStateAnimEvent(action, handler, event,
     return ReloadAnim.setWeaponAttachmentState(action, handler, parameter)
 end
 
----@param action ISBaseTimedAction
----@param handler GunworksReloadAnimHandler|nil
----@param event string
+---@param action    ISBaseTimedAction
+---@param handler   GunworksReloadAnimHandler | nil
+---@param event     string
 ---@param parameter string
 ---@return boolean
 function ReloadAnim.handleWeaponPartAnimEvent(action, handler, event, parameter)
@@ -561,8 +561,8 @@ function ReloadAnim.handleWeaponPartAnimEvent(action, handler, event, parameter)
     return true
 end
 
----@param action ISBaseTimedAction
----@param handler GunworksReloadAnimHandler|nil
+---@param action  ISBaseTimedAction
+---@param handler GunworksReloadAnimHandler | nil
 ---@return nil
 function ReloadAnim.setNoMagazineModel(action, handler)
     if not handler then
@@ -577,8 +577,8 @@ function ReloadAnim.setNoMagazineModel(action, handler)
     ReloadAnim.setWeaponSprite(action, handler.unloadedSprite)
 end
 
----@param action ISBaseTimedAction
----@param handler GunworksReloadAnimHandler|nil
+---@param action  ISBaseTimedAction
+---@param handler GunworksReloadAnimHandler | nil
 ---@return nil
 function ReloadAnim.resetWeaponModel(action, handler)
     if not handler or not action or not action.character then

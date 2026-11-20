@@ -37,36 +37,36 @@ local SpeedLoader = require("WeaponSystems/Utils/SpeedLoader")
 local Magazine = require("WeaponSystems/Utils/Magazine")
 
 ---@class GunworksReloadRuleContext
----@field step string                     the step being decided
----@field action ISBaseTimedAction|nil    its action (nil when a reload is being planned)
----@field character IsoGameCharacter
----@field gun HandWeapon
----@field handler GunworksReloadAnimHandler|nil
----@field hasChamber boolean
----@field chambered boolean
----@field boltOpen boolean
----@field jammed boolean
----@field rounds number                   rounds in the magazine or tube, not counting the chamber
----@field maxAmmo number
----@field freeSpace number                maxAmmo - rounds
----@field magazineFed boolean             the gun takes detachable magazines
----@field hasMagazine boolean             a magazine is in the gun
----@field aiming boolean
----@field bestClip InventoryItem|nil      the loaded stripper clip / speedloader the gun would take
----@field clipRounds number               rounds on bestClip (0 without one)
----@field rackQueued boolean              `after` only: a rack already follows this step
+---@field step        string                          the step being decided
+---@field action      ISBaseTimedAction | nil         its action (nil when a reload is being planned)
+---@field character   IsoGameCharacter
+---@field gun         HandWeapon
+---@field handler     GunworksReloadAnimHandler | nil
+---@field hasChamber  boolean
+---@field chambered   boolean
+---@field boltOpen    boolean
+---@field jammed      boolean
+---@field rounds      number                          rounds in the magazine or tube, not counting the chamber
+---@field maxAmmo     number
+---@field freeSpace   number                          maxAmmo - rounds
+---@field magazineFed boolean                         the gun takes detachable magazines
+---@field hasMagazine boolean                         a magazine is in the gun
+---@field aiming      boolean
+---@field bestClip    InventoryItem | nil             the loaded stripper clip / speedloader the gun would take
+---@field clipRounds  number                          rounds on bestClip (0 without one)
+---@field rackQueued  boolean                         `after` only: a rack already follows this step
 
 ---@alias GunworksReloadRuleAnswer string|string[]|nil
 ---@alias GunworksReloadRuleHook fun(ctx:GunworksReloadRuleContext):GunworksReloadRuleAnswer
 
 ---@class GunworksReloadRule
----@field before table<string,GunworksReloadRuleHook|string|string[]>|nil
----@field after table<string,GunworksReloadRuleHook|string|string[]>|nil
----@field instead table<string,GunworksReloadRuleHook|string|string[]>|nil
+---@field before  table<string, GunworksReloadRuleHook | string | string[]> | nil
+---@field after   table<string, GunworksReloadRuleHook | string | string[]> | nil
+---@field instead table<string, GunworksReloadRuleHook | string | string[]> | nil
 
 ---@class GunworksReloadStep
----@field create fun(ctx:GunworksReloadRuleContext):(table|table[]|nil)  the timed action(s) for this step, or nil to skip it
----@field dropsRackAfter boolean|nil  vanilla queues a rack after this step's action, and the step does not want it
+---@field create         fun(ctx: GunworksReloadRuleContext): (table | table[] | nil) the timed action(s) for this step, or nil to skip it
+---@field dropsRackAfter boolean | nil                                                vanilla queues a rack after this step's action, and the step does not want it
 
 ---@class GunworksReloadRules
 local ReloadRules = {}
@@ -80,11 +80,11 @@ ReloadRules.STEP_LOAD_CHAMBER = "loadChamber"
 --- Steps a rule may add in a row (a rule answering with a step that triggers the same rule again stops here).
 ReloadRules.MAX_DEPTH = 6
 
----@type table<string,GunworksReloadRule>
+---@type table<string, GunworksReloadRule>
 ReloadRules.rules = {}
----@type table<string,(string|GunworksReloadRule)[]>
+---@type table<string, (string | GunworksReloadRule)[]>
 ReloadRules.presets = {}
----@type table<string,GunworksReloadStep>
+---@type table<string, GunworksReloadStep>
 ReloadRules.steps = {}
 
 -- Gun ID -> true while an opening stroke this client played has not been closed. The bolt flag in mod data
@@ -124,8 +124,8 @@ function ReloadRules.Register(name, rule)
 end
 
 --- Register (or replace) a preset: a named list of rules. Entries are rule names, rule tables or other presets.
----@param name string
----@param entries (string|GunworksReloadRule)[]
+---@param name    string
+---@param entries string | GunworksReloadRule)[]
 ---@return nil
 function ReloadRules.RegisterPreset(name, entries)
     if type(name) ~= "string" or name == "" or type(entries) ~= "table" then
@@ -163,7 +163,7 @@ end
 --- `openToLoad` stands for "openToLoad" + "rackInTwoStrokes".
 ---@param options table
 ---@nodiscard
----@return (string|GunworksReloadRule)[]|nil
+---@return (string | GunworksReloadRule)[] | nil
 function ReloadRules.profileRules(options)
     local list = {}
     local seen = {}
@@ -175,7 +175,9 @@ function ReloadRules.profileRules(options)
             end
             seen[entry] = true
         elseif not isRuleTable(entry) then
-            warnOnce("a reload profile's rules may hold rule names, preset names and rule tables, not " .. tostring(entry))
+            warnOnce(
+                "a reload profile's rules may hold rule names, preset names and rule tables, not " .. tostring(entry)
+            )
             return
         end
         list[#list + 1] = entry
@@ -204,10 +206,10 @@ function ReloadRules.profileRules(options)
     return list
 end
 
----@param entries (string|GunworksReloadRule)[]
----@param out GunworksReloadRule[]
----@param seen table<string,boolean>
----@param depth number
+---@param entries string | GunworksReloadRule)[]
+---@param out     GunworksReloadRule[]
+---@param seen    table<string, boolean>
+---@param depth   number
 ---@return GunworksReloadRule[]
 local function collectRules(entries, out, seen, depth)
     for i = 1, #entries do
@@ -232,7 +234,7 @@ local function collectRules(entries, out, seen, depth)
     return out
 end
 
----@param handler GunworksReloadAnimHandler|nil
+---@param handler GunworksReloadAnimHandler | nil
 ---@nodiscard
 ---@return boolean
 function ReloadRules.hasRules(handler)
@@ -250,9 +252,9 @@ end
 
 --- The handler's rules in order, presets expanded. Names resolve when asked, so a profile may name a rule
 --- that another file registers later.
----@param handler GunworksReloadAnimHandler|nil
+---@param handler GunworksReloadAnimHandler | nil
 ---@nodiscard
----@return GunworksReloadRule[]|nil
+---@return GunworksReloadRule[] | nil
 function ReloadRules.getRules(handler)
     if not ReloadRules.hasRules(handler) then
         return nil
@@ -262,12 +264,12 @@ end
 
 --- Ask the handler's rules about one moment ("before", "after" or "instead") of a step. The first rule
 --- that answers wins. A rule that throws counts as no answer.
----@param handler GunworksReloadAnimHandler|nil
----@param moment string
----@param step string
----@param ctx GunworksReloadRuleContext
+---@param handler GunworksReloadAnimHandler | nil
+---@param moment  string
+---@param step    string
+---@param ctx     GunworksReloadRuleContext
 ---@nodiscard
----@return string[]|nil
+---@return string[] | nil
 function ReloadRules.evaluate(handler, moment, step, ctx)
     local rules = ReloadRules.getRules(handler)
     if not rules then
@@ -303,8 +305,8 @@ end
 -- State
 -------------------------------------------------
 
----@param a HandWeapon|nil
----@param b HandWeapon|nil
+---@param a HandWeapon | nil
+---@param b HandWeapon | nil
 ---@return boolean
 local function sameGun(a, b)
     if a == nil or b == nil then
@@ -314,7 +316,7 @@ local function sameGun(a, b)
 end
 
 --- Is the gun's action open? True while the bolt flag says so or a stroke this client played opened it.
----@param gun HandWeapon|nil
+---@param gun HandWeapon | nil
 ---@nodiscard
 ---@return boolean
 function ReloadRules.isBoltOpen(gun)
@@ -324,7 +326,7 @@ function ReloadRules.isBoltOpen(gun)
     return ReloadAnim.isBoltOpen(gun) or ReloadRules.openedBolts[gun:getID()] == true
 end
 
----@param gun HandWeapon
+---@param gun  HandWeapon
 ---@param step string
 ---@return nil
 function ReloadRules.recordStroke(gun, step)
@@ -336,9 +338,9 @@ function ReloadRules.recordStroke(gun, step)
 end
 
 --- The step an action stands for.
----@param action table|nil
+---@param action table | nil
 ---@nodiscard
----@return string|nil
+---@return string | nil
 function ReloadRules.stepOf(action)
     if not action then
         return nil
@@ -373,10 +375,10 @@ function ReloadRules.stepOf(action)
 end
 
 --- What the rules see of the gun.
----@param character IsoGameCharacter|nil
----@param gun HandWeapon
----@param step string
----@param action table|nil
+---@param character IsoGameCharacter | nil
+---@param gun       HandWeapon
+---@param step      string
+---@param action    table | nil
 ---@nodiscard
 ---@return GunworksReloadRuleContext
 function ReloadRules.buildContext(character, gun, step, action)
@@ -435,9 +437,9 @@ end
 -------------------------------------------------
 
 --- Build the actions for a list of step names. Unknown steps and steps whose create returns nil are skipped.
----@param names string[]
----@param ctx GunworksReloadRuleContext
----@param parent table|nil  the action the steps were added for
+---@param names  string[]
+---@param ctx    GunworksReloadRuleContext
+---@param parent table | nil               the action the steps were added for
 ---@nodiscard
 ---@return table[]
 function ReloadRules.createSteps(names, ctx, parent)
@@ -466,8 +468,8 @@ function ReloadRules.createSteps(names, ctx, parent)
     return actions
 end
 
----@param character IsoGameCharacter|nil
----@return table|nil
+---@param character IsoGameCharacter | nil
+---@return table | nil
 local function getQueue(character)
     if not character or not ISTimedActionQueue or not ISTimedActionQueue.getTimedActionQueue then
         return nil
@@ -479,7 +481,7 @@ end
 -- follow-up racks, so a mod that filters follow-ups still applies: Hot Brass manual racking refuses every
 -- ISRackFirearm queued this way, leaving the player to rack by hand. True when the action went in (checked in
 -- the queue, as not every addAfter wrapper passes vanilla's return value on).
----@param queue table
+---@param queue  table
 ---@param anchor table
 ---@param action table
 ---@return boolean
@@ -492,8 +494,8 @@ end
 -- action needs first, always queued) or in its place (`instead`). In place, the first step takes the action's
 -- spot and the rest follow it as follow-ups (queueAfter), so with Hot Brass manual racking a rack that becomes
 -- open + close only opens, and the next rack closes.
----@param queue table
----@param actions table[]
+---@param queue      table
+---@param actions    table[]
 ---@param keepAction boolean
 local function replaceHead(queue, actions, keepAction)
     if keepAction then
@@ -557,8 +559,8 @@ function ReloadRules.beginAction(action)
     end
 
     if (action.gunworksRuleDepth or 0) >= ReloadRules.MAX_DEPTH then
-        warnOnce("the rules of " .. tostring(gun:getFullType()) .. " keep adding steps; stopped after "
-            .. ReloadRules.MAX_DEPTH)
+        warnOnce("the rules of " .. tostring(gun:getFullType())
+                .. " keep adding steps; stopped after " .. ReloadRules.MAX_DEPTH)
         return false
     end
 
@@ -633,7 +635,7 @@ end
 --- rounds. An empty answer means there is nothing to load; another answer is queued as it stands (a
 --- stripper clip loads even with no loose rounds to move).
 ---@param playerObj IsoPlayer
----@param gun HandWeapon
+---@param gun       HandWeapon
 ---@return boolean true when the rules handled the reload
 function ReloadRules.planReload(playerObj, gun)
     if not instanceof(gun, "HandWeapon") or gun:getMagazineType() or gun:isJammed() then

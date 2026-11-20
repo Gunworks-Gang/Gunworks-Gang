@@ -1,5 +1,6 @@
-local FoldingBipod = {}
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
+
+local FoldingBipod = {}
 
 -------------------------------------------------
 -- Single source of truth: weaponType -> { modifiers, models?, attachments?, initialState? }
@@ -20,7 +21,7 @@ FoldingBipod.WeaponsWithFoldableBipod = {}
 FoldingBipod.RestoreStats = {}
 
 --- Declare which stats bipod profiles may modify.
----@param statNames string[]  e.g. { "RecoilDelay", "SwingTime", ... }
+---@param statNames string[] e.g. { "RecoilDelay", "SwingTime", ... }
 function FoldingBipod.RegisterRestoreStats(statNames)
     for _, name in ipairs(statNames) do
         FoldingBipod.RestoreStats[name] = true
@@ -32,8 +33,8 @@ end
 -------------------------------------------------
 
 --- Register a weapon as having a foldable bipod
---- @param weaponType string   e.g. "MyMod.MyLMG"
---- @param entry table  { modifiers = { folded = { ... }?, deployed = { ... }? }, models = { ... }?, attachments = { ... }?, initialState = "folded"|"deployed"? }
+---@param weaponType string e.g. "MyMod.MyLMG"
+---@param entry      table  { modifiers = { folded = { ... }?, deployed = { ... }? }, models = { ... }?, attachments = { ... }?, initialState = "folded"|"deployed"? }
 function FoldingBipod.RegisterWeapon(weaponType, entry)
     FoldingBipod.WeaponsWithFoldableBipod[weaponType] = entry
 end
@@ -138,6 +139,8 @@ local function getModifiers(weapon)
     return entry.modifiers[state]
 end
 
-StatsFactory.RegisterModifierLayer("FoldingBipod", getModifiers, FoldingBipod.RestoreStats, FoldingBipod.HasFoldableBipod)
+StatsFactory.RegisterModifierLayer(
+    "FoldingBipod", getModifiers, FoldingBipod.RestoreStats, FoldingBipod.HasFoldableBipod
+)
 
 return FoldingBipod

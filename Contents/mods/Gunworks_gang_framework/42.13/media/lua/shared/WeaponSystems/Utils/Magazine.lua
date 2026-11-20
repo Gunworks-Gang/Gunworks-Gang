@@ -1,5 +1,6 @@
-local Magazine = {}
 local Ammo = require("WeaponSystems/Utils/Ammo")
+
+local Magazine = {}
 
 -------------------------------------------------
 -- Table 1.a: Weapon -> Magazine Profile
@@ -32,7 +33,7 @@ Magazine.ProfileMagazineSet = {}
 
 --- Register one or more weapons to a magazine profile.
 ---@param profileName string
----@param weaponTypes string|string[]  single fullType or array of fullTypes
+---@param weaponTypes string | string[] single fullType or array of fullTypes
 function Magazine.RegisterWeaponWithProfile(profileName, weaponTypes)
     if type(weaponTypes) == "string" then
         Magazine.WeaponMagazineProfile[weaponTypes] = profileName
@@ -52,8 +53,8 @@ function Magazine.RegisterMultipleWeaponsWithProfiles(entriesTable)
 end
 
 --- Register one or more weaponPart to a magazine profile.
----@param profileName string
----@param weaponPartType string|string[]  single fullType or array of fullTypes
+---@param profileName    string
+---@param weaponPartType string | string[] single fullType or array of fullTypes
 function Magazine.RegisterWeaponPartWithProfile(profileName, weaponPartType)
     if type(weaponPartType) == "string" then
         Magazine.WeaponPartMagazineProfile[weaponPartType] = profileName
@@ -74,8 +75,8 @@ end
 
 --- Register a new magazine profile or add magazine types to an existing one.
 --- Duplicate magazine types are skipped so round-robin selection isn't skewed.
----@param profileName string
----@param magazineTypes string[]  ordered list of magazine fullTypes
+---@param profileName   string
+---@param magazineTypes string[] ordered list of magazine fullTypes
 function Magazine.RegisterMagazineProfile(profileName, magazineTypes)
     local list = Magazine.MagazineProfiles[profileName]
     if not list then
@@ -110,7 +111,7 @@ end
 
 --- Get the magazine profile name for a weapon part.
 ---@param weaponPart WeaponPart
----@return string|nil
+---@return string | nil
 function Magazine.GetProfileForWeaponPart(weaponPart)
     return Magazine.WeaponPartMagazineProfile[weaponPart:getFullType()]
 end
@@ -120,8 +121,8 @@ end
 --- magwell adapter / conversion part can change which magazines (and therefore
 --- which ammo) the weapon accepts. The first registered part found wins.
 ---@param gun HandWeapon
----@return string|nil profileName
----@return WeaponPart|nil part
+---@return string | nil profileName
+---@return WeaponPart | nil part
 function Magazine.GetPartProfileForGun(gun)
     if not gun or not gun.getAllWeaponParts then return nil end
 
@@ -142,7 +143,7 @@ end
 --- part registered with its own profile takes priority over the weapon's own
 --- WeaponMagazineProfile entry.
 ---@param gun HandWeapon
----@return string|nil
+---@return string | nil
 function Magazine.GetProfileForGun(gun)
     if not gun then return nil end
     return Magazine.GetPartProfileForGun(gun) or Magazine.WeaponMagazineProfile[gun:getFullType()]
@@ -150,14 +151,14 @@ end
 
 --- Get the magazine type list for a weapon (part profile takes priority).
 ---@param gun HandWeapon
----@return string[]|nil
+---@return string[] | nil
 function Magazine.GetMagazineTypesForGun(gun)
     local profile = Magazine.GetProfileForGun(gun)
     return profile and Magazine.MagazineProfiles[profile]
 end
 
 --- Check if a magazine type belongs to a given profile.
----@param magType string
+---@param magType     string
 ---@param profileName string
 ---@return boolean
 function Magazine.IsMagazineInProfile(magType, profileName)
@@ -172,7 +173,7 @@ end
 --- Predicate: returns true if the item is a magazine in the given profile set.
 --- The set is resolved once by the caller (part profile takes priority) and
 --- passed straight through, so this runs cheaply per inventory item.
----@param item InventoryItem
+---@param item       InventoryItem
 ---@param profileSet table<string, boolean>
 ---@return boolean
 function Magazine.predicateInProfile(item, profileSet)
@@ -199,9 +200,10 @@ function Magazine.reloadMagazine(playerObj, magazine)
     if not itemKey then
         return 0
     end
-    local ammoCount = magazine:getCurrentAmmoCount() +
-        ISInventoryPaneContextMenu.transferBullets(playerObj, itemKey, magazine:getCurrentAmmoCount(),
-            magazine:getMaxAmmo())
+    local ammoCount = magazine:getCurrentAmmoCount()
+        + ISInventoryPaneContextMenu.transferBullets(
+            playerObj, itemKey, magazine:getCurrentAmmoCount(), magazine:getMaxAmmo()
+        )
     if ammoCount > 0 then
         ISInventoryPaneContextMenu.transferIfNeeded(playerObj, magazine)
         ISTimedActionQueue.add(ISLoadBulletsInMagazine:new(playerObj, magazine, ammoCount, nil, itemKey))
@@ -246,9 +248,9 @@ function Magazine.getBestMagazineForGun(playerObj, gun)
     local profile = Magazine.GetProfileForGun(gun)
     local profileSet = profile and Magazine.ProfileMagazineSet[profile]
     if not profileSet then return nil end
-    return playerObj:getInventory():getBestEvalArgRecurse(
-        Magazine.predicateInProfile, Magazine.compareAmmoCount, profileSet
-    )
+    return playerObj
+        :getInventory()
+        :getBestEvalArgRecurse(Magazine.predicateInProfile, Magazine.compareAmmoCount, profileSet)
 end
 
 function Magazine.ReloadBestMagazineFromList(playerObj, gun)
@@ -298,6 +300,7 @@ function Magazine.RestoreMagazineType(weapon)
         weapon:setMagazineType(magType)
         weapon:setMaxAmmo(mag:getMaxAmmo())
     end
+    require("WeaponSystems/Utils/StackedMagazines").ApplySideCapacity(weapon)
 end
 
 ---------------------------------------------------------------

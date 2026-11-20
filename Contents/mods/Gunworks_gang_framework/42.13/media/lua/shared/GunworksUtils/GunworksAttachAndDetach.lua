@@ -1,7 +1,7 @@
-Gunworks_AttachAndDetach                       = {}
+Gunworks_AttachAndDetach = {}
 Gunworks_AttachAndDetach.weaponPartToolMapping = Gunworks_AttachAndDetach.weaponPartToolMapping or {}
 
-local Underbarrel                              = require("WeaponSystems/Utils/Underbarrel")
+local Underbarrel = require("WeaponSystems/Utils/Underbarrel")
 
 local function predicateNotBroken(item)
     return not item:isBroken()
@@ -19,8 +19,8 @@ function Gunworks_AttachAndDetach.Check.Wrench(character)
 end
 
 --- Register the tool check(s) needed to attach/detach parts of a given PartType.
---- @param partType string       weapon-part PartType, e.g. "Scope", "Barrel"
---- @param toolChecks table|nil   array of fn(character)->item|nil; {} or nil = no tool needed
+---@param partType   string      weapon-part PartType, e.g. "Scope", "Barrel"
+---@param toolChecks table | nil array of fn(character)->item|nil; {} or nil = no tool needed
 function Gunworks_AttachAndDetach.RegisterPartTool(partType, toolChecks)
     Gunworks_AttachAndDetach.weaponPartToolMapping[partType] = toolChecks or {}
 end
@@ -28,7 +28,7 @@ end
 --- Bulk form of RegisterPartTool. `mapping` is { [partType] = toolChecks }.
 --- Last registration for a PartType wins, so keep the tool for a shared PartType
 --- (e.g. "Scope") consistent across packs.
---- @param mapping table<string, table>
+---@param mapping table<string, table>
 function Gunworks_AttachAndDetach.RegisterPartTools(mapping)
     if not mapping then return end
     for partType, toolChecks in pairs(mapping) do

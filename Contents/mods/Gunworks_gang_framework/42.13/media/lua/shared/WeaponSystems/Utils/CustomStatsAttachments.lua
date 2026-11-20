@@ -1,5 +1,6 @@
-local CustomStatsAttachments = {}
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
+
+local CustomStatsAttachments = {}
 
 -------------------------------------------------
 -- Registry: partFullType -> { modifiers = { ... } }
@@ -22,7 +23,7 @@ CustomStatsAttachments.RestoreStats = {}
 
 --- Declare which stats custom-attachment modifiers may modify.
 --- Call once from your content mod before any RegisterPart calls.
----@param statNames string[]  e.g. { "SoundRadius", "SoundVolume" }
+---@param statNames string[] e.g. { "SoundRadius", "SoundVolume" }
 function CustomStatsAttachments.RegisterRestoreStats(statNames)
     for _, name in ipairs(statNames) do
         CustomStatsAttachments.RestoreStats[name] = true
@@ -30,12 +31,10 @@ function CustomStatsAttachments.RegisterRestoreStats(statNames)
 end
 
 --- Register an attachment that carries custom stat modifiers.
----@param partFullType string   e.g. "MWA.Suppressor_556"
----@param modifiers    table    array of StatsFactory modifier fns
+---@param partFullType string e.g. "MWA.Suppressor_556"
+---@param modifiers    table  array of StatsFactory modifier fns
 function CustomStatsAttachments.RegisterPart(partFullType, modifiers)
-    CustomStatsAttachments.RegisteredParts[partFullType] = {
-        modifiers = modifiers,
-    }
+    CustomStatsAttachments.RegisteredParts[partFullType] = { modifiers = modifiers }
 end
 
 function CustomStatsAttachments.RegisterMultipleParts(partsTable)
@@ -76,7 +75,9 @@ local function getModifiers(weapon)
         if part then
             local entry = CustomStatsAttachments.RegisteredParts[part:getFullType()]
             if entry and entry.modifiers then
-                if not combined then combined = {} end
+                if not combined then
+                    combined = {}
+                end
                 for _, mod in ipairs(entry.modifiers) do
                     combined[#combined + 1] = mod
                 end
@@ -101,10 +102,7 @@ end
 -- Register with StatsFactory
 -------------------------------------------------
 StatsFactory.RegisterModifierLayer(
-    "CustomStatsAttachments",
-    getModifiers,
-    CustomStatsAttachments.RestoreStats,
-    isApplicable
+    "CustomStatsAttachments", getModifiers, CustomStatsAttachments.RestoreStats, isApplicable
 )
 
 return CustomStatsAttachments

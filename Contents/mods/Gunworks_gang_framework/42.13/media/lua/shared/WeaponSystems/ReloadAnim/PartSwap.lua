@@ -23,9 +23,9 @@ ReloadAnim.PART_SWAP_EVENT = "gwSetPart"
 
 --- Split a gwSetPart value "PartType=fullType" into its parts. An empty fullType means "detach whatever
 --- is at this location". Returns nil partType for a malformed value.
----@param value string|nil
+---@param value string | nil
 ---@nodiscard
----@return string|nil partType, string fullType
+---@return string | nil partType, string fullType
 function ReloadAnim.parsePartSwapValue(value)
     if not value or value == "" then
         return nil, ""
@@ -44,7 +44,7 @@ function ReloadAnim.parsePartSwapValue(value)
     return partType, string.sub(value, eq + 1)
 end
 
----@param event string|nil
+---@param event string | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.isPartSwapEvent(event)
@@ -55,9 +55,9 @@ end
 --- trust it blindly. A detach (empty fullType) is always safe. For an attach, the item must resolve to
 --- a WeaponPart -- the swap is cosmetic (doChange=false) and PartState reconciles it away if it is
 --- wrong, so a WeaponPart check is a sufficient bar without a full MountOn scan.
----@param gun HandWeapon|nil
----@param partType string|nil
----@param fullType string|nil
+---@param gun      HandWeapon | nil
+---@param partType string | nil
+---@param fullType string | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.isAllowedPartValue(gun, partType, fullType)
@@ -76,10 +76,10 @@ end
 --- Apply one gwSetPart marker authoritatively (singleplayer, or the server acting for a client). An
 --- empty fullType detaches whatever is at `partType`; a non-empty one attaches it, and attachVisualPart
 --- auto-detaches the part already sharing that PartType, so a replace is one call.
----@param character IsoGameCharacter|nil
----@param gun HandWeapon|nil
----@param partType string|nil
----@param fullType string|nil
+---@param character IsoGameCharacter | nil
+---@param gun       HandWeapon | nil
+---@param partType  string | nil
+---@param fullType  string | nil
 ---@return nil
 function ReloadAnim.applyPartSwapEvent(character, gun, partType, fullType)
     if not character or not instanceof(gun, "HandWeapon") or not partType or partType == "" then
@@ -106,10 +106,10 @@ end
 
 --- Apply a relayed gwSetPart marker on an observer client. Gun-side only and no re-broadcast: the part
 --- change reaches the observer's copy of the weapon, syncHandWeaponFields stays with the server.
----@param character IsoGameCharacter|nil
----@param gun HandWeapon|nil
----@param partType string|nil
----@param fullType string|nil
+---@param character IsoGameCharacter | nil
+---@param gun       HandWeapon | nil
+---@param partType  string | nil
+---@param fullType  string | nil
 ---@return nil
 function ReloadAnim.applyRemotePartSwapEvent(character, gun, partType, fullType)
     if not character or not instanceof(gun, "HandWeapon") or not partType or partType == "" then
@@ -133,9 +133,9 @@ end
 
 --- Timed-action entry point: handle a gwSetPart marker fired by the reload clip. Additive -- returns
 --- false for every other event so the normal dispatch continues.
----@param action ISBaseTimedAction
----@param handler GunworksReloadAnimHandler|nil
----@param event string
+---@param action    ISBaseTimedAction
+---@param handler   GunworksReloadAnimHandler | nil
+---@param event     string
 ---@param parameter string
 ---@nodiscard
 ---@return boolean

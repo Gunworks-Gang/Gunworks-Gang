@@ -15,8 +15,9 @@
 		<m_ParameterValue>rack</m_ParameterValue>
 	</m_Events>
 	<m_Events>
+		<m_EventName>closeWeapon</m_EventName>
 		<m_TimePc>0.42</m_TimePc>
-		<m_ParameterValue>original</m_ParameterValue>
+		<m_ParameterValue></m_ParameterValue>
 	</m_Events>
 	<m_Events>
 		<m_EventName>rackBullet</m_EventName>

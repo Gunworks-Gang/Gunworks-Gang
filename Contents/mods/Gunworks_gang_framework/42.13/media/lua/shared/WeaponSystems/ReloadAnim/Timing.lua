@@ -21,7 +21,7 @@ function ReloadAnim.getReloadSpeed(action)
     return reloadSpeed
 end
 
----@param action ISBaseTimedAction
+---@param action  ISBaseTimedAction
 ---@param seconds number
 ---@nodiscard
 ---@return number
@@ -33,8 +33,8 @@ function ReloadAnim.getScaledReloadDelay(action, seconds)
     return seconds / ReloadAnim.getReloadSpeed(action)
 end
 
----@param action ISBaseTimedAction
----@param seconds number|nil
+---@param action     ISBaseTimedAction
+---@param seconds    number | nil
 ---@param fallbackMs number
 ---@nodiscard
 ---@return number
@@ -59,19 +59,14 @@ function ReloadAnim.captureReloadAiming(action)
 end
 
 -- Stages whose aim variant follows the aim state captured when the load / unload starts.
-local RELOAD_AIM_STAGES = {
-    load = true,
-    unload = true,
-    loadChamber = true,
-    clip = true,
-}
+local RELOAD_AIM_STAGES = { load = true, unload = true, loadChamber = true, clip = true }
 
 --- Choose the duration for the animation variant used by this action. Fields left
 --- unset retain the profile's ordinary timing, then the caller's existing fallback.
----@param action ISBaseTimedAction
+---@param action  ISBaseTimedAction
 ---@param handler GunworksReloadAnimHandler
----@param stage string
----@return number|nil
+---@param stage   string
+---@return number | nil
 function ReloadAnim.getProfileDuration(action, handler, stage)
     local character = action.character
     local vehicle = character and character:getVehicle() and handler.vehicleDurations
@@ -110,8 +105,8 @@ function ReloadAnim.shouldQueueShortRackAfterInsert(action)
     return ammoPerShot > 0 and action.magazine:getCurrentAmmoCount() >= ammoPerShot
 end
 
----@param action ISInsertMagazine
----@param handler GunworksReloadAnimHandler|nil
+---@param action  ISInsertMagazine
+---@param handler GunworksReloadAnimHandler | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.shouldUseShortLoad(action, handler)
@@ -131,8 +126,8 @@ function ReloadAnim.shouldUseShortLoad(action, handler)
     return ReloadAnim.shouldQueueShortRackAfterInsert(action)
 end
 
----@param action ISInsertMagazine
----@param enabled boolean|nil
+---@param action  ISInsertMagazine
+---@param enabled boolean | nil
 ---@return nil
 function ReloadAnim.setShortRackAfterInsert(action, enabled)
     if not action then
@@ -154,8 +149,8 @@ function ReloadAnim.setShortRackAfterInsert(action, enabled)
     end
 end
 
----@param action ISRackFirearm
----@param handler GunworksReloadAnimHandler|nil
+---@param action  ISRackFirearm
+---@param handler GunworksReloadAnimHandler | nil
 ---@return boolean
 function ReloadAnim.handleShortRackStart(action, handler)
     if not action or not action.useShortRack or not handler then
@@ -172,7 +167,10 @@ function ReloadAnim.handleShortRackStart(action, handler)
 
     action:setAnimVariable("RackAiming", action.character:isAiming())
     if action.character:isAiming() then
-        action.character:setAimingDelay(action.character:getAimingDelay() + action.gun:getAimingTime() * (0.15 - action.character:getPerkLevel(Perks.Reloading) * 0.01))
+        action.character:setAimingDelay(
+            action.character:getAimingDelay()
+                + action.gun:getAimingTime() * (0.15 - action.character:getPerkLevel(Perks.Reloading) * 0.01)
+        )
     end
 
     action:setActionAnim(CharacterActionAnims.Reload)

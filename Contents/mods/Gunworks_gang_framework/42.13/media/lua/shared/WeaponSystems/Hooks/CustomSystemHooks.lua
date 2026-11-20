@@ -782,8 +782,13 @@ Events.OnInitGlobalModData.Add(function()
 
     ISReloadWeaponAction.RAFattackHook = function(character, chargeDelta, weapon)
         if weapon:isRanged() and not character:isDoShove() and RateOfFire.IsWeaponRegistered(weapon) then
+            local singleFire = weapon:getFireMode() == "RealSingle"
+            if singleFire and (character:isAttackStarted() or RateOfFire.isTriggerLatched(character)) then return end
+
             local canFire, intervalMs = RateOfFire.canFire(character, weapon)
             if not canFire then return end
+
+            if singleFire then RateOfFire.latchTrigger(character) end
 
             RateOfFire.applySpreadOnShot(character, weapon, intervalMs)
 
@@ -804,4 +809,5 @@ Events.OnInitGlobalModData.Add(function()
     Hook.Attack.Add(ISReloadWeaponAction.RAFattackHook)
     Events.OnTick.Add(RateOfFire.burstTickHandler)
     Events.OnTick.Add(RateOfFire.decaySpreadTick)
+    Events.OnTick.Add(RateOfFire.triggerReleaseTick)
 end)

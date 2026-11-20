@@ -1,5 +1,6 @@
-local Ammo = {}
 local StatsFactory = require("WeaponSystems/Utils/StatsFactory")
+
+local Ammo = {}
 
 -------------------------------------------------
 -- Table 1: Item -> Ammo Family
@@ -29,7 +30,7 @@ Ammo.RestoreStats = {}
 
 --- Declare which stats ammo profiles may modify.
 --- These stats will be restored to base before reapplying modifiers.
----@param statNames string[]  e.g. { "MaxDamage", "MinDamage", ... }
+---@param statNames string[] e.g. { "MaxDamage", "MinDamage", ... }
 function Ammo.RegisterRestoreStats(statNames)
     for _, name in ipairs(statNames) do
         Ammo.RestoreStats[name] = true
@@ -77,8 +78,8 @@ end
 --- overrides the weapon's own family, so the part dictates what the weapon
 --- chambers. The first registered part found on the weapon wins. Magazines have
 --- no parts and resolve straight from ItemAmmoFamily.
----@param item InventoryItem  weapon or magazine
----@return string|nil
+---@param item InventoryItem weapon or magazine
+---@return string | nil
 function Ammo.GetFamilyForItem(item)
     if not item then return nil end
 
@@ -121,7 +122,9 @@ function Ammo.SetReloadPreferenceForFamily(playerObj, family, orderedTypes)
     if not registryList then return end
 
     local inRegistry = {}
-    for _, t in ipairs(registryList) do inRegistry[t] = true end
+    for _, t in ipairs(registryList) do
+        inRegistry[t] = true
+    end
 
     local clean, seen = {}, {}
     for _, t in ipairs(orderedTypes) do
@@ -132,7 +135,9 @@ function Ammo.SetReloadPreferenceForFamily(playerObj, family, orderedTypes)
     end
 
     local md = playerObj:getModData()
-    if not md.GunworksAmmoPref then md.GunworksAmmoPref = {} end
+    if not md.GunworksAmmoPref then
+        md.GunworksAmmoPref = {}
+    end
     md.GunworksAmmoPref[family] = clean
 
     if isClient() then
@@ -148,7 +153,9 @@ function Ammo.GetOrderedBulletTypesForFamily(playerObj, family)
     if not pref or #pref == 0 then return registryList end
 
     local inRegistry = {}
-    for _, t in ipairs(registryList) do inRegistry[t] = true end
+    for _, t in ipairs(registryList) do
+        inRegistry[t] = true
+    end
 
     local ordered, seen = {}, {}
     for _, t in ipairs(pref) do
@@ -198,8 +205,8 @@ end
 -------------------------------------------------
 
 --- Register one or more weapons/magazines to an ammo family
---- @param family string           e.g. "5.56x45mm"
---- @param itemTypes string|table  single type string or array of type strings
+---@param family    string         e.g. "5.56x45mm"
+---@param itemTypes string | table single type string or array of type strings
 function Ammo.RegisterItemWithFamily(family, itemTypes)
     if type(itemTypes) == "table" then
         for _, itemType in ipairs(itemTypes) do
@@ -232,8 +239,8 @@ end
 --- Register a new ammo family or add bullets to an existing one.
 --- Two mods can independently register the same round into the same family
 --- A new entry whose `type` already exists in the family replaces the earlier one in place - last mod to load wins.
---- @param family string  e.g. "5.56x45mm"
---- @param bullets table  array of { type, enum, profile? }
+---@param family  string e.g. "5.56x45mm"
+---@param bullets table  array of { type, enum, profile? }
 function Ammo.RegisterAmmoFamily(family, bullets)
     if not Ammo.AmmoFamilies[family] then
         Ammo.AmmoFamilies[family] = {}
@@ -258,8 +265,8 @@ function Ammo.RegisterMultipleAmmoFamilies(entriesTable)
 end
 
 --- Register a new ammo stat profile or overwrite an existing one
---- @param profileName string  e.g. "IncendiaryAmmo"
---- @param modifiers table  array of modifier functions (StatsFactory.Adjust / .Set / .Multiply / raw function)
+---@param profileName string e.g. "IncendiaryAmmo"
+---@param modifiers   table  array of modifier functions (StatsFactory.Adjust / .Set / .Multiply / raw function)
 function Ammo.RegisterAmmoStats(profileName, modifiers)
     Ammo.AmmoStats[profileName] = modifiers
 end
@@ -303,7 +310,7 @@ function Ammo.AmmoProfileSetter(weapon, bulletType)
         if playerObj then
             sendClientCommand(playerObj, "SWMG", "ammoProfile", {
                 itemId = weapon:getID(),
-                bulletType = bulletType
+                bulletType = bulletType,
             })
         end
     else
@@ -327,7 +334,7 @@ function Ammo.MagazineAmmoProfileSetter(magazine, bulletType)
         if playerObj then
             sendClientCommand(playerObj, "SWMG", "magazineAmmoProfile", {
                 itemId = magazine:getID(),
-                bulletType = bulletType
+                bulletType = bulletType,
             })
         end
     else
@@ -379,7 +386,7 @@ function Ammo.SyncAmmoListToClient(character, item)
     if not isServer() then return end
     sendServerCommand(character, "SWMG", "syncAmmoList", {
         itemId = item:getID(),
-        ammoList = item:getModData().AmmoList
+        ammoList = item:getModData().AmmoList,
     })
 end
 
