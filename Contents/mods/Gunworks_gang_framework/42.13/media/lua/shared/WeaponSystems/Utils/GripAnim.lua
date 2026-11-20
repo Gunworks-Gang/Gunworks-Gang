@@ -2,28 +2,36 @@
 --
 -- The held-pose counterpart to ReloadAnim: while a registered gun is in the primary hand,
 -- GunworksGripAnim = the gun's grip animId. The weapon pack's held/aim AnimSet nodes gate on
--- that variable, so a registered gun uses a custom grip/aim pose. Selection is by fullType, or
--- by a matches(gun) predicate for attachment-conditional grips (e.g. a different grip when a
--- foregrip is attached). Client-side rendering only (no server authority); MP observers are
--- covered by the same OnTick sweep the reload system uses. Registry structure mirrors
--- WeaponSystems/Utils/ReloadAnim.lua exactly.
+-- that variable, so a registered gun uses a custom grip/aim pose. Selection is by a matches(gun)
+-- predicate (attachment-conditional grips of one gun), then by the gun's fullType, then by a
+-- registered weapon part installed on the gun (e.g. any gun carrying a vertical foregrip).
+-- Client-side rendering only (no server authority); MP observers are covered by the same OnTick
+-- sweep the reload system uses. Registry structure mirrors WeaponSystems/Utils/ReloadAnim.lua.
+--
+-- The "Foregrip" grip set ships with Guns of Marz: every idle/move/aim/fire node of two-handed
+-- firearms with the left hand on a vertical foregrip (AnimSets/<set>/<state>/Foregrip_Rifle,
+-- GW_Foregrip_* nodes) and the clips they play (anims_X/Bob/Foregrip_Rifle, Marz_Foregrip_*).
+-- A weapon pack only registers its foregrip attachments: GripAnim.RegisterMultipleForegrips({...}).
 
 local GripAnim = {}
 
 GripAnim.ANIM_VARIABLE = "GunworksGripAnim"
+GripAnim.FOREGRIP = "Foregrip"
 
 ---@class GunworksGripAnimHandler
----@field id string
----@field fullType string|nil
----@field animId string
----@field matches fun(gun:HandWeapon):boolean|nil
+---@field id       string
+---@field fullType string | nil
+---@field animId   string
+---@field matches  fun(gun: HandWeapon): boolean | nil
 
 ---@type GunworksGripAnimHandler[]
 GripAnim.handlers = {}
----@type table<string,GunworksGripAnimHandler>
+---@type table<string, GunworksGripAnimHandler>
 GripAnim.byFullType = {}
 ---@type GunworksGripAnimHandler[]
 GripAnim.matchers = {}
+---@type table<string, GunworksGripAnimHandler>
+GripAnim.byPart = {}
 
 --- Rebuild the lookup indexes from the flat handler list.
 ---@return nil
@@ -71,10 +79,27 @@ function GripAnim.getHandlers()
     return GripAnim.handlers
 end
 
---- Resolve the grip handler for a gun: predicate matchers first, then the fullType index.
----@param gun HandWeapon|nil
+--- The grip of the first registered weapon part installed on the gun.
+---@param gun HandWeapon
 ---@nodiscard
----@return GunworksGripAnimHandler|nil
+---@return GunworksGripAnimHandler | nil
+local function gripForParts(gun)
+    local byPart = GripAnim.byPart
+    local parts = gun:getAllWeaponParts()
+    for i = 0, parts:size() - 1 do
+        local handler = byPart[parts:get(i):getFullType()]
+        if handler then
+            return handler
+        end
+    end
+    return nil
+end
+
+--- Resolve the grip handler for a gun: predicate matchers first, then the fullType index, then
+--- the registered weapon parts installed on the gun.
+---@param gun HandWeapon | nil
+---@nodiscard
+---@return GunworksGripAnimHandler | nil
 function GripAnim.GetGripForGun(gun)
     if not instanceof(gun, "HandWeapon") then
         return nil
@@ -87,12 +112,56 @@ function GripAnim.GetGripForGun(gun)
         end
     end
 
-    return GripAnim.byFullType[gun:getFullType()]
+    return GripAnim.byFullType[gun:getFullType()] or gripForParts(gun)
+end
+
+--- Public API: any gun with this weapon part installed uses the grip animation (unless the gun has
+--- its own grip registered by fullType or by a matches predicate, which win).
+---@param partFullType string             weapon part item fullType, e.g. "MarzGuns.Stub_Foregrip"
+---@param profile      { animId: string }
+---@return nil
+function GripAnim.RegisterPart(partFullType, profile)
+    if not partFullType or not profile or not profile.animId or profile.animId == "" then
+        return
+    end
+
+    GripAnim.byPart[partFullType] = { id = "part:" .. partFullType, animId = profile.animId }
+end
+
+--- Public API: register many parts at once. Keys are weapon part fullTypes.
+---@param entries table<string, { animId: string }>
+---@return nil
+function GripAnim.RegisterMultipleParts(entries)
+    if not entries then
+        return
+    end
+    for partFullType, profile in pairs(entries) do
+        GripAnim.RegisterPart(partFullType, profile)
+    end
+end
+
+--- Public API: a vertical foregrip attachment; guns carrying it use the Gunworks foregrip grip.
+---@param partFullType string
+---@return nil
+function GripAnim.RegisterForegrip(partFullType)
+    GripAnim.RegisterPart(partFullType, { animId = GripAnim.FOREGRIP })
+end
+
+--- Public API: register many foregrip attachments at once.
+---@param partFullTypes string[]
+---@return nil
+function GripAnim.RegisterMultipleForegrips(partFullTypes)
+    if not partFullTypes then
+        return
+    end
+    for i = 1, #partFullTypes do
+        GripAnim.RegisterForegrip(partFullTypes[i])
+    end
 end
 
 --- Public API: register a grip animation for a gun. Prefer Gunworks.RegisterWeapon.
----@param fullType string|nil  weapon fullType (nil only if profile.matches is set)
----@param profile {animId:string, matches:fun(gun:HandWeapon):boolean|nil, id:string|nil}
+---@param fullType string | nil                                                                       weapon fullType (nil only if profile.matches is set)
+---@param profile  { animId: string, matches: fun(gun: HandWeapon): boolean | nil, id: string | nil }
 ---@return nil
 function GripAnim.RegisterWeapon(fullType, profile)
     if not profile or not profile.animId or profile.animId == "" then
@@ -112,11 +181,11 @@ end
 
 -- Transition cache: last value applied per player (keyed by onlineID) so the per-tick pass only
 -- writes the variable on a change, never every frame.
----@type table<number, string|false>
+---@type table<number, string | false>
 local lastGripByOnlineId = {}
 
 --- Per-player tick pass: derive GunworksGripAnim from the held weapon's registered grip animId.
----@param player IsoPlayer|nil
+---@param player IsoPlayer | nil
 ---@return nil
 local function deriveGripForPlayer(player)
     if not player then
@@ -124,7 +193,7 @@ local function deriveGripForPlayer(player)
     end
 
     local onlineId = player:getOnlineID()
-    ---@type string|false
+    ---@type string | false
     local desired = false
 
     local handler = GripAnim.GetGripForGun(player:getPrimaryHandItem())
@@ -150,7 +219,7 @@ Events.OnPlayerUpdate.Add(deriveGripForPlayer)
 
 if isClient() then
     local ticksSincePass = 0
-    Events.OnTick.Add(function()
+    Events.OnTick.Add(function ()
         ticksSincePass = ticksSincePass + 1
         if ticksSincePass < 3 then
             return
