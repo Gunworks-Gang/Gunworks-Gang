@@ -136,9 +136,10 @@ function Gunworks.RegisterWeapon(fullType, spec)
                     animId = profile.animId,
                     matches = Gunworks.buildMatches(fullType, profile.when),
                     id = variantId(profile.animId, profile.when),
+                    variants = profile.variants,
                 })
             else
-                GripAnim.RegisterWeapon(fullType, { animId = profile.animId })
+                GripAnim.RegisterWeapon(fullType, { animId = profile.animId, variants = profile.variants })
             end
         end
     end

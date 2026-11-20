@@ -12,6 +12,9 @@
 -- firearms with the left hand on a vertical foregrip (AnimSets/<set>/<state>/Foregrip_Rifle,
 -- GW_Foregrip_* nodes) and the clips they play (anims_X/Bob/Foregrip_Rifle, Marz_Foregrip_*).
 -- A weapon pack only registers its foregrip attachments: GripAnim.RegisterMultipleForegrips({...}).
+--
+-- A gun's own grip may name variants per part grip: { animId = "SMG", variants = { Foregrip = "ForegripSMG" } }
+-- plays ForegripSMG while a registered "Foregrip" part is installed, and SMG otherwise.
 
 local GripAnim = {}
 
@@ -23,6 +26,7 @@ GripAnim.FOREGRIP = "Foregrip"
 ---@field fullType string | nil
 ---@field animId   string
 ---@field matches  fun(gun: HandWeapon): boolean | nil
+---@field variants table<string, GunworksGripAnimHandler> | nil
 
 ---@type GunworksGripAnimHandler[]
 GripAnim.handlers = {}
@@ -96,7 +100,8 @@ local function gripForParts(gun)
 end
 
 --- Resolve the grip handler for a gun: predicate matchers first, then the fullType index, then
---- the registered weapon parts installed on the gun.
+--- the registered weapon parts installed on the gun. A gun's own grip switches to its variant for
+--- the grip of an installed part (SMG + Foregrip part -> ForegripSMG).
 ---@param gun HandWeapon | nil
 ---@nodiscard
 ---@return GunworksGripAnimHandler | nil
@@ -105,14 +110,26 @@ function GripAnim.GetGripForGun(gun)
         return nil
     end
 
+    local handler = nil
     local matchers = GripAnim.matchers
     for i = 1, #matchers do
         if matchers[i].matches(gun) then
-            return matchers[i]
+            handler = matchers[i]
+            break
         end
     end
+    handler = handler or GripAnim.byFullType[gun:getFullType()]
 
-    return GripAnim.byFullType[gun:getFullType()] or gripForParts(gun)
+    if not handler then
+        return gripForParts(gun)
+    end
+    if handler.variants then
+        local part = gripForParts(gun)
+        if part and handler.variants[part.animId] then
+            return handler.variants[part.animId]
+        end
+    end
+    return handler
 end
 
 --- Public API: any gun with this weapon part installed uses the grip animation (unless the gun has
@@ -160,8 +177,9 @@ function GripAnim.RegisterMultipleForegrips(partFullTypes)
 end
 
 --- Public API: register a grip animation for a gun. Prefer Gunworks.RegisterWeapon.
----@param fullType string | nil                                                                       weapon fullType (nil only if profile.matches is set)
----@param profile  { animId: string, matches: fun(gun: HandWeapon): boolean | nil, id: string | nil }
+--- profile.variants maps a part grip animId to the animId this gun plays while that part is installed.
+---@param fullType string | nil                                                                                                                 weapon fullType (nil only if profile.matches is set)
+---@param profile  { animId: string, matches: fun(gun: HandWeapon): boolean | nil, id: string | nil, variants: table<string, string> | nil }
 ---@return nil
 function GripAnim.RegisterWeapon(fullType, profile)
     if not profile or not profile.animId or profile.animId == "" then
@@ -171,12 +189,34 @@ function GripAnim.RegisterWeapon(fullType, profile)
         return
     end
 
+    local id = profile.id or fullType or profile.animId
+    local variants = nil
+    if profile.variants then
+        variants = {}
+        for partAnimId, animId in pairs(profile.variants) do
+            variants[partAnimId] = { id = id .. "+" .. partAnimId, fullType = fullType, animId = animId }
+        end
+    end
+
     GripAnim.registerHandler({
-        id = profile.id or fullType or profile.animId,
+        id = id,
         fullType = fullType,
         animId = profile.animId,
         matches = profile.matches,
+        variants = variants,
     })
+end
+
+--- Public API: register many guns at once. Keys are weapon fullTypes.
+---@param entries table<string, { animId: string, variants: table<string, string> | nil }>
+---@return nil
+function GripAnim.RegisterMultipleWeapons(entries)
+    if not entries then
+        return
+    end
+    for fullType, profile in pairs(entries) do
+        GripAnim.RegisterWeapon(fullType, profile)
+    end
 end
 
 -- Transition cache: last value applied per player (keyed by onlineID) so the per-tick pass only
