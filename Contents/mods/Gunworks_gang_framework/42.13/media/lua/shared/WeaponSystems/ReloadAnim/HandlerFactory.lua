@@ -7,7 +7,7 @@
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
 local ReloadRules = require("WeaponSystems/ReloadAnim/Rules")
 
----@param options table|nil
+---@param options table | nil
 ---@param message string
 ---@return nil
 function ReloadAnim.logInvalidOptions(options, message)
@@ -16,10 +16,10 @@ function ReloadAnim.logInvalidOptions(options, message)
 end
 
 --- Flatten a public RegisterWeapon profile into the internal handler shape.
----@param fullType string|nil
----@param options table|nil
+---@param fullType string | nil
+---@param options  table | nil
 ---@nodiscard
----@return table|nil
+---@return table | nil
 function ReloadAnim.normalizeWeaponReloadOptions(fullType, options)
     if not options then
         return nil
@@ -126,13 +126,14 @@ function ReloadAnim.normalizeWeaponReloadOptions(fullType, options)
     if options.whenParts and not normalized.matches then
         local condition = ReloadAnim.normalizePartCondition(options.whenParts)
         if not condition then
-            ReloadAnim.logInvalidOptions(options,
-                "whenParts must be an item/partType string, an array of them, or { all/any/none = {...} }")
+            ReloadAnim.logInvalidOptions(
+                options, "whenParts must be an item/partType string, an array of them, or { all/any/none = {...} }"
+            )
             return nil
         end
 
         local gunType = fullType
-        normalized.matches = function(gun)
+        normalized.matches = function (gun)
             if gunType and gun:getFullType() ~= gunType then
                 return false
             end
@@ -165,13 +166,19 @@ function ReloadAnim.validatePartStateOptions(options)
     local ammoParts = partState.ammoParts
     if ammoParts then
         if type(ammoParts) ~= "table" then
-            ReloadAnim.logInvalidOptions(options, "partState.ammoParts must be an array of {partType, loaded, unloaded}")
+            ReloadAnim.logInvalidOptions(
+                options, "partState.ammoParts must be an array of {partType, loaded, unloaded}"
+            )
             return false
         end
         for i = 1, #ammoParts do
             local spec = ammoParts[i]
             if type(spec) ~= "table" or not spec.partType or not spec.loaded or not spec.unloaded then
-                ReloadAnim.logInvalidOptions(options, "partState.ammoParts[" .. i .. "] requires partType, loaded and unloaded")
+                ReloadAnim.logInvalidOptions(
+                    options,
+                    "partState.ammoParts[" .. i
+                        .. "] requires partType, loaded and unloaded"
+                )
                 return false
             end
         end
@@ -186,7 +193,12 @@ function ReloadAnim.validatePartStateOptions(options)
 
         for i = 1, #list do
             if type(list[i]) ~= "string" or list[i] == "" then
-                ReloadAnim.logInvalidOptions(options, "partState." .. name .. "[" .. i .. "] must be a non-empty item fullType")
+                ReloadAnim.logInvalidOptions(
+                    options,
+                    "partState." .. name
+                        .. "[" .. i
+                        .. "] must be a non-empty item fullType"
+                )
                 return false
             end
         end
@@ -195,7 +207,7 @@ function ReloadAnim.validatePartStateOptions(options)
     return true
 end
 
----@param options table|nil
+---@param options table | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.validateReloadOptions(options)
@@ -204,7 +216,9 @@ function ReloadAnim.validateReloadOptions(options)
     end
 
     if not options.animId or options.animId == "" then
-        ReloadAnim.logInvalidOptions(options, "animId is required (it must equal the AnimSet node's GunworksReloadAnim value)")
+        ReloadAnim.logInvalidOptions(
+            options, "animId is required (it must equal the AnimSet node's GunworksReloadAnim value)"
+        )
         return false
     end
 
@@ -216,7 +230,7 @@ function ReloadAnim.validateReloadOptions(options)
     return ReloadAnim.validatePartStateOptions(options)
 end
 
----@param options table|nil
+---@param options table | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.validateSpriteReloadOptions(options)
@@ -242,7 +256,7 @@ function ReloadAnim.validateSpriteReloadOptions(options)
     return true
 end
 
----@param options table|nil
+---@param options table | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.validateAttachmentReloadOptions(options)
@@ -279,7 +293,7 @@ end
 --- Validate a non-magazine (ISReloadWeaponAction-driven) profile. These guns need only an
 --- animId + a fullType/matches; a prop or model swap is optional, but if the author opts
 --- into a sprite/attachment model swap they must satisfy that style's requirements.
----@param options table|nil
+---@param options table | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.validateNonMagReloadOptions(options)
@@ -322,10 +336,10 @@ function ReloadAnim.createSpriteReloadHandler(options)
         partState = options.partState,
         matches = options.matches,
         consumes = options.consumes,
-        onEjectStart = function(action)
+        onEjectStart = function (action)
             return false
         end,
-        onEjectAnimEvent = function(action, event, parameter)
+        onEjectAnimEvent = function (action, event, parameter)
             local handled = ReloadAnim.handleWeaponSpriteAnimEvent(action, event, parameter)
             if handled then
                 local handler = ReloadAnim.getHandlerForAction(action)
@@ -335,35 +349,35 @@ function ReloadAnim.createSpriteReloadHandler(options)
             end
             return false
         end,
-        onEjectStop = function(action)
+        onEjectStop = function (action)
             ReloadAnim.detachReloadMagazine(action)
         end,
-        onEjectPerform = function(action)
+        onEjectPerform = function (action)
             ReloadAnim.detachReloadMagazine(action)
         end,
-        onInsertStart = function(action)
+        onInsertStart = function (action)
             ReloadAnim.setShortRackAfterInsert(action, options.shortRackAfterInsert)
             ReloadAnim.attachReloadMagazine(action, ReloadAnim.getHandlerForAction(action))
         end,
-        onInsertAnimEvent = function(action, event, parameter)
+        onInsertAnimEvent = function (action, event, parameter)
             local handled = ReloadAnim.handleWeaponSpriteAnimEvent(action, event, parameter)
             if handled then
                 ReloadAnim.detachReloadMagazine(action)
             end
             return false
         end,
-        onInsertStop = function(action)
+        onInsertStop = function (action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.setShortRackAfterInsert(action, false)
         end,
-        onInsertLoadAmmo = function(action)
+        onInsertLoadAmmo = function (action)
             if options.shortRackAfterInsert and not isServer() and not isClient() then
                 if ReloadAnim.shouldQueueShortRackAfterInsert(action) then
                     ReloadAnim.setShortRackPending(action)
                 end
             end
         end,
-        onInsertPerform = function(action)
+        onInsertPerform = function (action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.setShortRackAfterInsert(action, false)
 
@@ -373,19 +387,19 @@ function ReloadAnim.createSpriteReloadHandler(options)
                 end
             end
         end,
-        onRackStart = function(action)
+        onRackStart = function (action)
             if not options.shortRackAfterInsert then
                 return false
             end
 
             return ReloadAnim.handleShortRackStart(action, ReloadAnim.getHandlerForAction(action))
         end,
-        onRackStop = function(action)
+        onRackStop = function (action)
             if options.shortRackAfterInsert then
                 ReloadAnim.handleShortRackStop(action)
             end
         end,
-        onRackPerform = function(action)
+        onRackPerform = function (action)
             if options.shortRackAfterInsert then
                 ReloadAnim.handleShortRackPerform(action)
             end
@@ -429,11 +443,11 @@ function ReloadAnim.createSimpleReloadHandler(options)
         partState = options.partState,
         matches = options.matches,
         consumes = options.consumes,
-        onEjectStart = function(action)
+        onEjectStart = function (action)
             ReloadAnim.attachReloadMagazine(action, ReloadAnim.getHandlerForAction(action))
             return false
         end,
-        onEjectAnimEvent = function(action, event, parameter)
+        onEjectAnimEvent = function (action, event, parameter)
             local handler = ReloadAnim.getHandlerForAction(action)
             if ReloadAnim.handleGwSetPartAnimEvent(action, handler, event, parameter) then
                 return false
@@ -441,19 +455,19 @@ function ReloadAnim.createSimpleReloadHandler(options)
             ReloadAnim.handlePropAnimEvent(action, handler, event, parameter)
             return false
         end,
-        onEjectStop = function(action)
+        onEjectStop = function (action)
             ReloadAnim.detachReloadMagazine(action)
-            ReloadAnim.clearActionHandProp(action)   -- attachToHand without its detachFromHand
+            ReloadAnim.clearActionHandProp(action)  -- attachToHand without its detachFromHand
         end,
-        onEjectPerform = function(action)
+        onEjectPerform = function (action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.clearActionHandProp(action)
         end,
-        onInsertStart = function(action)
+        onInsertStart = function (action)
             ReloadAnim.setShortRackAfterInsert(action, options.shortRackAfterInsert)
             ReloadAnim.attachReloadMagazine(action, ReloadAnim.getHandlerForAction(action))
         end,
-        onInsertAnimEvent = function(action, event, parameter)
+        onInsertAnimEvent = function (action, event, parameter)
             local handler = ReloadAnim.getHandlerForAction(action)
             if ReloadAnim.handleGwSetPartAnimEvent(action, handler, event, parameter) then
                 return false
@@ -461,19 +475,19 @@ function ReloadAnim.createSimpleReloadHandler(options)
             ReloadAnim.handlePropAnimEvent(action, handler, event, parameter)
             return false
         end,
-        onInsertStop = function(action)
+        onInsertStop = function (action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.clearActionHandProp(action)
             ReloadAnim.setShortRackAfterInsert(action, false)
         end,
-        onInsertLoadAmmo = function(action)
+        onInsertLoadAmmo = function (action)
             if options.shortRackAfterInsert and not isServer() and not isClient() then
                 if ReloadAnim.shouldQueueShortRackAfterInsert(action) then
                     ReloadAnim.setShortRackPending(action)
                 end
             end
         end,
-        onInsertPerform = function(action)
+        onInsertPerform = function (action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.clearActionHandProp(action)
             ReloadAnim.setShortRackAfterInsert(action, false)
@@ -484,19 +498,19 @@ function ReloadAnim.createSimpleReloadHandler(options)
                 end
             end
         end,
-        onRackStart = function(action)
+        onRackStart = function (action)
             if not options.shortRackAfterInsert then
                 return false
             end
 
             return ReloadAnim.handleShortRackStart(action, ReloadAnim.getHandlerForAction(action))
         end,
-        onRackStop = function(action)
+        onRackStop = function (action)
             if options.shortRackAfterInsert then
                 ReloadAnim.handleShortRackStop(action)
             end
         end,
-        onRackPerform = function(action)
+        onRackPerform = function (action)
             if options.shortRackAfterInsert then
                 ReloadAnim.handleShortRackPerform(action)
             end
@@ -520,10 +534,7 @@ function ReloadAnim.createAttachmentReloadHandler(options)
 
     local states = options.states
     if not states then
-        states = {
-            loaded = { attach = { "mag" } },
-            unloaded = { detach = { "mag" } }
-        }
+        states = { loaded = { attach = { "mag" } }, unloaded = { detach = { "mag" } } }
     end
 
     return {
@@ -549,10 +560,10 @@ function ReloadAnim.createAttachmentReloadHandler(options)
         partState = options.partState,
         matches = options.matches,
         consumes = options.consumes,
-        onEjectStart = function(action)
+        onEjectStart = function (action)
             return false
         end,
-        onEjectAnimEvent = function(action, event, parameter)
+        onEjectAnimEvent = function (action, event, parameter)
             local handler = ReloadAnim.getHandlerForAction(action)
             if ReloadAnim.handleWeaponPartAnimEvent(action, handler, event, parameter) then
                 return false
@@ -560,21 +571,21 @@ function ReloadAnim.createAttachmentReloadHandler(options)
 
             return ReloadAnim.handleWeaponAttachmentStateAnimEvent(action, handler, event, parameter)
         end,
-        onEjectStop = function(action)
+        onEjectStop = function (action)
             local handler = ReloadAnim.getHandlerForAction(action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.setWeaponAttachmentState(action, handler, unloadedState)
         end,
-        onEjectPerform = function(action)
+        onEjectPerform = function (action)
             local handler = ReloadAnim.getHandlerForAction(action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.setWeaponAttachmentState(action, handler, unloadedState)
         end,
-        onInsertStart = function(action)
+        onInsertStart = function (action)
             ReloadAnim.setShortRackAfterInsert(action, options.shortRackAfterInsert)
             ReloadAnim.attachReloadMagazine(action, ReloadAnim.getHandlerForAction(action))
         end,
-        onInsertAnimEvent = function(action, event, parameter)
+        onInsertAnimEvent = function (action, event, parameter)
             local handler = ReloadAnim.getHandlerForAction(action)
             if ReloadAnim.handleWeaponPartAnimEvent(action, handler, event, parameter) then
                 return false
@@ -586,13 +597,13 @@ function ReloadAnim.createAttachmentReloadHandler(options)
             end
             return false
         end,
-        onInsertStop = function(action)
+        onInsertStop = function (action)
             local handler = ReloadAnim.getHandlerForAction(action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.setShortRackAfterInsert(action, false)
             ReloadAnim.setWeaponAttachmentState(action, handler, loadedState)
         end,
-        onInsertLoadAmmo = function(action)
+        onInsertLoadAmmo = function (action)
             local handler = ReloadAnim.getHandlerForAction(action)
             ReloadAnim.setWeaponAttachmentState(action, handler, loadedState)
             if options.shortRackAfterInsert and not isServer() and not isClient() then
@@ -601,7 +612,7 @@ function ReloadAnim.createAttachmentReloadHandler(options)
                 end
             end
         end,
-        onInsertPerform = function(action)
+        onInsertPerform = function (action)
             local handler = ReloadAnim.getHandlerForAction(action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.setShortRackAfterInsert(action, false)
@@ -613,19 +624,19 @@ function ReloadAnim.createAttachmentReloadHandler(options)
                 end
             end
         end,
-        onRackStart = function(action)
+        onRackStart = function (action)
             if not options.shortRackAfterInsert then
                 return false
             end
 
             return ReloadAnim.handleShortRackStart(action, ReloadAnim.getHandlerForAction(action))
         end,
-        onRackStop = function(action)
+        onRackStop = function (action)
             if options.shortRackAfterInsert then
                 ReloadAnim.handleShortRackStop(action)
             end
         end,
-        onRackPerform = function(action)
+        onRackPerform = function (action)
             if options.shortRackAfterInsert then
                 ReloadAnim.handleShortRackPerform(action)
             end
@@ -679,10 +690,10 @@ function ReloadAnim.createNonMagReloadHandler(options)
         customUnload = options.customUnload,
         matches = options.matches,
         consumes = options.consumes,
-        onReloadStart = function(action)
+        onReloadStart = function (action)
             ReloadAnim.attachReloadMagazine(action, ReloadAnim.getHandlerForAction(action))
         end,
-        onReloadAnimEvent = function(action, event, parameter)
+        onReloadAnimEvent = function (action, event, parameter)
             -- Additive only: never block vanilla animEvent (it owns loadFinished/loadAmmo).
             -- A style="none" gun (the common case) has no such events, so this is a no-op.
             local handler = ReloadAnim.getHandlerForAction(action)
@@ -701,12 +712,12 @@ function ReloadAnim.createNonMagReloadHandler(options)
             ReloadAnim.handleWeaponAttachmentStateAnimEvent(action, handler, event, parameter)
             return false
         end,
-        onReloadStop = function(action)
+        onReloadStop = function (action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.restoreReloadPartState(action)
-            ReloadAnim.clearActionHandProp(action)   -- a round attachToHand put in the hand, not yet detached
+            ReloadAnim.clearActionHandProp(action)  -- a round attachToHand put in the hand, not yet detached
         end,
-        onReloadPerform = function(action)
+        onReloadPerform = function (action)
             ReloadAnim.detachReloadMagazine(action)
             ReloadAnim.restoreReloadPartState(action)
             ReloadAnim.clearActionHandProp(action)
@@ -741,8 +752,8 @@ end
 --- complete profile; nothing is inherited from the default. The first entry whose parts are installed
 --- wins, so list the most specific first. Without any of them the default plays. A profile with no
 --- animId of its own registers only the alternatives, so without a part the gun keeps vanilla.
----@param fullType string|nil
----@param profile table
+---@param fullType string | nil
+---@param profile  table
 ---@return nil
 function ReloadAnim.registerPartVariants(fullType, profile)
     local entries = profile.whenParts
@@ -750,8 +761,10 @@ function ReloadAnim.registerPartVariants(fullType, profile)
         local entry = entries[i]
         local variant = type(entry) == "table" and entry.reloadAnimation
         if type(variant) ~= "table" or entry.weaponPart == nil or variant.whenParts ~= nil then
-            ReloadAnim.logInvalidOptions(profile,
-                "whenParts[" .. i .. "] needs a weaponPart and a reloadAnimation profile without its own whenParts")
+            ReloadAnim.logInvalidOptions(
+                profile,
+                "whenParts[" .. i .. "] needs a weaponPart and a reloadAnimation profile without its own whenParts"
+            )
         else
             local options = {}
             for key, value in pairs(variant) do
@@ -804,8 +817,8 @@ end
 ---
 --- Reload rules: `rules` lists the rules the reload follows (rule names, preset names or rule tables,
 --- registered by the weapon pack); see ReloadAnim/Rules.lua.
----@param fullType string|nil  weapon fullType key, e.g. "MyPack.M249Rifle" (nil only if profile.matches or profile.whenParts is set)
----@param profile {animId:string,archetype:string|nil,style:string|nil,magItem:string|nil,prop:{item:string|nil}|nil,sprite:{loaded:string|nil,unloaded:string|nil}|nil,attachments:table|nil,durations:{load:number|nil,loadAim:number|nil,loadShort:number|nil,unload:number|nil,unloadAim:number|nil,rack:number|nil,rackAim:number|nil,rackOpen:number|nil,rackOpenAim:number|nil,rackClose:number|nil,rackCloseAim:number|nil,loadChamber:number|nil,loadChamberAim:number|nil,clip:number|nil,clipAim:number|nil,vehicle:table|nil}|nil,shortRackAfterInsert:boolean|nil,rules:string|table|nil,matches:fun(gun:HandWeapon):boolean|nil,whenParts:string|string[]|table|nil,id:string|nil}|table[]
+---@param fullType string | nil                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       weapon fullType key, e.g. "MyPack.M249Rifle" (nil only if profile.matches or profile.whenParts is set)
+---@param profile  { animId: string, archetype: string | nil, style: string | nil, magItem: string | nil, prop: { item: string | nil } | nil, sprite: { loaded: string | nil, unloaded: string | nil } | nil, attachments: table | nil, durations: { load: number | nil, loadAim: number | nil, loadShort: number | nil, unload: number | nil, unloadAim: number | nil, rack: number | nil, rackAim: number | nil, rackOpen: number | nil, rackOpenAim: number | nil, rackClose: number | nil, rackCloseAim: number | nil, loadChamber: number | nil, loadChamberAim: number | nil, clip: number | nil, clipAim: number | nil, vehicle: table | nil } | nil, shortRackAfterInsert: boolean | nil, rules: string | table | nil, matches: fun(gun: HandWeapon): boolean | nil, whenParts: string | string[] | table | nil, id: string | nil } | table[]
 ---@return nil
 function ReloadAnim.RegisterWeapon(fullType, profile)
     -- An array of profiles for one gun (base + whenParts variants). Each entry carries its own
@@ -871,7 +884,7 @@ end
 
 --- Public API: register many guns at once. Keys are weapon fullTypes; each value is a single
 --- profile or an array of profiles (a base plus whenParts variants for that gun).
----@param entries table<string,table|table[]>
+---@param entries table<string, table | table[]>
 ---@return nil
 function ReloadAnim.RegisterMultipleWeapons(entries)
     if not entries then

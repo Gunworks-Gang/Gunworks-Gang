@@ -40,28 +40,28 @@ require("WeaponSystems/ReloadAnim/Visuals")
 local Magazine = require("WeaponSystems/Utils/Magazine")
 local Ammo = require("WeaponSystems/Utils/Ammo")
 
-ReloadAnim.PROP_SET_EVENT = "gwSetProp"          -- item -> off-hand slot (Bip01_Prop2)
-ReloadAnim.PROP_SET_HAND_EVENT = "gwSetHandProp" -- item -> right-hand slot (Bip01_R_Hand)
+ReloadAnim.PROP_SET_EVENT = "gwSetProp"           -- item -> off-hand slot (Bip01_Prop2)
+ReloadAnim.PROP_SET_HAND_EVENT = "gwSetHandProp"  -- item -> right-hand slot (Bip01_R_Hand)
 ReloadAnim.PART_TO_HAND_EVENT = "gwPartToHand"
 ReloadAnim.PART_TO_GUN_EVENT = "gwPartToGun"
-ReloadAnim.ATTACH_TO_HAND_EVENT = "attachToHand"     -- reload magazine -> off-hand (alias of gwSetProp)
-ReloadAnim.DETACH_FROM_HAND_EVENT = "detachFromHand" -- empty the off-hand (alias of gwSetProp "")
+ReloadAnim.ATTACH_TO_HAND_EVENT = "attachToHand"      -- reload magazine -> off-hand (alias of gwSetProp)
+ReloadAnim.DETACH_FROM_HAND_EVENT = "detachFromHand"  -- empty the off-hand (alias of gwSetProp "")
 
 --- "attach" / "detach" for the magazine hand events (case-insensitive), nil for anything else.
----@type table<string,string>
+---@type table<string, string>
 local HAND_EVENTS = {
     [string.lower(ReloadAnim.ATTACH_TO_HAND_EVENT)] = "attach",
     [string.lower(ReloadAnim.DETACH_FROM_HAND_EVENT)] = "detach",
 }
 
----@param event string|nil
+---@param event string | nil
 ---@nodiscard
----@return string|nil
+---@return string | nil
 function ReloadAnim.handEventKind(event)
     return event and HAND_EVENTS[string.lower(event)] or nil
 end
 
----@type table<string,boolean>
+---@type table<string, boolean>
 local PROP_EVENTS = {
     [ReloadAnim.PROP_SET_EVENT] = true,
     [ReloadAnim.PROP_SET_HAND_EVENT] = true,
@@ -80,7 +80,7 @@ local function slotForEvent(event)
     return ReloadAnim.RELOAD_MAGAZINE_ATTACH_LOCATION
 end
 
----@param event string|nil
+---@param event string | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.isPropEvent(event)
@@ -88,7 +88,7 @@ function ReloadAnim.isPropEvent(event)
 end
 
 --- Is itemType a magazine this gun takes (its own MagazineType or any type of its magazine profile)?
----@param gun HandWeapon|nil
+---@param gun      HandWeapon | nil
 ---@param itemType string
 ---@nodiscard
 ---@return boolean
@@ -111,7 +111,7 @@ local function isGunMagazineType(gun, itemType)
 end
 
 --- Is itemType a round this gun loads (its AmmoType item, or any bullet type of its Gunworks ammo family)?
----@param gun HandWeapon|nil
+---@param gun      HandWeapon | nil
 ---@param itemType string
 ---@nodiscard
 ---@return boolean
@@ -137,10 +137,10 @@ end
 
 --- The round a non-magazine reload (ISReloadWeaponAction) is putting in: the type Gunworks chose for this
 --- reload (ammoTypeOverride), else the next round of the action's own list, else the gun's AmmoType.
----@param action ISBaseTimedAction
----@param handler GunworksReloadAnimHandler|nil
+---@param action  ISBaseTimedAction
+---@param handler GunworksReloadAnimHandler | nil
 ---@nodiscard
----@return string|nil
+---@return string | nil
 function ReloadAnim.resolveReloadRoundItem(action, handler)
     local override = action.ammoTypeOverride
     if override and override ~= "" then
@@ -163,10 +163,10 @@ end
 
 --- The item attachToHand shows when the marker names none: the round being loaded for a non-magazine
 --- archetype (falling back to the profile's prop item), the magazine otherwise.
----@param action ISBaseTimedAction
+---@param action  ISBaseTimedAction
 ---@param handler GunworksReloadAnimHandler
 ---@nodiscard
----@return string|nil
+---@return string | nil
 local function resolveHandItem(action, handler)
     if ReloadAnim.isNonMagArchetype(handler.archetype) then
         return ReloadAnim.resolveReloadRoundItem(action, handler) or handler.magItem
@@ -178,9 +178,9 @@ end
 --- client command, so an unvalidated one would let a client spawn any item into its inventory.
 --- Allowed: the profile's partState lists, its magItem, and (when the gun is given) any magazine type
 --- the gun takes - the attachToHand magazine - or, for a non-magazine archetype, any round it loads.
----@param handler GunworksReloadAnimHandler|nil
----@param itemType string|nil
----@param gun HandWeapon|nil
+---@param handler  GunworksReloadAnimHandler | nil
+---@param itemType string | nil
+---@param gun      HandWeapon | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.isAllowedPropValue(handler, itemType, gun)
@@ -242,7 +242,7 @@ local trackedProps = {}
 --- Free whatever currently occupies `location`. The send* globals self-guard on GameServer.server,
 --- so this is a plain local mutation in singleplayer.
 ---@param character IsoGameCharacter
----@param location string
+---@param location  string
 ---@return boolean
 local function removeProp(character, location)
     local attached = character:getAttachedItem(location)
@@ -271,8 +271,8 @@ end
 --- Set (or clear, with an empty itemType) the prop in `location`. Server / singleplayer only: a
 --- client creating the item locally would leave a phantom that no packet can reconcile.
 ---@param character IsoGameCharacter
----@param location string
----@param itemType string|nil
+---@param location  string
+---@param itemType  string | nil
 ---@return boolean
 local function applyProp(character, location, itemType)
     if not ReloadAnim.hasAttachLocation(character, location) then
@@ -310,7 +310,7 @@ local function applyProp(character, location, itemType)
 end
 
 --- Clear the off-hand prop wherever authority for it lives. Used on reload interrupt.
----@param character IsoGameCharacter|nil
+---@param character IsoGameCharacter | nil
 ---@return nil
 function ReloadAnim.clearOffHandProp(character)
     if not character then
@@ -330,9 +330,9 @@ end
 
 --- Apply one marker authoritatively (singleplayer, or the server acting on a client's request).
 ---@param character IsoGameCharacter
----@param gun HandWeapon|nil
----@param event string
----@param value string|nil
+---@param gun       HandWeapon | nil
+---@param event     string
+---@param value     string | nil
 ---@return nil
 function ReloadAnim.applyPropEvent(character, gun, event, value)
     -- gwSetProp -> off-hand (Prop2) slot; gwSetHandProp -> right-hand slot. Independent slots.
@@ -368,10 +368,10 @@ end
 
 --- Apply a relayed marker on an observer client. Only the gun-side part moves here; the prop item
 --- and its attachment arrive from the server as engine packets.
----@param character IsoGameCharacter|nil
----@param gun HandWeapon|nil
----@param event string
----@param value string|nil
+---@param character IsoGameCharacter | nil
+---@param gun       HandWeapon | nil
+---@param event     string
+---@param value     string | nil
 ---@return nil
 function ReloadAnim.applyRemotePropEvent(character, gun, event, value)
     if not character then
@@ -397,8 +397,7 @@ function ReloadAnim.applyRemotePropEvent(character, gun, event, value)
             return
         end
 
-        local location = (event == ReloadAnim.PROP_SET_HAND_EVENT)
-            and ReloadAnim.RELOAD_HAND_ATTACH_LOCATION
+        local location = (event == ReloadAnim.PROP_SET_HAND_EVENT) and ReloadAnim.RELOAD_HAND_ATTACH_LOCATION
             or ReloadAnim.RELOAD_MAGAZINE_ATTACH_LOCATION
 
         local current = character:getAttachedItem(location)
@@ -432,9 +431,9 @@ end
 --- ignores the LOCAL player, so the owner never sees its own prop until it attaches the synced item
 --- itself. A nil itemId means clear the slot (the server already removed the item + broadcast the
 --- detach; only our local attachment is left to drop).
----@param character IsoGameCharacter|nil
----@param itemId number|nil
----@param location string|nil
+---@param character IsoGameCharacter | nil
+---@param itemId    number | nil
+---@param location  string | nil
 ---@return nil
 function ReloadAnim.applyOwnerProp(character, itemId, location)
     if not character then
@@ -463,7 +462,7 @@ end
 
 --- The action ended (finished or interrupted): drop a magazine that attachToHand put in the off-hand and
 --- that no detachFromHand removed. No-op unless this action attached one.
----@param action ISBaseTimedAction|nil
+---@param action ISBaseTimedAction | nil
 ---@return nil
 function ReloadAnim.clearActionHandProp(action)
     if not action or not action._gwHandProp then
@@ -489,9 +488,9 @@ function ReloadAnim.clearActionHandProp(action)
 end
 
 --- Timed-action entry point: handle a prop/transfer marker fired by the reload clip.
----@param action ISBaseTimedAction
----@param handler GunworksReloadAnimHandler|nil
----@param event string
+---@param action    ISBaseTimedAction
+---@param handler   GunworksReloadAnimHandler | nil
+---@param event     string
 ---@param parameter string
 ---@return boolean
 function ReloadAnim.handlePropAnimEvent(action, handler, event, parameter)
@@ -499,7 +498,7 @@ function ReloadAnim.handlePropAnimEvent(action, handler, event, parameter)
     -- observers and the cleanup all go through the one tested off-hand prop path.
     local handKind = ReloadAnim.handEventKind(event)
     if handKind == "attach" then
-        local value = parameter ---@type string|nil
+        local value = parameter  ---@type string | nil
         if (not value or value == "") and handler then
             value = resolveHandItem(action, handler)
         end

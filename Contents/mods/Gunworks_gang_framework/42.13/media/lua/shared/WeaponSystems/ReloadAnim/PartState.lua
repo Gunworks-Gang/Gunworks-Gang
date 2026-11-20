@@ -21,9 +21,9 @@ local PartReconcile = require("WeaponSystems/Utils/PartReconcile")
 
 --- Reconcile a part whose variant is chosen by whether the gun is loaded (flint cooked/uncooked, hammer
 --- cocked/uncocked). One helper for every such spec so flint and hammer stay identical.
----@param gun HandWeapon
+---@param gun       HandWeapon
 ---@param character IsoGameCharacter
----@param spec GunworksReloadAmmoPartSpec
+---@param spec      GunworksReloadAmmoPartSpec
 ---@return boolean
 local function reconcileAmmoKeyedPart(gun, character, spec)
     local desired = spec.unloaded
@@ -41,9 +41,9 @@ local function reconcileAmmoKeyedPart(gun, character, spec)
 end
 
 --- Reconcile every ammo-keyed part (flint, hammer, ...) the profile declares.
----@param gun HandWeapon
+---@param gun       HandWeapon
 ---@param character IsoGameCharacter
----@param list GunworksReloadAmmoPartSpec[]
+---@param list      GunworksReloadAmmoPartSpec[]
 ---@return boolean
 local function reconcileAmmoParts(gun, character, list)
     local changed = false
@@ -53,9 +53,9 @@ local function reconcileAmmoParts(gun, character, list)
     return changed
 end
 
----@param gun HandWeapon
+---@param gun       HandWeapon
 ---@param character IsoGameCharacter
----@param ensure string[]
+---@param ensure    string[]
 ---@return boolean
 local function reconcileEnsuredParts(gun, character, ensure)
     local changed = false
@@ -70,8 +70,8 @@ end
 
 --- Force every ensured part back onto the gun and reconcile the flint from the live ammo count.
 --- Called by the reload hooks on interrupt, where the markers may have left a part in the hand.
----@param character IsoGameCharacter|nil
----@param gun HandWeapon|nil
+---@param character IsoGameCharacter | nil
+---@param gun       HandWeapon | nil
 ---@return nil
 function ReloadAnim.restoreWeaponParts(character, gun)
     if not character or not instanceof(gun, "HandWeapon") then
@@ -146,7 +146,7 @@ function ReloadAnim.restoreReloadPartState(action)
 end
 
 --- The desired variant for an ammo-keyed part (flint or hammer), from the gun's live ammo count.
----@param gun HandWeapon
+---@param gun  HandWeapon
 ---@param spec GunworksReloadAmmoPartSpec
 ---@nodiscard
 ---@return string
@@ -158,7 +158,7 @@ local function desiredAmmoKeyedPart(gun, spec)
 end
 
 --- The desired fullType of every ammo-keyed part, in profile order, for the observer relay.
----@param gun HandWeapon
+---@param gun  HandWeapon
 ---@param list GunworksReloadAmmoPartSpec[]
 ---@nodiscard
 ---@return string[]
@@ -173,7 +173,7 @@ end
 --- Read-only: does this gun's part set differ from its profile's desired state? The MP client uses
 --- this to decide whether to nudge the server WITHOUT mutating locally - predicting locally would
 --- stop the nudge after one tick and lose it if it raced ahead of the equip-sync to the server.
----@param gun HandWeapon
+---@param gun     HandWeapon
 ---@param profile GunworksReloadPartStateProfile
 ---@nodiscard
 ---@return boolean
@@ -207,7 +207,7 @@ end
 -- the TRIGGER; the server recomputes the desired parts from its own authoritative ammo count and
 -- never trusts a client-supplied part list.
 
----@param player IsoPlayer|nil
+---@param player IsoPlayer | nil
 ---@return nil
 local function reconcilePartsForPlayer(player)
     if not player then
@@ -266,9 +266,9 @@ end
 --- profile (never from client input). Returns the desired {ammoParts, ensure} it applied, for the
 --- observer relay, or nil if the gun carries no partState profile.
 ---@param player IsoPlayer
----@param gun HandWeapon|nil
+---@param gun    HandWeapon | nil
 ---@nodiscard
----@return { ammoParts: string[]|nil, ensure: string[]|nil }|nil
+---@return { ammoParts: string[] | nil, ensure: string[] | nil } | nil
 function ReloadAnim.reconcileServerParts(player, gun)
     if not instanceof(gun, "HandWeapon") then
         return nil
@@ -298,10 +298,10 @@ end
 --- Apply a relayed steady-state part set on an observer client (or the reloader mirroring the
 --- server). Idempotent: attachVisualPart skips a part already present, and swapping an ammo-keyed
 --- part auto-detaches the previous one (same PartType).
----@param character IsoGameCharacter|nil
----@param gun HandWeapon|nil
----@param ammoParts string[]|nil
----@param ensure string[]|nil
+---@param character IsoGameCharacter | nil
+---@param gun       HandWeapon | nil
+---@param ammoParts string[] | nil
+---@param ensure    string[] | nil
 ---@return nil
 function ReloadAnim.applyRemotePartState(character, gun, ammoParts, ensure)
     if not character or not instanceof(gun, "HandWeapon") then

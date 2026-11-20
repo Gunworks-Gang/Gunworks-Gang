@@ -32,13 +32,9 @@ local BOLT_OPEN_KEY = "gunworksBoltOpen"
 local HAND_CHAMBERED_KEY = "gunworksHandChambered"
 
 -- Round events of a rack, skipped by a closing stroke that closes over a round loaded by hand.
-local ROUND_EVENTS = {
-    rackBullet = true,
-    ejectCasing = true,
-    chamberRound = true,
-}
+local ROUND_EVENTS = { rackBullet = true, ejectCasing = true, chamberRound = true }
 
----@param gun HandWeapon|nil
+---@param gun HandWeapon | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.isBoltOpen(gun)
@@ -82,8 +78,10 @@ function ReloadAnim.startOpeningStroke(action)
     action:setAnimVariable("isRacking", true)
     action:setAnimVariable("RackAiming", character:isAiming())
     if character:isAiming() then
-        character:setAimingDelay(character:getAimingDelay()
-            + action.gun:getAimingTime() * (0.15 - character:getPerkLevel(Perks.Reloading) * 0.01))
+        character:setAimingDelay(
+            character:getAimingDelay() + action.gun:getAimingTime()
+                    * (0.15 - character:getPerkLevel(Perks.Reloading) * 0.01)
+        )
     end
     action:setOverrideHandModels(action.gun, nil)
     action:setActionAnim(CharacterActionAnims.Reload)
@@ -92,7 +90,7 @@ function ReloadAnim.startOpeningStroke(action)
 end
 
 --- Was the chambered round put in by hand while the action was open? Server and singleplayer only.
----@param gun HandWeapon|nil
+---@param gun HandWeapon | nil
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.isHandChambered(gun)
@@ -100,7 +98,7 @@ function ReloadAnim.isHandChambered(gun)
     return modData ~= nil and modData[HAND_CHAMBERED_KEY] == true
 end
 
----@param gun HandWeapon|nil
+---@param gun   HandWeapon | nil
 ---@param value boolean
 ---@return nil
 function ReloadAnim.setHandChambered(gun, value)
@@ -115,8 +113,7 @@ end
 ---@nodiscard
 ---@return boolean
 function ReloadAnim.closesOverHandRound(action)
-    return not isClient()
-        and action.gunworksRackPhase == ReloadAnim.RACK_PHASE_CLOSE
+    return not isClient() and action.gunworksRackPhase == ReloadAnim.RACK_PHASE_CLOSE
         and ReloadAnim.isHandChambered(action.gun)
 end
 
