@@ -1246,6 +1246,10 @@ Guns of Marz also ships a stance for short-handguard SMGs that use the rifle ani
 
 Guns of Marz registers its SMGs in `MarzWeapons/Registries/GripStances.lua` with the variant from section 3, so a registered foregrip on an SMG plays `ForegripSMG`.
 
+Each of the three sets also has versions of the Tactical Hold mod's rifle poses (TAC, High Ready, Low Ready, Classic Stock Grip), in `maskingright/<folder>`.
+They play while Tactical Hold sets `RightHandMask` and the gun has that grip, so the left hand stays on the foregrip or the SMG handguard in those poses.
+Without Tactical Hold they never play.
+
 ### Module import
 
 ```lua
