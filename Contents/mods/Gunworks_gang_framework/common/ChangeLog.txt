@@ -70,3 +70,11 @@ B42.22.2:
 [*] Rework spawner to allow minimal and maximun items without breaking existing tables
 [*] Rework animations event to prevent additional trigger in MP
 [ ------ ]
+
+[22/November/2026 ]
+B42.22.2:
+[*] New Stacked Magazine endpoint
+[*] Adjustments to allow custom stances for foregrip
+[*] Single Firemode operates like real single fire, you will need to click in order to fire
+[*] New endpoint to allow attachments that will worn outside
+[ ------ ]
