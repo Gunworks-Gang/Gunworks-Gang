@@ -33,6 +33,15 @@ function ISReloadWeaponAction:complete()
     return ISReloadWeaponAction_complete(self)
 end
 
+local ISReloadWeaponAction_stop = ISReloadWeaponAction.stop
+function ISReloadWeaponAction:stop()
+    if Animations.WeaponsWithAnimatedParts[self.gun:getFullType()] and not ReloadRules.keepsActionWhenStopped(self.gun) then
+        ReloadRules.recordStroke(self.gun, "close")
+        Animations.CallAnimate(self.character, self.gun, false, nil, "reload")
+    end
+    return ISReloadWeaponAction_stop(self)
+end
+
 local function isTriggerBlocked(weapon)
     return weapon:getFireMode() == "Safe" or weapon:getModData().gunworksBoltOpen == true
 end
@@ -89,11 +98,19 @@ function ISRackFirearm:complete()
     if Animations.IsWeaponWithCustomStates(self.gun:getFullType()) then
         Animations.CheckStates(self.gun)
     end
-    if self.gunworksRackPhase ~= "open"
-        and (not self.gun:haveChamber() or self.gun:getModData().gunworksBoltOpen == true) then
+    if not self.gun:haveChamber() and self.gunworksRackPhase ~= "open" then
         Animations.CallAnimate(self.character, self.gun, false, nil, "reload", self.gunworksRackPhase)
     end
     return ISRackFirearm_complete(self)
+end
+
+local ISRackFirearm_stop = ISRackFirearm.stop
+function ISRackFirearm:stop()
+    if Animations.WeaponsWithAnimatedParts[self.gun:getFullType()] and not ReloadRules.keepsActionWhenStopped(self.gun) then
+        ReloadRules.recordStroke(self.gun, "close")
+        Animations.CallAnimate(self.character, self.gun, false, nil, "reload")
+    end
+    return ISRackFirearm_stop(self)
 end
 
 --------------------------------------------------------------------------
@@ -116,6 +133,15 @@ function ISUnloadBulletsFromFirearm:complete()
         Animations.CallAnimate(self.character, self.gun, false, nil, "reload")
     end
     return ISUnloadBulletsFromFirearm_complete(self)
+end
+
+local ISUnloadBulletsFromFirearm_stop = ISUnloadBulletsFromFirearm.stop
+function ISUnloadBulletsFromFirearm:stop()
+    if Animations.WeaponsWithAnimatedParts[self.gun:getFullType()] and not ReloadRules.keepsActionWhenStopped(self.gun) then
+        ReloadRules.recordStroke(self.gun, "close")
+        Animations.CallAnimate(self.character, self.gun, false, nil, "reload")
+    end
+    return ISUnloadBulletsFromFirearm_stop(self)
 end
 
 ---------------------------------------------------------------

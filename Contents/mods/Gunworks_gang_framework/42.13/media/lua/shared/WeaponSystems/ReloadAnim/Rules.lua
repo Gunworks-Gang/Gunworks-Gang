@@ -29,6 +29,10 @@
 -- reload key, the radial menu or the inventory menu follows the same rules, and an interrupted reload
 -- picks up where it stopped. Each action is checked once. For each moment the first rule in the gun's
 -- list that answers wins; an empty list under `instead` drops the step.
+--
+-- An interrupted rack, load or unload closes the action, the way a spring-driven bolt runs home. A gun whose
+-- action is worked by hand (bolt, pump, lever, break action, revolver cylinder) lists a rule that carries
+-- `keepActionWhenStopped = true`, and its action stays where the interrupted stroke left it.
 
 ---@class GunworksReloadAnim
 local ReloadAnim = require("WeaponSystems/Utils/ReloadAnim")
@@ -63,6 +67,7 @@ local Magazine = require("WeaponSystems/Utils/Magazine")
 ---@field before  table<string, GunworksReloadRuleHook | string | string[]> | nil
 ---@field after   table<string, GunworksReloadRuleHook | string | string[]> | nil
 ---@field instead table<string, GunworksReloadRuleHook | string | string[]> | nil
+---@field keepActionWhenStopped boolean | nil an interrupted rack, load or unload leaves the action as it is
 
 ---@class GunworksReloadStep
 ---@field create         fun(ctx: GunworksReloadRuleContext): (table | table[] | nil) the timed action(s) for this step, or nil to skip it
@@ -155,7 +160,8 @@ end
 ---@param value any
 ---@return boolean
 local function isRuleTable(value)
-    return type(value) == "table" and (value.before ~= nil or value.after ~= nil or value.instead ~= nil)
+    return type(value) == "table"
+        and (value.before ~= nil or value.after ~= nil or value.instead ~= nil or value.keepActionWhenStopped ~= nil)
 end
 
 --- The rule list a reload profile asks for: its `rules` (a rule or preset name, a rule table, or a list of
@@ -260,6 +266,24 @@ function ReloadRules.getRules(handler)
         return nil
     end
     return collectRules(handler.rules, {}, {}, 0)
+end
+
+--- Does an interrupted rack, load or unload leave this gun's action as it is? True when one of its rules carries
+--- `keepActionWhenStopped`; otherwise the interrupted action closes (AnimationsHooks).
+---@param gun HandWeapon
+---@nodiscard
+---@return boolean
+function ReloadRules.keepsActionWhenStopped(gun)
+    local rules = ReloadRules.getRules(ReloadAnim.GetHandlerForGun(gun))
+    if not rules then
+        return false
+    end
+    for i = 1, #rules do
+        if rules[i].keepActionWhenStopped then
+            return true
+        end
+    end
+    return false
 end
 
 --- Ask the handler's rules about one moment ("before", "after" or "instead") of a step. The first rule
