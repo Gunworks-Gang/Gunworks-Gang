@@ -89,7 +89,8 @@ function ISRackFirearm:complete()
     if Animations.IsWeaponWithCustomStates(self.gun:getFullType()) then
         Animations.CheckStates(self.gun)
     end
-    if not self.gun:haveChamber() and self.gunworksRackPhase ~= "open" then
+    if self.gunworksRackPhase ~= "open"
+        and (not self.gun:haveChamber() or self.gun:getModData().gunworksBoltOpen == true) then
         Animations.CallAnimate(self.character, self.gun, false, nil, "reload", self.gunworksRackPhase)
     end
     return ISRackFirearm_complete(self)
