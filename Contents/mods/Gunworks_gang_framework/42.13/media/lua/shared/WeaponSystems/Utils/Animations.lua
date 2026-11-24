@@ -65,11 +65,7 @@ local function setBoltFlag(weapon, open)
     weapon:getModData().gunworksBoltOpen = open and true or nil
 end
 
----@param boltOpen boolean | nil true/false sets modData.gunworksBoltOpen to true/nil; nil leaves it unchanged
-function Animations.CallSyncHandWeaponFields(player, weapon, boltOpen)
-    if boltOpen ~= nil then
-        setBoltFlag(weapon, boltOpen)
-    end
+function Animations.CallSyncHandWeaponFields(player, weapon)
     syncHandWeaponFields(player, weapon)
     player:setPrimaryHandItem(nil)
     if weapon:isTwoHandWeapon() then
@@ -161,11 +157,10 @@ end
 function Animations.CallAnimate(player, weapon, open, keepBoltState, route, rackPhase)
     firingRefresh = true
     Animations.CallAnimationFunction(weapon, open, route, rackPhase)
-    local boltOpen = nil
     if not keepBoltState then
-        boltOpen = open and true or false
+        setBoltFlag(weapon, open)
     end
-    Animations.CallSyncHandWeaponFields(player, weapon, boltOpen)
+    Animations.CallSyncHandWeaponFields(player, weapon)
     firingRefresh = false
 end
 
