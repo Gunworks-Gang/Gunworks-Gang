@@ -23,6 +23,13 @@ function ISStackedMagazine:isValid()
     return self.character:getPrimaryHandItem() == self.gun
 end
 
+function ISStackedMagazine:begin()
+    if ReloadRules.beginAction(self) then
+        return
+    end
+    ISBaseTimedAction.begin(self)
+end
+
 function ISStackedMagazine:start()
     if isClient() then
         self.gun = self.character:getInventory():getItemById(self.gun:getID())
@@ -227,6 +234,7 @@ function ISStackedMagazine:perform()
     if rack then
         ISTimedActionQueue.addAfter(self, ISRackFirearm:new(self.character, self.gun))
     end
+    ReloadRules.afterAction(self)
 
     ISBaseTimedAction.perform(self)
 end

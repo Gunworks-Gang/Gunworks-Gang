@@ -12,6 +12,9 @@
 --   loadRounds    ISReloadWeaponAction, rounds one by one
 --   loadChamber   ISReloadWeaponAction that puts one round straight into the open chamber
 --   unloadRounds  ISUnloadBulletsFromFirearm
+--   flipMag       ISStackedMagazine, the next side of a stacked magazine into the well. A gun whose rules do not
+--                 answer for it is asked as the magazine swap it stands for: `before` as ejectMag, then
+--                 insertMag, `after` as insertMag.
 --
 -- A rule says which steps must come before, after or instead of a step, given the gun's state:
 --
@@ -81,6 +84,15 @@ ReloadAnim.Rules = ReloadRules
 --- can tell the steps apart (for example a stripper clip from a single round, both ISInsertMagazine / load).
 ReloadRules.STEP_VARIABLE = "GunworksReloadStep"
 ReloadRules.STEP_LOAD_CHAMBER = "loadChamber"
+ReloadRules.STEP_FLIP_MAG = "flipMag"
+
+-- Step -> moment -> the steps asked in its place when no rule answers for the step itself.
+local STANDS_FOR = {
+    [ReloadRules.STEP_FLIP_MAG] = {
+        before = { "ejectMag", "insertMag" },
+        after = { "insertMag" },
+    },
+}
 
 --- Steps a rule may add in a row (a rule answering with a step that triggers the same rule again stops here).
 ReloadRules.MAX_DEPTH = 6
@@ -287,7 +299,7 @@ function ReloadRules.keepsActionWhenStopped(gun)
 end
 
 --- Ask the handler's rules about one moment ("before", "after" or "instead") of a step. The first rule
---- that answers wins. A rule that throws counts as no answer.
+--- that answers wins. When none answers, the steps the step stands for (STANDS_FOR) are asked in turn.
 ---@param handler GunworksReloadAnimHandler | nil
 ---@param moment  string
 ---@param step    string
@@ -300,26 +312,32 @@ function ReloadRules.evaluate(handler, moment, step, ctx)
         return nil
     end
 
-    for i = 1, #rules do
-        local hooks = rules[i][moment]
-        local hook = type(hooks) == "table" and hooks[step] or nil
-        local answer = nil
-        if type(hook) == "function" then
-            local ok, result = pcall(hook, ctx)
-            if ok then
-                answer = result
-            else
-                warnOnce("a rule for '" .. moment .. " " .. step .. "' failed: " .. tostring(result))
-            end
-        elseif type(hook) == "table" or type(hook) == "string" then
-            answer = hook
+    local asked = { step }
+    local standIns = STANDS_FOR[step] and STANDS_FOR[step][moment]
+    if standIns then
+        for i = 1, #standIns do
+            asked[#asked + 1] = standIns[i]
         end
+    end
 
-        if type(answer) == "string" then
-            return { answer }
-        end
-        if type(answer) == "table" then
-            return answer
+    for s = 1, #asked do
+        local name = asked[s]
+        for i = 1, #rules do
+            local hooks = rules[i][moment]
+            local hook = type(hooks) == "table" and hooks[name] or nil
+            local answer = nil
+            if type(hook) == "function" then
+                answer = hook(ctx)
+            elseif type(hook) == "table" or type(hook) == "string" then
+                answer = hook
+            end
+
+            if type(answer) == "string" then
+                return { answer }
+            end
+            if type(answer) == "table" then
+                return answer
+            end
         end
     end
     return nil
@@ -394,6 +412,8 @@ function ReloadRules.stepOf(action)
         return "loadRounds"
     elseif actionType == "ISUnloadBulletsFromFirearm" then
         return "unloadRounds"
+    elseif actionType == "ISStackedMagazine" then
+        return ReloadRules.STEP_FLIP_MAG
     end
     return nil
 end
@@ -475,10 +495,8 @@ function ReloadRules.createSteps(names, ctx, parent)
         if not step then
             warnOnce("no step named '" .. tostring(name) .. "'")
         else
-            local ok, made = pcall(step.create, ctx)
-            if not ok then
-                warnOnce("step '" .. name .. "' failed: " .. tostring(made))
-            elseif made then
+            local made = step.create(ctx)
+            if made then
                 if made.Type then
                     made = { made }
                 end

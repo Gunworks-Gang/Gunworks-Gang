@@ -1951,6 +1951,10 @@ Gunworks knows these step names: it tells the actions apart by them, sets the an
 | `loadRounds` | `ISReloadWeaponAction` | your usual load node |
 | `loadChamber` | `ISReloadWeaponAction` | `GunworksReloadStep = loadChamber` |
 | `unloadRounds` | `ISUnloadBulletsFromFirearm` | your usual unload node |
+| `flipMag` | `ISStackedMagazine`, the next side of a stacked magazine into the well | the flip's nodes (Stacked Magazine System) |
+
+`flipMag` is a magazine swap in one action. When none of the gun's rules answers for `flipMag`, Gunworks asks them about the swap instead: `before` as `ejectMag`, then `insertMag`, and `after` as `insertMag`. So an HK (`openWhenChamberEmpty`) opens before a flip onto an empty chamber, and the rack after it only closes.
+Your mod does not register `flipMag`, because the reload key creates the flip itself.
 
 Every action of a gun with a reload profile sets `GunworksReloadStep` to its step name.
 Gate a node on it when two steps share an action (`insertClip` and `insertMag`, `loadChamber` and `loadRounds`).
@@ -2007,7 +2011,6 @@ When rules run:
 - Each action is checked once. For each moment, the first rule in the gun's list that answers wins, so list specific rules first.
 - A preset expands in place, so its rules take the preset's position in the list.
 - Steps a rule adds are checked too when they begin. A rule that keeps answering with its own step stops after 6 steps.
-- A rule that throws an error counts as no answer, and the error is printed.
 
 After a load, vanilla queues a `rack` when nothing is chambered, and the rules shape it when it begins (in the complete example, `rackInTwoStrokes` turns it into a `close`).
 Check `ctx.rackQueued` in an `after` rule so you do not add a second one.
@@ -2436,7 +2439,7 @@ Events in either case:
 - `attachToHand` / `detachFromHand`: the pack in the left hand, as in a magazine reload. The hand shows the pack as it came out of the well. Leave out `detachFromHand` in your unload and `attachToHand` in your load to keep it in the hand through both: it keeps that model, so the load clip must move the hand so that the next side lines up with the well at `InsertMag`. When the unload puts it down (the gun's own clips), the load picks up the side going in.
 - `playReloadSound` with `load`, `insertAmmoStart`, `unload` or `ejectAmmoStart`: the gun's sounds.
 
-The rack after the flip is the gun's normal rack, so reload rules (for example a bolt catch slap) still apply to it.
+The gun's reload rules apply to the flip as the step `flipMag` (Reload Rules System, section 1): strokes they want before a magazine swap begin in front of the flip, and steps they want after an insert follow it. The rack after the flip is the gun's normal rack, so reload rules (for example a bolt catch slap or the HK's closing stroke) still apply to it.
 
 ### 3. Helpers
 
